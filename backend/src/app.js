@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import cookieparser from "cookie-parser";
 import sequelize from "./database/db.js";
 import cors from "cors"
-import googleAuth from "../src/routes/OAuth/googleAuth.routes.js"
+import OAuth from "./routes/OAuth.routes.js"
 
 dotenv.config();
 
@@ -33,6 +33,6 @@ export async function startApp() {
 }
 
 
-app.use("/auth",googleAuth);
+app.use("/auth",OAuth);
 
 export default app;
