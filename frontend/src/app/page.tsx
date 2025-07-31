@@ -25,7 +25,7 @@ export default function Home() {
   <div className="flex flex-col items-center justify-center min-h-screen">
     <Toggle />
     <div ref={container} className="flex items-center justify-center gap-8 p-8 bg-secondary rounded-lg shadow-lg">
-      <div className="box w-24 h-24 rounded-lg flex items-center justify-center font-bold text-white bg-gradient-to-br from-blue-500 to-blue-300 shadow-md">
+      <div className="font-sans box w-24 h-24 rounded-lg flex items-center justify-center font-bold text-white bg-gradient-to-br from-blue-500 to-blue-300 shadow-md">
         Hi
       </div>
       <div
@@ -38,6 +38,15 @@ export default function Home() {
     <div className="box w-24 h-24 rounded-lg flex items-center justify-center font-bold text-white bg-gradient-to-br from-blue-500 to-blue-300 shadow-md mt-8">
       Begin
     </div>
+    <h1 className='font-mono text-5xl'>
+      Hlw there its time to begin
+    </h1>
+    <h1 className='font-sans text-5xl'>
+      Hlw there its time to begin
+    </h1>
+    <h1 className=''>
+      Hlw there its time to begin
+    </h1>
   </div>
 );
 }
