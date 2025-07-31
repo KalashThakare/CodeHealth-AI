@@ -1,0 +1,39 @@
+# Dependency directories
+node_modules/
+vendor/
+.env
+*.env
+*.pyc
+__pycache__/
+
+# Build output
+dist/
+build/
+out/
+bin/
+target/
+
+# Logs and temp files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tmp
+*.swp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Local databases and secrets
+*.sqlite
+*.db
+*.local
+config.json
+.secret
