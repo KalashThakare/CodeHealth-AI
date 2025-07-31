@@ -11,7 +11,7 @@ gsap.registerPlugin(useGSAP);
 export default function Home() {
 
   const container = useRef<HTMLDivElement>(null);
-  const circle = useRef<HTMLDivElement>(null);
+  const circle = useRef<HTMLDivElement>(null); 
 
   useGSAP(
     () => {
@@ -20,6 +20,10 @@ export default function Home() {
     },
     { scope: container }
   );
+
+  const handleGoogleAuthClick = () => {
+  window.location.href = "http://localhost:8080/auth/google";
+};
 
   return (
   <div className="flex flex-col items-center justify-center min-h-screen">
@@ -47,6 +51,20 @@ export default function Home() {
     <h1 className=''>
       Hlw there its time to begin
     </h1>
+
+
+
+
+
+/* testing */................................
+
+
+    <button
+        onClick={handleGoogleAuthClick}
+        className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+      >
+        Login with Google
+      </button>
   </div>
 );
 }

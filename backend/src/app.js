@@ -3,16 +3,23 @@ import express from "express";
 import dotenv from "dotenv";
 import cookieparser from "cookie-parser";
 import sequelize from "./database/db.js";
+import cors from "cors"
+import googleAuth from "../src/routes/OAuth/googleAuth.routes.js"
 
 dotenv.config();
 
 const app = express();
 
+app.use(cors({
+  origin:"http://localhost:3000",
+  credentials:true
+}))
 app.use(express.urlencoded({
     extended:true
 }));
 app.use(cookieparser());
 app.use(express.json());
+
 
 export async function startApp() {
   try {
@@ -24,5 +31,8 @@ export async function startApp() {
     throw err;
   }
 }
+
+
+app.use("/auth",googleAuth);
 
 export default app;
