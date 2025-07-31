@@ -31,10 +31,6 @@ export const Toggle = () => {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  // const toggleTheme = (checked: boolean) => {
-  //   setTheme(checked ? "dark" : "light");
-  // };
-
   if (!mounted) return null;
 
   return (
