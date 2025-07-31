@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import "@/app/globals.css"
+import { Toggle } from '@/components/ui/themeToggle';
 
 gsap.registerPlugin(useGSAP);
 
@@ -21,8 +22,9 @@ export default function Home() {
   );
 
   return (
-  <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-100">
-    <div ref={container} className="flex items-center justify-center gap-8 p-8 bg-white rounded-lg shadow-lg">
+  <div className="flex flex-col items-center justify-center min-h-screen">
+    <Toggle />
+    <div ref={container} className="flex items-center justify-center gap-8 p-8 bg-secondary rounded-lg shadow-lg">
       <div className="box w-24 h-24 rounded-lg flex items-center justify-center font-bold text-white bg-gradient-to-br from-blue-500 to-blue-300 shadow-md">
         Hi
       </div>
