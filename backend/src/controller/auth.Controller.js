@@ -3,6 +3,8 @@ import { generateState, generateCodeVerifier } from "arctic";
 import { google } from "../lib/OAuth/google.js";
 import { decodeIdToken } from "arctic";
 import { github } from "../lib/OAuth/github.js";
+import jwt from "jsonwebtoken";
+import BlacklistToken from "../database/models/blacklistToken.js";
 
 await User.sync();
 
@@ -75,10 +77,23 @@ export async function googleAuthCallback(req, res) {
             });
         }
 
-        // Log in or set session/token as desired
-        // Example: req.session.userId = user.id; or generate JWT
+        const jwtPayload = {
+            userId:user.id,
+            email: user.email,
+            name: user.name,
+            provider: user.oauthProvider
+        }
 
-        res.redirect("/dashboard"); // or wherever in your app
+        const jwtSecret = process.env.JWT_SECRET;
+        const token = jwt.sign(jwtPayload,jwtSecret,{expiresIn:"24h"});
+
+        res.cookie("token",token,{
+            httpOnly:true,
+            maxAge:24 * 60 * 60 * 1000,
+            sameSite:"strict"
+        })
+
+        res.status(200).json({message:"Auth Success"});
 
     } catch (e) {
         console.error(e);
@@ -160,13 +175,54 @@ export const githubAuthCallback = async (req, res) => {
             });
         }
 
-        // Session/JWT logic here (if used)
-        // e.g., req.session.userId = user.id; or send token
+        const jwtPayload={
+            userId:user.id,
+            email:user.email,
+            name:user.name,
+            provider: user.oauthProvider
+        }
+        const jwtSecret = process.env.JWT_SECRET;
+        const  token = jwt.sign(jwtPayload,jwtSecret,{expiresIn:"24h"});
 
-        // Redirect to frontend after successful login
-        res.redirect("/dashboard"); // Update as appropriate for your app
+        res.cookie("token",token,{
+            httpOnly:true,
+            maxAge:24 * 60 * 60 * 1000,
+            sameSite:"strict"
+        })
+
+        res.status(200).json({message:"Auth success"});
+
     } catch (e) {
         console.error("GitHub OAuth callback error:", e);
         res.status(500).send("GitHub authentication failed.");
     }
 };
+
+export const logout =async(req,res)=>{
+    try {
+        const token = res.cookies.token || req.headers.authorization?.split(' ')[1];
+
+        if(!token){
+            res.status(400).json({message:"Unauthorised"});
+        }
+
+        await BlacklistToken.create({token});
+
+        res.clearCookie('token');
+
+        res.status(200).json({ message: "Logged out successfully" });
+
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ message: "Logout controller error" });
+    }
+}
+
+export const checkAuth = (req, res) => {
+    try {
+        res.status(200).json(req.user)
+    } catch (error) {
+        console.log("error in checkAuth controller", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
