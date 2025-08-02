@@ -7,11 +7,12 @@
 :root {
   --grid-unit: 1rem;
   --border-radius-base: 0.5rem;
-  --transition: background 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
+  --transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
 /* Light Theme: Soft Purples */
 [data-theme="light"] {
+  color-scheme: light;
   --color-bg: #f6f4fa;
   --color-bg-secondary: #ede9f7;
   --color-bg-tertiary: #e3d7f5;
@@ -34,7 +35,7 @@
 }
 
 /* Dark Theme: Zinc */
-[data-theme="dark"] {
+/* [data-theme="dark"] {
   --color-bg: #18181b;
   --color-bg-secondary: #27272a;
   --color-bg-tertiary: #3f3f46;
@@ -54,7 +55,54 @@
   --color-link: #a084e8;
   --color-link-hover: #cdb4f6;
   --shadow: 0 2px 8px 0 rgba(39, 39, 42, 0.16);
+} */
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #000;                    /* Pure black background */
+  --color-bg-secondary: #111;          /* Slightly lighter for containers */
+  --color-bg-tertiary: #1a1a1a;       
+  --color-fg: #ededed;                 /* Light gray text (not pure white) */
+  --color-fg-secondary: #a1a1aa;       /* Secondary text remains same */
+  --color-primary: #333;               /* Primary elements */
+  --color-primary-hover: #444;         /* Hover states */
+  --color-accent: #6366f1;             /* Blue accent for focus/highlights */
+  --color-border: #333;                /* Dark gray borders */
+  --color-card: #111;                  /* Card background - very dark gray */
+  --color-input-bg: #000;              /* Input background pure black */
+  --color-input-border: #333;          /* Input border dark gray */
+  --color-btn-bg: #e5e5e5;             /* "Continue with Email" button - light gray */
+  --color-btn-bg-hover: #d4d4d4;       /* Email button hover */
+  --color-btn-fg: #000;                /* Email button text - black */
+  --color-btn-border: #e5e5e5;         /* Email button border */
+  --color-link: #3b82f6;               /* Blue for "Sign Up" link */
+  --color-link-hover: #2563eb;         /* Darker blue for link hover */
+  --shadow: 0 2px 8px 0 rgba(0,0,0,0.3); /* Subtle black shadow */
 }
+
+
+/* [data-theme="dark"] {
+  --color-bg: #000;                  
+  --color-bg-secondary: #18181b;    
+  --color-bg-tertiary: #232329;
+  --color-fg: #fff;                 
+  --color-fg-secondary: #a1a1aa;     
+  --color-primary: #232329;        
+  --color-primary-hover: #34343a;    
+  --color-accent: #6366f1;           
+  --color-border: #232329;          
+  --color-card: #111114;             
+  --color-input-bg: #000;          
+  --color-input-border: #27272a;    
+  --color-btn-bg: #fff1;            
+  --color-btn-bg-hover: #232329;  
+  --color-btn-fg: #fff;             
+  --color-btn-border: #232329;     
+  --color-link: #3b82f6;            
+  --color-link-hover: #2563eb;      
+  --shadow: 0 2px 8px 0 rgba(0,0,0,0.25);  
+} */
+
 
 /* Smooth transitions for theme changes */
 body, .App, .container, button, input, select, textarea, .card, a {
@@ -77,7 +125,7 @@ body {
   align-items: center;
   justify-content: space-around;
   min-height: 100vh;
-  background: var(--color-bg-secondary);
+  background: var(--color-bg);
 }
 
 /* Card component */
@@ -120,10 +168,14 @@ input, select, textarea {
   margin-bottom: var(--grid-unit);
   box-shadow: none;
   transition: var(--transition);
+  transition: var(--transition);
 }
 input:focus, select:focus, textarea:focus {
+  background: var(--color-bg-tertiary);
   border-color: var(--color-primary);
   outline: none;
+  border: 3px solid var(--color-input-border);
+  transition: var(--transition);
 }
 
 /* Headings */
@@ -200,4 +252,43 @@ th {
 }
 .font-mono {
   font-family: var(--font-geist-mono), monospace;
+}
+
+
+/* Fix autofill styling for dark theme */
+[data-theme="dark"] input:-webkit-autofill,
+[data-theme="dark"] input:-webkit-autofill:hover,
+[data-theme="dark"] input:-webkit-autofill:focus,
+[data-theme="dark"] input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #000 inset !important;
+  -webkit-text-fill-color: #ededed !important;
+  background-color: #000 !important;
+}
+
+/* Force input states to respect dark theme */
+[data-theme="dark"] input,
+[data-theme="dark"] input:focus,
+[data-theme="dark"] input:active {
+  background-color: var(--color-input-bg) !important;
+  color: var(--color-fg) !important;
+  /* border: 1px solid var(--color-input-border) !important; */
+}
+
+/* Fix autofill styling for light theme */
+[data-theme="light"] input:-webkit-autofill,
+[data-theme="light"] input:-webkit-autofill:hover,
+[data-theme="light"] input:-webkit-autofill:focus,
+[data-theme="light"] input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #f3eaff inset !important;
+  -webkit-text-fill-color: #2d1a4a !important;
+  background-color: #f3eaff !important;
+}
+
+/* Force input states to respect light theme */
+[data-theme="light"] input,
+[data-theme="light"] input:focus,
+[data-theme="light"] input:active {
+  background-color: var(--color-input-bg) !important;
+  color: var(--color-fg) !important;
+  /* border: 1px solid var(--color-input-border) !important; */
 }
