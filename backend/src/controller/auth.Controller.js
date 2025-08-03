@@ -27,13 +27,9 @@ export const googleLogin = async (req, res) => {
 export async function googleAuthCallback(req, res) {
     try {
         const { code, state } = req.query;
-        // Retrieve and delete cookies to prevent replay attacks
+        
         const storedState = req.cookies.google_oauth_state;
         const codeVerifier = req.cookies.google_code_verifier;
-        console.log("Received code:", code);
-        console.log("Received state:", state);
-        console.log("Stored state:", storedState);
-        console.log("Stored codeVerifier:", codeVerifier);
         res.clearCookie("google_oauth_state");
         res.clearCookie("google_code_verifier");
 
@@ -47,19 +43,11 @@ export async function googleAuthCallback(req, res) {
         // Exchange the auth code for tokens
         const tokens = await google.validateAuthorizationCode(code, codeVerifier);
 
-        console.log(tokens)
-
         // Decode the ID token to get user info
         const claims = decodeIdToken(tokens.idToken());
         const googleId = claims.sub;
         const email = claims.email;
         const name = claims.name;
-
-
-        console.log(claims);
-        console.log(googleId);
-        console.log(email);
-        console.log(name);
 
         // Upsert user into your DB
         let user = await User.findOne({ where: { oauthProvider: "google", oauthProviderId: googleId } });
@@ -93,7 +81,12 @@ export async function googleAuthCallback(req, res) {
             sameSite:"strict"
         })
 
-        res.status(200).json({message:"Auth Success"});
+        res.status(200).json({
+            message:"Auth Success",
+            email:user.email,
+            name:user.name,
+            provider: user.oauthProvider
+        });
 
     } catch (e) {
         console.error(e);
@@ -190,7 +183,12 @@ export const githubAuthCallback = async (req, res) => {
             sameSite:"strict"
         })
 
-        res.status(200).json({message:"Auth success"});
+        res.status(200).json({
+            message:"Auth Success",
+            email:user.email,
+            name:user.name,
+            provider: user.oauthProvider
+        });
 
     } catch (e) {
         console.error("GitHub OAuth callback error:", e);
