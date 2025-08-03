@@ -53,7 +53,7 @@ export const useAuthStore = create<AuthStore>()(
 
           if (!token) {
             set({ authUser: null, isloggingin: false });
-            router.push("/Auth");
+            router.push("/");
             return;
           }
 

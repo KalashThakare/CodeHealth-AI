@@ -1,9 +1,13 @@
 // components/Login.js
 "use client";
+import { useAuthStore } from "@/store/authStore";
 import { useState } from "react";
 import { FaGoogle, FaGithub } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
+  const router = useRouter();
+  const login = useAuthStore((state) => state.login);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -17,6 +21,8 @@ export default function Login() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log({ email, password });
+    login({ email, password });
+    router.replace("/dashboard");
   };
 
   return (

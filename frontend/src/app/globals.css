@@ -1,8 +1,5 @@
 @import "tailwindcss";
 
-/* Import Tailwind base styles */
-@import "tailwindcss";
-
 /* Root variables for grid and border radius */
 :root {
   --grid-unit: 1rem;

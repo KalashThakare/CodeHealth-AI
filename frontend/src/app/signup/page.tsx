@@ -1,5 +1,7 @@
 // components/SignUp.js
 "use client";
+import { useAuthStore } from "@/store/authStore";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FaGoogle, FaGithub } from "react-icons/fa";
 
@@ -7,6 +9,8 @@ export default function SignUp() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const signup = useAuthStore((state) => state.signup);
+  const router = useRouter();
 
   const handleGoogleAuthClick = () => {
     window.location.href = "http://localhost:8080/auth/google";
@@ -18,6 +22,8 @@ export default function SignUp() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log({ name, email, password });
+    signup({ name, email, password });
+    router.replace("/dashboard");
   };
 
   return (
