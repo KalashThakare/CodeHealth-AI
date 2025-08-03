@@ -5,8 +5,13 @@ import { decodeIdToken } from "arctic";
 import { github } from "../lib/OAuth/github.js";
 import jwt from "jsonwebtoken";
 import BlacklistToken from "../database/models/blacklistToken.js";
+import dotenv from 'dotenv';
+dotenv.config();
+
+const frontendBaseURL = process.env.FRONTEND_URL;
 
 await User.sync();
+await BlacklistToken.sync();
 
 export const googleLogin = async (req, res) => {
 
@@ -73,20 +78,15 @@ export async function googleAuthCallback(req, res) {
         }
 
         const jwtSecret = process.env.JWT_SECRET;
-        const token = jwt.sign(jwtPayload,jwtSecret,{expiresIn:"24h"});
+        const authToken = jwt.sign(jwtPayload,jwtSecret,{expiresIn:"24h"});
 
-        res.cookie("token",token,{
+        res.cookie("token",authToken,{
             httpOnly:true,
             maxAge:24 * 60 * 60 * 1000,
             sameSite:"strict"
         })
 
-        res.status(200).json({
-            message:"Auth Success",
-            email:user.email,
-            name:user.name,
-            provider: user.oauthProvider
-        });
+        res.redirect(`${frontendBaseURL}/dashboard?token=${authToken}`);
 
     } catch (e) {
         console.error(e);
@@ -183,12 +183,7 @@ export const githubAuthCallback = async (req, res) => {
             sameSite:"strict"
         })
 
-        res.status(200).json({
-            message:"Auth Success",
-            email:user.email,
-            name:user.name,
-            provider: user.oauthProvider
-        });
+        res.redirect(`${frontendBaseURL}/dashboard?token=${authToken}`);
 
     } catch (e) {
         console.error("GitHub OAuth callback error:", e);
@@ -198,7 +193,7 @@ export const githubAuthCallback = async (req, res) => {
 
 export const logout =async(req,res)=>{
     try {
-        const token = res.cookies.token || req.headers.authorization?.split(' ')[1];
+        const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
 
         if(!token){
             res.status(400).json({message:"Unauthorised"});

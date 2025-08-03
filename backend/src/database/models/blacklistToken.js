@@ -3,7 +3,7 @@ import sequelize from '../db.js';
 
 const BlacklistToken = sequelize.define('BlacklistToken', {
   token: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false,
     unique: true,
   },
