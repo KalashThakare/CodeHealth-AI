@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { NextRouter } from 'next/router';
 import { axiosInstance } from '@/lib/axios';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 interface User {
   _id: string;
@@ -86,6 +87,7 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const res = await axiosInstance.post<AuthResponse>("/auth/login", data);
           if (res.data?.token) {
+            console.log("User logged in:", res.data);
             localStorage.setItem("authToken", res.data.token);
           }
           set({ authUser: res.data, isloggingin: false });

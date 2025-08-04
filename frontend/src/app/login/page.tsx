@@ -18,11 +18,12 @@ export default function Login() {
     window.location.href = "http://localhost:8080/auth/github";
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log({ email, password });
-    login({ email, password });
-    router.replace("/dashboard");
+    if (await login({ email, password })) {
+      router.replace("/dashboard");
+    }
   };
 
   return (
