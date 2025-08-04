@@ -97,7 +97,7 @@ export async function googleAuthCallback(req, res) {
       sameSite: "strict",
     });
 
-    // res.redirect(`${frontendBaseURL}/dashboard?token=${authToken}`);
+    res.redirect(`${frontendBaseURL}/dashboard?token=${authToken}`);
   } catch (e) {
     console.error(e);
     res.status(500).send("Google authentication failed.");
