@@ -145,6 +145,14 @@ export const githubAuthCallback = async (req, res) => {
     // Exchange the authorization code for tokens using PKCE
     const tokens = await github.validateAuthorizationCode(code, codeVerifier);
 
+    const githubAccessToken = tokens.accessToken();
+
+    res.cookie('gitHubtoken', githubAccessToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     // Fetch GitHub profile
     const profileRes = await fetch("https://api.github.com/user", {
       headers: {
@@ -196,15 +204,16 @@ export const githubAuthCallback = async (req, res) => {
       provider: user.oauthProvider,
     };
     const jwtSecret = process.env.JWT_SECRET;
-    const token = jwt.sign(jwtPayload, jwtSecret, { expiresIn: "24h" });
+    const authToken = jwt.sign(jwtPayload, jwtSecret, { expiresIn: "24h" });
 
-    res.cookie("token", token, {
+    res.cookie("token", authToken, {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
       sameSite: "strict",
     });
 
     res.redirect(`${frontendBaseURL}/dashboard?token=${authToken}`);
+
   } catch (e) {
     console.error("GitHub OAuth callback error:", e);
     res.status(500).send("GitHub authentication failed.");

@@ -5,6 +5,7 @@ import cookieparser from "cookie-parser";
 import sequelize from "./database/db.js";
 import cors from "cors"
 import OAuth from "./routes/OAuth.routes.js"
+import githubRoutes from "./routes/githubRoutes.js";
 
 dotenv.config();
 
@@ -34,5 +35,6 @@ export async function startApp() {
 
 
 app.use("/auth",OAuth);
+app.use("/github",githubRoutes)
 
 export default app;
