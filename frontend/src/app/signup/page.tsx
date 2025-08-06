@@ -9,6 +9,7 @@ export default function SignUp() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const[loaded, setLoaded] = useState(false);
   const signup = useAuthStore((state) => state.signup);
   const router = useRouter();
 
@@ -19,12 +20,25 @@ export default function SignUp() {
     window.location.href = `${process.env.NEXT_PUBLIC_GITHUB_AUTH_URL}`;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    setLoaded(true);
     e.preventDefault();
-    console.log({ name, email, password });
-    signup({ name, email, password });
-    router.replace("/dashboard");
+    try {
+      await signup({ name, email, password });
+      router.push("/dashboard");
+    } finally {
+      setLoaded(false);
+    }
   };
+
+  if (loaded) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"></div>
+        <p className="mt-4">Signing up...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="App">

@@ -189,11 +189,17 @@ export const useGitHubStore = create<GitHubStore>()(
       },
 
       checkGitHubTokenStatus: async () => {
+        const authStorage = localStorage.getItem("auth-storage");
+        let provider = null;
+        if (authStorage) {
+          const parsed = JSON.parse(authStorage);
+          provider = parsed?.state?.authUser?.oauthProvider;
+        }
         set({ isLoading: true });
         try {
           const res = await axiosInstance.get("/github/token-status");
-          if (res.data.hasToken) {
-            set({ githubToken: "valid-token-exists" }); // Just a placeholder
+          if (res.data.hasToken && provider === "github") {
+            set({ githubToken: "valid-token-exists" });
             return true;
           }
           set({ githubToken: null });

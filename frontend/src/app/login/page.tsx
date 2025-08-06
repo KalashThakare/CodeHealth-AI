@@ -10,6 +10,7 @@ export default function Login() {
   const login = useAuthStore((state) => state.login);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loaded, setLoaded] = useState(false);
 
   const handleGoogleAuthClick = () => {
     window.location.href = `${process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL}`;
@@ -19,12 +20,25 @@ export default function Login() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    setLoaded(true);
     e.preventDefault();
-    console.log({ email, password });
-    if (await login({ email, password })) {
-      router.replace("/dashboard");
+    try {
+      if (await login({ email, password })) {
+        router.push("/dashboard");
+      }
+    } finally {
+      setLoaded(false); // Always reset loaded after login attempt
     }
   };
+
+  if (loaded) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"></div>
+        <p className="mt-4">Logging in...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="App">
