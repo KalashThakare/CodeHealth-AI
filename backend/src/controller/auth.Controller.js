@@ -6,6 +6,7 @@ import { github } from "../lib/OAuth/github.js";
 import jwt from "jsonwebtoken";
 import BlacklistToken from "../database/models/blacklistToken.js";
 import dotenv from "dotenv";
+import bcrypt from "bcrypt";
 dotenv.config();
 
 const frontendBaseURL = process.env.FRONTEND_URL;
@@ -219,6 +220,99 @@ export const githubAuthCallback = async (req, res) => {
     res.status(500).send("GitHub authentication failed.");
   }
 };
+
+export const Signup=async(req,res)=>{
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email, and password are required." });
+    }
+
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(409).json({ message: "User with this email already exists." });
+    }
+
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      oauthProvider: null,
+      oauthProviderId: null,
+      oauthAccessToken: null,
+    });
+
+    const jwtPayload = {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      provider: "local",
+    };
+    const jwtSecret = process.env.JWT_SECRET;
+    const authToken = jwt.sign(jwtPayload, jwtSecret, { expiresIn: "24h" });
+
+    res.cookie("token", authToken, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: "strict",
+    });
+
+    res.status(201).json({ message: "User registered successfully", token: authToken });
+  } catch (error) {
+    console.error("Signup error:", error);
+    res.status(500).json({ message: "Internal server error during signup" });
+  }
+}
+
+export const Login =async(req,res)=>{
+
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required." });
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    if (user.oauthProvider) {
+      return res.status(400).json({ message: `Please login using ${user.oauthProvider}` });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    const jwtPayload = {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      provider: "local",
+    };
+    const jwtSecret = process.env.JWT_SECRET;
+    const authToken = jwt.sign(jwtPayload, jwtSecret, { expiresIn: "24h" });
+
+    res.cookie("token", authToken, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: "strict",
+    });
+
+    res.status(200).json({ message: "Login successful", token: authToken });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Internal server error during login" });
+  }
+
+}
 
 export const logout = async (req, res) => {
   try {

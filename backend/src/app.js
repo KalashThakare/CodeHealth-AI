@@ -6,6 +6,7 @@ import sequelize from "./database/db.js";
 import cors from "cors"
 import OAuth from "./routes/OAuth.routes.js"
 import githubRoutes from "./routes/githubRoutes.js";
+import Auth from "../src/routes/authRoutes.js"
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ export async function startApp() {
 
 
 app.use("/auth",OAuth);
+app.use("/manual-auth",Auth);
 app.use("/github",githubRoutes)
 
 export default app;
