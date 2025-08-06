@@ -97,12 +97,21 @@ const Dashboard = () => {
     <div className='flex flex-col items-center justify-center h-screen'>
       <h1 className='font-semibold text-2xl'>Dashboard</h1>
       <p className="mt-2 text-gray-600">Welcome, {authUser.name}!</p>
+
+      <button 
+        onClick={() => router.replace('/gitProject')}
+        className="mt-4 px-4 py-2 rounded transition-colors"
+      >
+        Github Projects
+      </button>
+
       <button 
         onClick={handleLogOut} 
         className='mt-4 px-4 py-2 rounded'
       >
         Log Out
       </button>
+
     </div>
   );
 };

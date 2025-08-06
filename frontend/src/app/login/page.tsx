@@ -12,10 +12,10 @@ export default function Login() {
   const [password, setPassword] = useState("");
 
   const handleGoogleAuthClick = () => {
-    window.location.href = "http://localhost:8080/auth/google";
+    window.location.href = `${process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL}`;
   };
   const handleGithubAuthClick = () => {
-    window.location.href = "http://localhost:8080/auth/github";
+    window.location.href = `${process.env.NEXT_PUBLIC_GITHUB_AUTH_URL}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

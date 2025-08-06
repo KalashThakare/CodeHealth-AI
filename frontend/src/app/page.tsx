@@ -1,12 +1,11 @@
 "use client"
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRef } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import "@/app/globals.css"
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-// import { Toggle } from '@/components/ui/themeToggle';
 
 gsap.registerPlugin(useGSAP);
 
@@ -15,23 +14,46 @@ export default function Home() {
   const { authUser, isloggingin, checkAuth } = useAuthStore();
   const container = useRef<HTMLDivElement>(null);
   const circle = useRef<HTMLDivElement>(null); 
+  const [animationsReady, setAnimationsReady] = useState(false);
 
   useEffect(() => {
     const initAuth = async () => {
       await checkAuth(router as any);
       if (authUser) {
         router.push('/dashboard');
+      } else {
+        setAnimationsReady(true);
       }
     };
     initAuth();
   }, [checkAuth, authUser, router]);
 
+  // Run animations only when ready and user is not authenticated
   useGSAP(
     () => {
-      gsap.to(".box", { rotation: "+=360", duration: 3 });
-      gsap.to(circle.current, { rotation: "-=360", duration: 3 });
+      if (animationsReady && !isloggingin && !authUser) {
+        // Ensure elements exist before animating
+        const boxElements = document.querySelectorAll(".box");
+        if (boxElements.length > 0 && circle.current) {
+          gsap.to(".box", { 
+            rotation: "+=360", 
+            duration: 3,
+            ease: "power2.inOut",
+            repeat: -1 
+          });
+          gsap.to(circle.current, { 
+            rotation: "-=360", 
+            duration: 3,
+            ease: "power2.inOut",
+            repeat: -1 
+          });
+        }
+      }
     },
-    { scope: container }
+    { 
+      scope: container,
+      dependencies: [animationsReady, isloggingin, authUser] // Add dependencies
+    }
   );
 
   // loading state for checking authentication
@@ -67,10 +89,10 @@ export default function Home() {
       Begin
     </div>
 
-    <button className='btn w-40 mt-4' onClick={() => {window.location.href = "http://localhost:3000/login"}}>
+    <button className='btn w-40 mt-4' onClick={() => {window.location.href = `${process.env.NEXT_PUBLIC_LOGIN_URL}`}}>
       Log In
     </button>
-    <button className='btn w-40 mt-4' onClick={() => {window.location.href = "http://localhost:3000/signup"}}>
+    <button className='btn w-40 mt-4' onClick={() => {window.location.href = `${process.env.NEXT_PUBLIC_SIGNUP_URL}`}}>
       Sign Up
     </button>
   </div>

@@ -3,7 +3,6 @@ import { persist } from 'zustand/middleware';
 import { NextRouter } from 'next/router';
 import { axiosInstance } from '@/lib/axios';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
 
 interface User {
   _id: string;
@@ -85,7 +84,7 @@ export const useAuthStore = create<AuthStore>()(
       login: async (data: LoginData): Promise<AuthResponse | null> => {
         set({ isloggingin: true });
         try {
-          const res = await axiosInstance.post<AuthResponse>("/auth/login", data);
+          const res = await axiosInstance.post<AuthResponse>("/manual-auth/login", data);
           console.log("Login response:", res.data);
           if (res.data?.token) {
             console.log("User logged in:", res.data);
@@ -129,7 +128,7 @@ export const useAuthStore = create<AuthStore>()(
       signup: async (data: SignupData): Promise<number> => {
         set({ isloggingin: true });
         try {
-          const res = await axiosInstance.post<AuthResponse>("/auth/signup", data);
+          const res = await axiosInstance.post<AuthResponse>("/manual-auth/signup", data);
           if (res.data?.token) {
             localStorage.setItem("authToken", res.data.token);
           }
