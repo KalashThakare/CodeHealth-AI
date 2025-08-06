@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { axiosInstance } from '@/lib/axios';
-import { toast } from 'sonner';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { axiosInstance } from "@/lib/axios";
+import { toast } from "sonner";
 
 interface GitHubRepo {
   id: number;
@@ -59,6 +59,7 @@ interface GitHubStore {
   clearError: () => void;
   resetStore: () => void;
   getRepositoryById: (id: number) => GitHubRepo | undefined;
+  checkGitHubTokenStatus: () => Promise<boolean>;
 }
 
 export const useGitHubStore = create<GitHubStore>()(
@@ -92,16 +93,17 @@ export const useGitHubStore = create<GitHubStore>()(
             headers: { Authorization: `Bearer ${token}` },
           });
 
-          set({ 
-            githubUser: res.data, 
-            isLoading: false 
+          set({
+            githubUser: res.data,
+            isLoading: false,
           });
           toast.success("GitHub user profile fetched successfully");
         } catch (error: any) {
-          const errorMessage = error?.response?.data?.error || "Failed to fetch GitHub user";
-          set({ 
-            error: errorMessage, 
-            isLoading: false 
+          const errorMessage =
+            error?.response?.data?.error || "Failed to fetch GitHub user";
+          set({
+            error: errorMessage,
+            isLoading: false,
           });
           toast.error(errorMessage);
         }
@@ -120,16 +122,17 @@ export const useGitHubStore = create<GitHubStore>()(
             headers: { Authorization: `Bearer ${token}` },
           });
 
-          set({ 
-            repositories: res.data, 
-            isLoading: false 
+          set({
+            repositories: res.data,
+            isLoading: false,
           });
           toast.success(`Fetched ${res.data.length} repositories`);
         } catch (error: any) {
-          const errorMessage = error?.response?.data?.error || "Failed to fetch GitHub repos";
-          set({ 
-            error: errorMessage, 
-            isLoading: false 
+          const errorMessage =
+            error?.response?.data?.error || "Failed to fetch GitHub repos";
+          set({
+            error: errorMessage,
+            isLoading: false,
           });
           toast.error(errorMessage);
         }
@@ -140,7 +143,9 @@ export const useGitHubStore = create<GitHubStore>()(
         toast.info(`Selected repository: ${repo.name}`);
       },
 
-      analyzeRepository: async (repoUrl: string): Promise<RepositoryAnalysis | null> => {
+      analyzeRepository: async (
+        repoUrl: string
+      ): Promise<RepositoryAnalysis | null> => {
         const token = get().githubToken;
         if (!token) {
           toast.error("No GitHub token found");
@@ -149,25 +154,29 @@ export const useGitHubStore = create<GitHubStore>()(
 
         set({ isLoading: true, error: null });
         try {
-          const res = await axiosInstance.post<RepositoryAnalysis>("/github/analyze", 
+          const res = await axiosInstance.post<RepositoryAnalysis>(
+            "/github/analyze",
             { repoUrl },
             { headers: { Authorization: `Bearer ${token}` } }
           );
 
           // Add to analysis history
           const currentHistory = get().analysisHistory;
-          set({ 
+          set({
             analysisHistory: [res.data, ...currentHistory],
-            isLoading: false 
+            isLoading: false,
           });
 
-          toast.success(`Repository analysis completed. Health score: ${res.data.health_score}/100`);
+          toast.success(
+            `Repository analysis completed. Health score: ${res.data.health_score}/100`
+          );
           return res.data;
         } catch (error: any) {
-          const errorMessage = error?.response?.data?.error || "Failed to analyze repository";
-          set({ 
-            error: errorMessage, 
-            isLoading: false 
+          const errorMessage =
+            error?.response?.data?.error || "Failed to analyze repository";
+          set({
+            error: errorMessage,
+            isLoading: false,
           });
           toast.error(errorMessage);
           return null;
@@ -176,7 +185,25 @@ export const useGitHubStore = create<GitHubStore>()(
 
       getRepositoryById: (id: number): GitHubRepo | undefined => {
         const repositories = get().repositories;
-        return repositories.find(repo => repo.id === id);
+        return repositories.find((repo) => repo.id === id);
+      },
+
+      checkGitHubTokenStatus: async () => {
+        set({ isLoading: true });
+        try {
+          const res = await axiosInstance.get("/github/token-status");
+          if (res.data.hasToken) {
+            set({ githubToken: "valid-token-exists" }); // Just a placeholder
+            return true;
+          }
+          set({ githubToken: null });
+          return false;
+        } catch (error) {
+          set({ githubToken: null });
+          return false;
+        } finally {
+          set({ isLoading: false });
+        }
       },
 
       clearError: () => {
@@ -190,10 +217,10 @@ export const useGitHubStore = create<GitHubStore>()(
           selectedRepo: null,
           analysisHistory: [],
           isLoading: false,
-          error: null
+          error: null,
         });
         toast.info("GitHub store reset");
-      }
+      },
     }),
     {
       name: "github-storage",
@@ -202,7 +229,7 @@ export const useGitHubStore = create<GitHubStore>()(
         githubUser: state.githubUser,
         repositories: state.repositories,
         selectedRepo: state.selectedRepo,
-        analysisHistory: state.analysisHistory
+        analysisHistory: state.analysisHistory,
       }),
     }
   )

@@ -15,18 +15,27 @@ export default function ProjectsPage() {
     fetchGitHubRepos,
     analyzeRepository,
     clearError,
-    setGitHubToken
+    setGitHubToken,
+    checkGitHubTokenStatus
   } = useGitHubStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'public' | 'private'>('all');
 
   useEffect(() => {
-    if (githubToken) {
+    if (!githubToken) {
+      checkGitHubTokenStatus().then((hasToken) => {
+        if (hasToken) {
+          fetchGitHubUser();
+          fetchGitHubRepos();
+        }
+      });
+    } else {
       fetchGitHubUser();
       fetchGitHubRepos();
     }
-  }, [githubToken, fetchGitHubUser, fetchGitHubRepos]);
+    // eslint-disable-next-line
+  }, [githubToken, fetchGitHubUser, fetchGitHubRepos, checkGitHubTokenStatus]);
 
   // Filter repositories based on search and filter type
   const filteredRepos = repositories.filter(repo => {

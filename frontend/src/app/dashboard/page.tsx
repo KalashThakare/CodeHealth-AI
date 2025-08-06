@@ -106,6 +106,13 @@ const Dashboard = () => {
       </button>
 
       <button 
+        onClick={() => {window.location.href = `${process.env.NEXT_PUBLIC_GITHUB_PERMISSION_URL}`;}}
+        className="mt-4 px-4 py-2 rounded transition-colors"
+      >
+        Github Permissions
+      </button>
+
+      <button 
         onClick={handleLogOut} 
         className='mt-4 px-4 py-2 rounded'
       >
