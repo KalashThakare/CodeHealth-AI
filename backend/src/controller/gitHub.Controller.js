@@ -1,6 +1,7 @@
 import axios from "axios";
 import { generateState, generateCodeVerifier } from "arctic";
 import { github } from "../lib/OAuth/github.js";
+import crypto from 'crypto';
 
 export const ListRepos = async (req, res) => {
     try {
@@ -83,5 +84,42 @@ export const getGitHubUser = async (req, res) => {
   } catch (error) {
     console.error('GitHub API error:', error.response?.data || error.message);
     res.status(500).json({ error: 'Failed to fetch user profile' });
+  }
+}
+
+
+export async function githubWebhookController(req, res) {
+  try {
+    const signature = req.headers['x-hub-signature-256'];
+    const event = req.headers['x-github-event'];
+    const payload = req.body;
+
+    if (!signature) {
+      return res.status(401).send('No X-Hub-Signature-256 header found');
+    }
+
+    const secret = process.env.GITHUB_WEBHOOK_SECRET;
+    const hmac = crypto.createHmac('sha256', secret);
+    const digest = 'sha256=' + hmac.update(JSON.stringify(payload)).digest('hex');
+
+    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest))) {
+      return res.status(401).send('Invalid signature');
+    }
+
+    console.log(`Received GitHub event: ${event}`);
+
+    if (event === 'installation' && payload.action === 'created') {
+      const installationId = payload.installation.id;
+      const accountLogin = payload.installation.account.login;
+
+      console.log(`Installation created for account: ${accountLogin}, installation ID: ${installationId}`);
+
+      return res.status(200).send('Installation event processed');
+    }
+    
+    res.status(200).send('Event received');
+  } catch (error) {
+    console.error('Error processing webhook:', error);
+    res.status(500).send('Internal Server Error');
   }
 }
