@@ -108,86 +108,80 @@ export const githubWebhookController = async (req, res) => {
     const hmac = crypto.createHmac("sha256", secret);
     const digest = "sha256=" + hmac.update(JSON.stringify(payload)).digest("hex");
 
-    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest))) {
+    const sigBuffer = Buffer.from(signature, "utf8");
+    const digestBuffer = Buffer.from(digest, "utf8");
+
+    if (
+      sigBuffer.length !== digestBuffer.length ||
+      !crypto.timingSafeEqual(sigBuffer, digestBuffer)
+    ) {
       return res.status(401).send("Invalid signature");
     }
 
-    console.log(`Received GitHub event: ${event}, action: ${payload.action}`);
+    console.log(`📦 Received GitHub event: ${event}, action: ${payload.action}`);
 
-    // Handle Installation Created (initial install of app)
-    if (event === "installation" && payload.action === "created") {
-      const installationId = payload.installation.id;
-      const accountLogin = payload.installation.account.login;
-      const accountId = payload.installation.account.id;
-      const repos = payload.repositories || [];
-
-      // Find your user by provider ID (assuming you store GitHub account ID in oauthProviderId)
+    const processRepos = async (repos, installationId, accountId) => {
       const user = await User.findOne({
         where: { oauthProviderId: accountId.toString() }
       });
 
       if (!user) {
-        console.warn(`User with GitHub account ${accountLogin} not found in DB`);
-        return res.status(404).send("User not found");
+        console.warn(`⚠️ No user with oauthProviderId=${accountId} found in DB`);
+        return false;
       }
 
-      // Store each repo in DB
+      console.log(`✅ Found user: ${user.email || user.id}`);
+
       for (const repo of repos) {
-        await Project.findOrCreate({
+        const repoUrl = repo.html_url || `https://github.com/${repo.full_name}`;
+        const [project, created] = await Project.findOrCreate({
           where: { repoName: repo.name, userId: user.id },
           defaults: {
             userId: user.id,
             repoName: repo.name,
-            repoUrl: repo.html_url,
+            repoUrl,
             installationId
           }
         });
+
+        console.log(created 
+          ? `📌 Added repo ${repo.name} for ${user.email}` 
+          : `ℹ️ Repo ${repo.name} already exists for ${user.email}`);
       }
 
-      console.log(
-        `Stored ${repos.length} repos for user ${accountLogin} (instId: ${installationId})`
+      return true;
+    };
+
+    // 1. Initial installation
+    if (event === "installation" && payload.action === "created") {
+      const ok = await processRepos(
+        payload.repositories || [],
+        payload.installation.id,
+        payload.installation.account.id
       );
-      return res.status(200).send("Installation event processed");
+      return res.status(ok ? 200 : 404).send("Installation event processed");
     }
 
-    // Handle Repo Added to Installation
+    // 2. Repo added to app
     if (event === "installation_repositories" && payload.action === "added") {
-      const installationId = payload.installation.id;
-      const accountId = payload.installation.account.id;
-      const reposAdded = payload.repositories_added || [];
-
-      const user = await User.findOne({
-        where: { oauthProviderId: accountId.toString() }
-      });
-      if (!user) {
-        return res.status(404).send("User not found");
-      }
-
-      for (const repo of reposAdded) {
-        await Project.findOrCreate({
-          where: { repoName: repo.name, userId: user.id },
-          defaults: {
-            userId: user.id,
-            repoName: repo.name,
-            repoUrl: repo.html_url,
-            installationId
-          }
-        });
-      }
-
-      console.log(`Added ${reposAdded.length} repos for user ${user.email}`);
-      return res.status(200).send("Repos added");
+      const ok = await processRepos(
+        payload.repositories_added || [],
+        payload.installation.id,
+        payload.installation.account.id
+      );
+      return res.status(ok ? 200 : 404).send("Repos added");
     }
 
-    // Handle Repo Removed from Installation
+    // 3. Repo removed from app
     if (event === "installation_repositories" && payload.action === "removed") {
       const accountId = payload.installation.account.id;
       const reposRemoved = payload.repositories_removed || [];
-
       const user = await User.findOne({
         where: { oauthProviderId: accountId.toString() }
       });
+
       if (!user) {
+        console.warn(`⚠️ No user found for accountId ${accountId}`);
         return res.status(404).send("User not found");
       }
 
@@ -195,17 +189,14 @@ export const githubWebhookController = async (req, res) => {
         await Project.destroy({
           where: { repoName: repo.name, userId: user.id }
         });
+        console.log(`🗑 Removed repo ${repo.name} for ${user.email}`);
       }
-
-      console.log(`Removed ${reposRemoved.length} repos for user ${user.email}`);
       return res.status(200).send("Repos removed");
     }
 
-    res.status(200).send("Event received");
+    res.status(200).send("Event received (unhandled type)");
   } catch (error) {
-    console.error("Error processing webhook:", error);
+    console.error("❌ Error processing webhook:", error);
     res.status(500).send("Internal Server Error");
   }
 };
-
-

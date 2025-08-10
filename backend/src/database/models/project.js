@@ -7,10 +7,16 @@ export const Project = sequelize.define("Project", {
   userId: { type: DataTypes.UUID, allowNull: false },
   repoName: { type: DataTypes.STRING, allowNull: false },
   repoUrl: { type: DataTypes.STRING, allowNull: false },
-  installationId: { type: DataTypes.BIGINT, allowNull: false, unique: true },
+  installationId: { type: DataTypes.BIGINT, allowNull: false,},
 }, {
   tableName: "projects",
   timestamps: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['userId', 'repoName']
+    }
+  ]
 });
 
 User.hasMany(Project, { foreignKey: "userId" });
