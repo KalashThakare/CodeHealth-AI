@@ -8,3 +8,4 @@ export const axiosInstance: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
   },
 });
+axiosInstance.defaults.withCredentials = true;

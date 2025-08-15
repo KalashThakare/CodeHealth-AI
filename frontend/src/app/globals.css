@@ -31,29 +31,6 @@
   --shadow: 0 2px 8px 0 rgba(160, 132, 232, 0.08);
 }
 
-/* Dark Theme: Zinc */
-/* [data-theme="dark"] {
-  --color-bg: #18181b;
-  --color-bg-secondary: #27272a;
-  --color-bg-tertiary: #3f3f46;
-  --color-fg: #f4f4f5;
-  --color-fg-secondary: #a1a1aa;
-  --color-primary: #71717a;
-  --color-primary-hover: #52525b;
-  --color-accent: #a1a1aa;
-  --color-border: #27272a;
-  --color-card: #232336;
-  --color-input-bg: #27272a;
-  --color-input-border: #3f3f46;
-  --color-btn-bg: #3f3f46;
-  --color-btn-bg-hover: #52525b;
-  --color-btn-fg: #f4f4f5;
-  --color-btn-border: #52525b;
-  --color-link: #a084e8;
-  --color-link-hover: #cdb4f6;
-  --shadow: 0 2px 8px 0 rgba(39, 39, 42, 0.16);
-} */
-
 [data-theme="dark"] {
   color-scheme: dark;
   --color-bg: #000;                    /* Pure black background */
@@ -76,30 +53,6 @@
   --color-link-hover: #2563eb;         /* Darker blue for link hover */
   --shadow: 0 2px 8px 0 rgba(0,0,0,0.3); /* Subtle black shadow */
 }
-
-
-/* [data-theme="dark"] {
-  --color-bg: #000;                  
-  --color-bg-secondary: #18181b;    
-  --color-bg-tertiary: #232329;
-  --color-fg: #fff;                 
-  --color-fg-secondary: #a1a1aa;     
-  --color-primary: #232329;        
-  --color-primary-hover: #34343a;    
-  --color-accent: #6366f1;           
-  --color-border: #232329;          
-  --color-card: #111114;             
-  --color-input-bg: #000;          
-  --color-input-border: #27272a;    
-  --color-btn-bg: #fff1;            
-  --color-btn-bg-hover: #232329;  
-  --color-btn-fg: #fff;             
-  --color-btn-border: #232329;     
-  --color-link: #3b82f6;            
-  --color-link-hover: #2563eb;      
-  --shadow: 0 2px 8px 0 rgba(0,0,0,0.25);  
-} */
-
 
 /* Smooth transitions for theme changes */
 body, .App, .container, button, input, select, textarea, .card, a {

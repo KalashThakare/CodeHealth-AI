@@ -5,19 +5,11 @@ import { toast } from "sonner";
 
 interface GitHubRepo {
   id: number;
-  name: string;
-  full_name: string;
-  description: string;
-  html_url: string;
-  language: string;
-  stargazers_count: number;
-  forks_count: number;
-  updated_at: string;
-  private: boolean;
-  owner: {
-    login: string;
-    avatar_url: string;
-  };
+  repoName: string;
+  repoUrl: string;
+  installationId?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface GitHubUser {
@@ -98,6 +90,7 @@ export const useGitHubStore = create<GitHubStore>()(
             isLoading: false,
           });
           toast.success("GitHub user profile fetched successfully");
+          console.log("GitHub User:", res.data);
         } catch (error: any) {
           const errorMessage =
             error?.response?.data?.error || "Failed to fetch GitHub user";
@@ -120,6 +113,7 @@ export const useGitHubStore = create<GitHubStore>()(
         try {
           const res = await axiosInstance.get<GitHubRepo[]>("/github/repos", {
             headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
           });
 
           set({
@@ -140,7 +134,7 @@ export const useGitHubStore = create<GitHubStore>()(
 
       selectRepository: (repo: GitHubRepo) => {
         set({ selectedRepo: repo });
-        toast.info(`Selected repository: ${repo.name}`);
+        toast.info(`Selected repository: ${repo.repoName}`);
       },
 
       analyzeRepository: async (
