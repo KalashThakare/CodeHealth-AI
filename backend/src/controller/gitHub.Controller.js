@@ -10,10 +10,11 @@ await Project.sync();
 
 export const ListRepos = async (req, res) => {
   try {
-
+    console.log(req.user)
     const userId = req.user?.id;
+    console.log(userId)
     if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorised" });
     }
 
     const user = await User.findOne({
