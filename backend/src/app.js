@@ -7,6 +7,7 @@ import cors from "cors"
 import OAuth from "./routes/OAuth.routes.js"
 import githubRoutes from "./routes/githubRoutes.js";
 import Auth from "../src/routes/authRoutes.js"
+import teamRoutes from "./routes/teamRoutes.js";
 
 dotenv.config();
 
@@ -38,5 +39,6 @@ export async function startApp() {
 app.use("/auth",OAuth);
 app.use("/manual-auth",Auth);
 app.use("/github",githubRoutes)
+app.use("/team",teamRoutes)
 
 export default app;
