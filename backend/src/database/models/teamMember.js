@@ -20,7 +20,7 @@ const TeamMember = sequelize.define("TeamMember", {
         onDelete: "CASCADE",
     },
     role: {
-        type: DataTypes.ENUM("Owner", "Manager", "Member", "Viewer"),
+        type: DataTypes.ENUM("Owner", "Manager", "Member"),
         allowNull: false,
         defaultValue: "Member",
     },

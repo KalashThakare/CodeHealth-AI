@@ -52,3 +52,20 @@ export const createTeam = async (req, res) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 }
+
+export const sendInvite = async(req,res)=>{
+    try {
+        const {email,role} = req.body;
+        
+    } catch (error) {
+        
+    }
+}
+
+export const addMember = async(req,res)=>{
+    try {
+        
+    } catch (error) {
+        
+    }
+}
