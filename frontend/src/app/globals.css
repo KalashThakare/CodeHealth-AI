@@ -5,6 +5,11 @@
   --grid-unit: 1rem;
   --border-radius-base: 0.5rem;
   --transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  --font-esbuild: 'Inter', system-ui, sans-serif;
+}
+
+.font-title {
+  font-family: var(--font-esbuild), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 /* Light Theme: Soft Purples */
@@ -29,33 +34,78 @@
   --color-link: #7c3aed;
   --color-link-hover: #5b21b6;
   --shadow: 0 2px 8px 0 rgba(160, 132, 232, 0.08);
+
+  /* Terminal Theme - Light */
+  --terminal-bg: rgba(255, 255, 255, 0.95);
+  --terminal-header: rgba(240, 240, 250, 0.9);
+  --terminal-border: rgba(209, 196, 233, 0.6);
+  --terminal-text: #2d1a4a;
+  --terminal-title: #6d4e9c;
+  --terminal-success: #16a34a;
+  --terminal-info: #3b82f6;
+  --terminal-warning: #f59e0b;
+  --terminal-accent: #8b5cf6;
+  --terminal-cyan: #06b6d4;
+  --terminal-command: #16a34a;
+  --terminal-path: #3b82f6;
+  --terminal-success-light: #22c55e;
+  --terminal-info-light: #60a5fa;
+  --terminal-warning-light: #fbbf24;
+  --terminal-accent-light: #a78bfa;
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --color-bg: #000;                    /* Pure black background */
-  --color-bg-secondary: #111;          /* Slightly lighter for containers */
-  --color-bg-tertiary: #1a1a1a;       
-  --color-fg: #ededed;                 /* Light gray text (not pure white) */
-  --color-fg-secondary: #a1a1aa;       /* Secondary text remains same */
-  --color-primary: #333;               /* Primary elements */
-  --color-primary-hover: #444;         /* Hover states */
-  --color-accent: #6366f1;             /* Blue accent for focus/highlights */
-  --color-border: #333;                /* Dark gray borders */
-  --color-card: #111;                  /* Card background - very dark gray */
-  --color-input-bg: #000;              /* Input background pure black */
-  --color-input-border: #333;          /* Input border dark gray */
-  --color-btn-bg: #e5e5e5;             /* "Continue with Email" button - light gray */
-  --color-btn-bg-hover: #d4d4d4;       /* Email button hover */
-  --color-btn-fg: #000;                /* Email button text - black */
-  --color-btn-border: #e5e5e5;         /* Email button border */
-  --color-link: #3b82f6;               /* Blue for "Sign Up" link */
-  --color-link-hover: #2563eb;         /* Darker blue for link hover */
-  --shadow: 0 2px 8px 0 rgba(0,0,0,0.3); /* Subtle black shadow */
+  --color-bg: #000;
+  --color-bg-secondary: #111;
+  --color-bg-tertiary: #1a1a1a;
+  --color-fg: #ededed;
+  --color-fg-secondary: #a1a1aa;
+  --color-primary: #333;
+  --color-primary-hover: #444;
+  --color-accent: #6366f1;
+  --color-border: #333;
+  --color-card: #111;
+  --color-input-bg: #000;
+  --color-input-border: #333;
+  --color-btn-bg: #e5e5e5;
+  --color-btn-bg-hover: #d4d4d4;
+  --color-btn-fg: #000;
+  --color-btn-border: #e5e5e5;
+  --color-link: #3b82f6;
+  --color-link-hover: #2563eb;
+  --shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.3);
+
+  /* Terminal Theme - Dark */
+  --terminal-bg: rgba(15, 23, 42, 0.95);
+  --terminal-header: rgba(30, 41, 59, 0.9);
+  --terminal-border: rgba(51, 65, 85, 0.6);
+  --terminal-text: #cbd5e1;
+  --terminal-title: #94a3b8;
+  --terminal-success: #22c55e;
+  --terminal-info: #3b82f6;
+  --terminal-warning: #f59e0b;
+  --terminal-accent: #a855f7;
+  --terminal-cyan: #06b6d4;
+  --terminal-command: #4ade80;
+  --terminal-path: #60a5fa;
+  --terminal-success-light: #86efac;
+  --terminal-info-light: #93c5fd;
+  --terminal-warning-light: #fcd34d;
+  --terminal-accent-light: #c4b5fd;
 }
 
 /* Smooth transitions for theme changes */
-body, .App, .container, button, input, select, textarea, .card, a {
+body,
+.App,
+.container,
+button,
+input,
+select,
+textarea,
+.card,
+a,
+.terminal-window {
   transition: var(--transition);
 }
 
@@ -70,7 +120,8 @@ body {
 }
 
 /* Layout containers */
-.App, .container {
+.App,
+.container {
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -89,7 +140,8 @@ body {
 }
 
 /* Buttons */
-button, .btn {
+button,
+.btn {
   background: var(--color-btn-bg);
   color: var(--color-btn-fg);
   border: 1px solid var(--color-btn-border);
@@ -101,14 +153,19 @@ button, .btn {
   box-shadow: var(--shadow);
   transition: var(--transition);
 }
-button:hover, .btn:hover, button:focus, .btn:focus {
+button:hover,
+.btn:hover,
+button:focus,
+.btn:focus {
   background: var(--color-btn-bg-hover);
   border-color: var(--color-primary-hover);
   outline: none;
 }
 
 /* Inputs, selects, textareas */
-input, select, textarea {
+input,
+select,
+textarea {
   background: var(--color-input-bg);
   color: var(--color-fg);
   border: 1px solid var(--color-input-border);
@@ -118,9 +175,10 @@ input, select, textarea {
   margin-bottom: var(--grid-unit);
   box-shadow: none;
   transition: var(--transition);
-  transition: var(--transition);
 }
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
   background: var(--color-bg-tertiary);
   border-color: var(--color-primary);
   outline: none;
@@ -129,10 +187,14 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* Headings */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: var(--color-fg);
   margin-top: 0;
-  margin-bottom: 0.5em;
   font-weight: 700;
 }
 
@@ -142,70 +204,110 @@ a {
   text-decoration: underline;
   transition: var(--transition);
 }
-a:hover, a:focus {
+a:hover,
+a:focus {
   color: var(--color-link-hover);
 }
 
-/* Tables */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--color-card);
-  color: var(--color-fg);
-}
-th, td {
-  border: 1px solid var(--color-border);
-  padding: 0.75em 1em;
-}
-th {
-  background: var(--color-bg-tertiary);
-  color: var(--color-fg-secondary);
+/* Terminal Window Specific Styles */
+.terminal-window {
+  background: var(--terminal-bg) !important;
+  border: 1px solid var(--terminal-border) !important;
 }
 
-/* Alerts */
-.alert {
-  padding: 1em 1.5em;
+.terminal-window .terminal-header {
+  background: var(--terminal-header) !important;
+  border-bottom: 1px solid var(--terminal-border) !important;
+}
+
+/* Neon glow effect */
+.neon-glow {
+  filter: drop-shadow(0 0 10px var(--color-primary));
+}
+
+/* Button secondary variant */
+.btn-secondary {
+  background: transparent;
+  color: var(--color-fg);
+  border: 2px solid var(--color-border);
   border-radius: var(--border-radius-base);
-  background: var(--color-accent);
-  color: var(--color-fg);
-  border: 1px solid var(--color-primary);
-  margin-bottom: var(--grid-unit);
+  padding: 0.75em 1.5em;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
 }
 
-/* Utility classes */
-.bg-primary { background: var(--color-primary) !important; }
-.bg-secondary { background: var(--color-bg-secondary) !important; }
-.text-primary { color: var(--color-primary) !important; }
-.text-secondary { color: var(--color-fg-secondary) !important; }
-.border-primary { border-color: var(--color-primary) !important; }
-.shadow { box-shadow: var(--shadow) !important; }
-.rounded { border-radius: var(--border-radius-base) !important; }
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 10px;
+.btn-secondary:hover {
   background: var(--color-bg-secondary);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--color-primary);
-  border-radius: var(--border-radius-base);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
-/* Selection */
-::selection {
-  background: var(--color-primary);
-  color: var(--color-btn-fg);
+/* Apple-style button hover effect */
+.apple-button {
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.font-sans {
-  font-family: var(--font-geist-sans);
-}
-.font-mono {
-  font-family: var(--font-geist-mono), monospace;
+.apple-button:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 10px 25px -5px rgba(160, 132, 232, 0.4),
+    0 4px 6px -2px rgba(160, 132, 232, 0.2);
 }
 
+.apple-button:active {
+  transform: translateY(0) scale(1);
+}
 
-/* Fix autofill styling for dark theme */
+/* Apple-style card hover effect */
+.apple-card {
+  position: relative;
+  transform: translateZ(0);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+}
+
+.apple-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.25),
+    0 4px 25px 0px rgba(0, 0, 0, 0.12), 0 8px 10px -5px rgba(160, 132, 232, 0.1);
+}
+
+.apple-card:hover .neon-glow {
+  filter: drop-shadow(0 0 12px var(--color-primary))
+    drop-shadow(0 0 24px var(--color-primary));
+}
+
+/* Smooth fade effect for text */
+.fade-text {
+  transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Enhanced backdrop blur */
+.backdrop-blur-xl {
+  backdrop-filter: blur(24px);
+}
+
+/* Responsive utilities */
+@media (max-width: 640px) {
+  .hero-title {
+    font-size: 2.5rem !important;
+    line-height: 0.95 !important;
+  }
+
+  .particle {
+    display: none;
+  }
+
+  .fade-text {
+    opacity: 0.4 !important;
+  }
+}
+
+/* Fix autofill styling */
 [data-theme="dark"] input:-webkit-autofill,
 [data-theme="dark"] input:-webkit-autofill:hover,
 [data-theme="dark"] input:-webkit-autofill:focus,
@@ -215,16 +317,6 @@ th {
   background-color: #000 !important;
 }
 
-/* Force input states to respect dark theme */
-[data-theme="dark"] input,
-[data-theme="dark"] input:focus,
-[data-theme="dark"] input:active {
-  background-color: var(--color-input-bg) !important;
-  color: var(--color-fg) !important;
-  /* border: 1px solid var(--color-input-border) !important; */
-}
-
-/* Fix autofill styling for light theme */
 [data-theme="light"] input:-webkit-autofill,
 [data-theme="light"] input:-webkit-autofill:hover,
 [data-theme="light"] input:-webkit-autofill:focus,
@@ -234,11 +326,45 @@ th {
   background-color: #f3eaff !important;
 }
 
-/* Force input states to respect light theme */
-[data-theme="light"] input,
-[data-theme="light"] input:focus,
-[data-theme="light"] input:active {
-  background-color: var(--color-input-bg) !important;
-  color: var(--color-fg) !important;
-  /* border: 1px solid var(--color-input-border) !important; */
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+.terminal-window:hover .bg-red-500 {
+  background-color: rgb(248 113 113);
+}
+
+.terminal-window:hover .bg-yellow-500 {
+  background-color: rgb(251 191 36);
+}
+
+.terminal-window:hover .bg-green-500 {
+  background-color: rgb(74 222 128);
 }
