@@ -773,10 +773,198 @@
 //   );
 // }
 
+// "use client";
+// import { useEffect, useState } from "react";
+// import { useGitHubStore } from "@/store/githubStore";
+// import { FiGithub, FiSearch } from "react-icons/fi";
+
+// export default function GitHubImportPage() {
+//   const {
+//     githubToken,
+//     githubUser,
+//     repositories,
+//     isLoading,
+//     error,
+//     fetchGitHubUser,
+//     fetchGitHubRepos,
+//     checkGitHubTokenStatus,
+//   } = useGitHubStore();
+
+//   const [search, setSearch] = useState("");
+
+//   useEffect(() => {
+//     if (!githubToken) {
+//       checkGitHubTokenStatus();
+//     } else {
+//       fetchGitHubUser();
+//       fetchGitHubRepos();
+//     }
+//     // eslint-disable-next-line
+//   }, [githubToken]);
+
+//   // Use repo.repoName and repo.updatedAt for your backend shape
+//   const filteredRepos = repositories.filter(
+//     (repo: any) =>
+//       typeof repo.repoName === "string" &&
+//       repo.repoName.toLowerCase().includes(search.toLowerCase())
+//   );
+
+//   // If not connected, show connect prompt
+//   if (!githubToken) {
+//     return (
+//       <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)]">
+//         <div className="card w-full max-w-md text-center">
+//           <FiGithub size={48} className="mx-auto mb-4 text-primary" />
+//           <h2 className="text-2xl font-bold mb-2">
+//             Connect your GitHub account
+//           </h2>
+//           <p className="text-secondary mb-6">
+//             To import a repository, please connect your GitHub account.
+//           </p>
+//           <button
+//             className="btn w-full flex items-center justify-center gap-2"
+//             onClick={() =>
+//               (window.location.href = process.env.NEXT_PUBLIC_GITHUB_AUTH_URL!)
+//             }
+//           >
+//             <FiGithub className="text-lg" />
+//             Connect GitHub
+//           </button>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="min-h-screen bg-[var(--color-bg)] flex flex-col items-center py-10 px-2">
+//       {/* Header */}
+//       <div className="mb-8 text-center">
+//         <h1 className="text-4xl font-bold mb-2 text-[var(--color-fg)]">
+//           Let's build something new.
+//         </h1>
+//         <p className="text-secondary text-lg">
+//           To deploy a new Project, import an existing Git Repository or get
+//           started with one of our Templates.
+//         </p>
+//       </div>
+
+//       {/* Main grid */}
+//       <div className="w-full max-w-6xl flex items-start justify-center">
+//         {/* Import Git Repository */}
+//         <div className="card flex flex-col">
+//           <h2 className="text-xl font-bold mb-4">Import Git Repository</h2>
+//           {/* User selector and search */}
+//           <div className="flex gap-2 mb-4">
+//             <div className="flex items-center bg-[var(--color-input-bg)] rounded px-3 py-2 min-w-[140px]">
+//               <FiGithub className="text-secondary mr-2" />
+//               <span className="font-medium">
+//                 {githubUser?.login ?? "GitHub User"}
+//               </span>
+//             </div>
+//             <div className="relative flex-1">
+//               <FiSearch
+//                 size={16}
+//                 className="absolute left-3 top-2/5 -translate-y-1/2 text-secondary pointer-events-none"
+//                 aria-hidden="true"
+//               />
+
+//               <input
+//                 className="rounded text-center w-full pl-12 pr-1 py-2 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] focus:border-[var(--color-primary)] placeholder:text-secondary"
+//                 placeholder="Search…"
+//                 value={search}
+//                 onChange={(e) => setSearch(e.target.value)}
+//               />
+//             </div>
+//           </div>
+//           {/* Repo list */}
+//           <div className="mb-3">
+//             {filteredRepos.length === 0 && (
+//               <div className="text-secondary text-center py-6">
+//                 No repositories found.
+//                 <br />
+//                 <a
+//                   href={process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI}
+//                   className="link mt-2 inline-block"
+//                   target="_blank"
+//                   rel="noopener noreferrer"
+//                 >
+//                   Install GitHub App →
+//                 </a>
+//               </div>
+//             )}
+//             {filteredRepos.map((repo: any) => (
+//               <div
+//                 key={repo.id}
+//                 className="flex items-center justify-between py-3 border-b border-[var(--color-border)] last:border-b-0"
+//               >
+//                 <div className="flex items-center gap-3">
+//                   <div className="w-7 h-7 rounded-full bg-[var(--color-bg-secondary)] flex items-center justify-center font-bold text-secondary text-base">
+//                     {repo.repoName[0]?.toUpperCase()}
+//                   </div>
+//                   <span className="font-medium">{repo.repoName}</span>
+//                   <span className="text-secondary text-xs ml-2">
+//                     {repo.updatedAt
+//                       ? new Date(repo.updatedAt).toLocaleDateString(undefined, {
+//                           month: "short",
+//                           day: "numeric",
+//                         })
+//                       : ""}
+//                   </span>
+//                 </div>
+//                 <button className="btn min-w-[80px]">Import</button>
+//               </div>
+//             ))}
+//           </div>
+//           <div className="border-t border-[var(--color-border)] my-6" />
+//           <div className="text-sm text-secondary">
+//             Import Third-Party Git Repository →
+//           </div>
+//         </div>
+
+//         {/* Clone Template */}
+//         {/* <div className="card flex flex-col">
+//           <div className="flex items-center justify-between mb-4">
+//             <h2 className="text-xl font-bold">Clone Template</h2>
+//             <span className="text-secondary text-sm font-normal">Framework</span>
+//           </div>
+//           <div className="grid grid-cols-2 gap-3">
+//             <div className="card p-4 text-center min-h-[100px] flex flex-col justify-center items-center">
+//               <div className="font-semibold mb-1">Next.js Boilerplate</div>
+//               <div className="text-xs text-secondary">Next.js</div>
+//             </div>
+//             <div className="card p-4 text-center min-h-[100px] flex flex-col justify-center items-center">
+//               <div className="font-semibold mb-1">AI Chatbot</div>
+//               <div className="text-xs text-secondary">AI</div>
+//             </div>
+//             <div className="card p-4 text-center min-h-[100px] flex flex-col justify-center items-center">
+//               <div className="font-semibold mb-1">Commerce</div>
+//               <div className="text-xs text-secondary">E-commerce</div>
+//             </div>
+//             <div className="card p-4 text-center min-h-[100px] flex flex-col justify-center items-center">
+//               <div className="font-semibold mb-1">Vite + React Starter</div>
+//               <div className="text-xs text-secondary">Vite + React</div>
+//             </div>
+//           </div>
+//           <a href="#" className="link mt-6 text-sm block">
+//             Browse All Templates →
+//           </a>
+//         </div> */}
+//       </div>
+//     </div>
+//   );
+// }
+
 "use client";
 import { useEffect, useState } from "react";
 import { useGitHubStore } from "@/store/githubStore";
-import { FiGithub, FiSearch } from "react-icons/fi";
+import {
+  FiGithub,
+  FiSearch,
+  FiRefreshCw,
+  FiExternalLink,
+  FiLock,
+  FiCalendar,
+} from "react-icons/fi";
 
 export default function GitHubImportPage() {
   const {
@@ -791,6 +979,7 @@ export default function GitHubImportPage() {
   } = useGitHubStore();
 
   const [search, setSearch] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (!githubToken) {
@@ -799,156 +988,250 @@ export default function GitHubImportPage() {
       fetchGitHubUser();
       fetchGitHubRepos();
     }
-    // eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [githubToken]);
 
-  // Use repo.repoName and repo.updatedAt for your backend shape
-  const filteredRepos = repositories.filter(
-    (repo: any) =>
-      typeof repo.repoName === "string" &&
-      repo.repoName.toLowerCase().includes(search.toLowerCase())
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchGitHubRepos();
+    setTimeout(() => setIsRefreshing(false), 450);
+  };
+
+  // normalized name/url/date fields used by store
+  const filteredRepos = repositories.filter((repo: any) =>
+    (repo.repoName ?? repo.name ?? "")
+      .toString()
+      .toLowerCase()
+      .includes(search.toLowerCase())
   );
 
-  // If not connected, show connect prompt
   if (!githubToken) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)]">
-        <div className="card w-full max-w-md text-center">
-          <FiGithub size={48} className="mx-auto mb-4 text-primary" />
-          <h2 className="text-2xl font-bold mb-2">
-            Connect your GitHub account
-          </h2>
-          <p className="text-secondary mb-6">
-            To import a repository, please connect your GitHub account.
-          </p>
-          <button
-            className="btn w-full flex items-center justify-center gap-2"
-            onClick={() =>
-              (window.location.href = process.env.NEXT_PUBLIC_GITHUB_AUTH_URL!)
-            }
-          >
-            <FiGithub className="text-lg" />
-            Connect GitHub
-          </button>
-        </div>
-      </div>
-    );
+    return <ConnectGitHubPage />;
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] flex flex-col items-center py-10 px-2">
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold mb-2 text-[var(--color-fg)]">
-          Let's build something new.
-        </h1>
-        <p className="text-secondary text-lg">
-          To deploy a new Project, import an existing Git Repository or get
-          started with one of our Templates.
-        </p>
-      </div>
+    <div className="min-h-screen bg-[var(--color-bg)] py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <header className="mb-8">
+          <h1 className="text-4xl font-bold text-[var(--color-fg)]">
+            Let's build something new.
+          </h1>
+          <p className="text-sm text-[var(--color-fg-secondary)] mt-2">
+            To deploy a new Project, import an existing Git Repository or try one
+            of the curated templates on the right.
+          </p>
+        </header>
 
-      {/* Main grid */}
-      <div className="w-full max-w-6xl flex items-start justify-center">
-        {/* Import Git Repository */}
-        <div className="card flex flex-col">
-          <h2 className="text-xl font-bold mb-4">Import Git Repository</h2>
-          {/* User selector and search */}
-          <div className="flex gap-2 mb-4">
-            <div className="flex items-center bg-[var(--color-input-bg)] rounded px-3 py-2 min-w-[140px]">
-              <FiGithub className="text-secondary mr-2" />
-              <span className="font-medium">
-                {githubUser?.login ?? "GitHub User"}
-              </span>
-            </div>
-            <div className="relative flex-1">
-              <FiSearch
-                size={16}
-                className="absolute left-3 top-2/5 -translate-y-1/2 text-secondary pointer-events-none"
-                aria-hidden="true"
-              />
-
-              <input
-                className="rounded text-center w-full pl-12 pr-1 py-2 bg-[var(--color-input-bg)] border border-[var(--color-input-border)] focus:border-[var(--color-primary)] placeholder:text-secondary"
-                placeholder="Search…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-          </div>
-          {/* Repo list */}
-          <div className="mb-3">
-            {filteredRepos.length === 0 && (
-              <div className="text-secondary text-center py-6">
-                No repositories found.
-                <br />
-                <a
-                  href={process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI}
-                  className="link mt-2 inline-block"
-                  target="_blank"
-                  rel="noopener noreferrer"
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left: Import Git Repository */}
+          <section className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-[var(--color-fg)]">
+                Import Git Repository
+              </h2>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleRefresh}
+                  disabled={isLoading || isRefreshing}
+                  className="btn"
                 >
-                  Install GitHub App →
-                </a>
+                  <FiRefreshCw
+                    size={16}
+                    className={`${isLoading || isRefreshing ? "animate-spin" : ""}`}
+                  />
+                  <span className="ml-2 hidden sm:inline">Refresh</span>
+                </button>
               </div>
-            )}
-            {filteredRepos.map((repo: any) => (
-              <div
-                key={repo.id}
-                className="flex items-center justify-between py-3 border-b border-[var(--color-border)] last:border-b-0"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-[var(--color-bg-secondary)] flex items-center justify-center font-bold text-secondary text-base">
-                    {repo.repoName[0]?.toUpperCase()}
+            </div>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center bg-[var(--color-input-bg)] rounded px-3 py-2 min-w-[160px]">
+                <FiGithub className="text-[var(--color-fg-secondary)] mr-2" />
+                <span className="font-medium text-[var(--color-fg)]">
+                  {githubUser?.login ?? "GitHub User"}
+                </span>
+              </div>
+
+              <div className="relative flex-1">
+                <FiSearch
+                  size={18}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-fg-secondary)] pointer-events-none"
+                  aria-hidden="true"
+                />
+                <input
+                  className="w-full pl-12 pr-4 py-2 rounded bg-[var(--color-input-bg)] border border-[var(--color-input-border)] focus:border-[var(--color-primary)] placeholder:text-[var(--color-fg-secondary)]"
+                  placeholder="Search repositories…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="divide-y divide-[var(--color-border)]">
+              {isLoading && (
+                <div className="py-6 text-[var(--color-fg-secondary)]">Loading repositories…</div>
+              )}
+
+              {!isLoading && filteredRepos.length === 0 && (
+                <div className="py-6 text-[var(--color-fg-secondary)]">
+                  No repositories found.
+                  <div className="mt-3">
+                    <a
+                      href={process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="link"
+                    >
+                      Adjust GitHub App Permissions →
+                    </a>
                   </div>
-                  <span className="font-medium">{repo.repoName}</span>
-                  <span className="text-secondary text-xs ml-2">
-                    {repo.updatedAt
-                      ? new Date(repo.updatedAt).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })
-                      : ""}
-                  </span>
                 </div>
-                <button className="btn min-w-[80px]">Import</button>
-              </div>
-            ))}
-          </div>
-          <div className="border-t border-[var(--color-border)] my-6" />
-          <div className="text-sm text-secondary">
-            Import Third-Party Git Repository →
+              )}
+
+              {!isLoading &&
+                filteredRepos.map((repo: any) => {
+                  const name = repo.repoName ?? repo.name ?? "Repository";
+                  const date = repo.updatedAt ?? repo.updated_at ?? repo.createdAt ?? "";
+                  const prettyDate = date
+                    ? new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+                    : "";
+                  const isPrivate = Boolean(
+                    repo.isPrivate ?? repo.private ?? repo.visibility === "private"
+                  );
+
+                  return (
+                    <div key={repo.id} className="flex items-center justify-between py-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-[var(--color-bg-secondary)] flex items-center justify-center font-bold text-[var(--color-fg)]">
+                          {name[0]?.toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-3">
+                            <span className="font-medium truncate">{name}</span>
+                            <span className="text-xs text-[var(--color-fg-secondary)]">{prettyDate}</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-bg-tertiary)] text-[var(--color-fg-secondary)]">
+                              {isPrivate ? "Private" : "Public"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <a
+                          href={repo.repoUrl ?? repo.html_url ?? "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 rounded bg-[var(--color-bg-secondary)] text-[var(--color-fg-secondary)] hover:bg-[var(--color-primary)] hover:text-[var(--color-btn-fg)] transition"
+                          aria-label="Open repository"
+                        >
+                          <FiExternalLink size={16} />
+                        </a>
+                        <button className="btn">Import</button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            <div className="border-t border-[var(--color-border)] mt-6 pt-4 text-sm text-[var(--color-fg-secondary)]">
+              Import Third-Party Git Repository →
+            </div>
+          </section>
+
+          {/* Right: Clone Template (NEW polished tiles) */}
+          <aside className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-[var(--color-fg)]">Clone Template</h2>
+              <div className="text-sm text-[var(--color-fg-secondary)]">Framework ▾</div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <TemplateTile
+                title="Next.js Boilerplate"
+                tag="Production-ready"
+                summary="Opinionated Next.js starter with routing, auth hooks, and a clean folder structure — perfect for fast prototypes and production apps."
+                cta="Clone"
+              />
+              <TemplateTile
+                title="Vite + React Starter"
+                tag="Lightning fast"
+                summary="Minimal Vite setup with Tailwind-ready styles and example components so you can ship UI quickly."
+                cta="Use"
+              />
+              <TemplateTile
+                title="AI Chatbot"
+                tag="Demo"
+                summary="Prewired chat UI that connects to CodeHealth AI — use this to test prompt flows and conversational debugging features."
+                cta="Explore"
+              />
+              <TemplateTile
+                title="Commerce Starter"
+                tag="E-commerce"
+                summary="Sample storefront with product pages, cart flow and deployment scripts — great for testing CI/CD and performance checks."
+                cta="Preview"
+              />
+            </div>
+
+            <div className="mt-6 text-sm text-[var(--color-fg-secondary)]">
+              Browse All Templates →
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Template tile component — uses theme variables only */
+function TemplateTile({
+  title,
+  tag,
+  summary,
+  cta,
+}: {
+  title: string;
+  tag: string;
+  summary: string;
+  cta: string;
+}) {
+  return (
+    <div className="border border-[var(--color-border)] rounded-lg p-4 bg-[var(--color-card)]">
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <div className="text-sm text-[var(--color-fg-secondary)]">{tag}</div>
+          <h3 className="text-lg font-semibold text-[var(--color-fg)] mt-1">{title}</h3>
+        </div>
+        <div className="flex-shrink-0">
+          <div className="w-12 h-12 rounded-md bg-[var(--color-bg-secondary)] flex items-center justify-center text-[var(--color-fg)] font-bold">
+            {title.split(" ").map(s=>s[0]).slice(0,2).join("")}
           </div>
         </div>
+      </div>
 
-        {/* Clone Template */}
-        {/* <div className="card flex flex-col">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">Clone Template</h2>
-            <span className="text-secondary text-sm font-normal">Framework</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="card p-4 text-center min-h-[100px] flex flex-col justify-center items-center">
-              <div className="font-semibold mb-1">Next.js Boilerplate</div>
-              <div className="text-xs text-secondary">Next.js</div>
-            </div>
-            <div className="card p-4 text-center min-h-[100px] flex flex-col justify-center items-center">
-              <div className="font-semibold mb-1">AI Chatbot</div>
-              <div className="text-xs text-secondary">AI</div>
-            </div>
-            <div className="card p-4 text-center min-h-[100px] flex flex-col justify-center items-center">
-              <div className="font-semibold mb-1">Commerce</div>
-              <div className="text-xs text-secondary">E-commerce</div>
-            </div>
-            <div className="card p-4 text-center min-h-[100px] flex flex-col justify-center items-center">
-              <div className="font-semibold mb-1">Vite + React Starter</div>
-              <div className="text-xs text-secondary">Vite + React</div>
-            </div>
-          </div>
-          <a href="#" className="link mt-6 text-sm block">
-            Browse All Templates →
-          </a>
-        </div> */}
+      <p className="text-sm text-[var(--color-fg-secondary)] mb-4">{summary}</p>
+
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-[var(--color-fg-secondary)]">Includes CI & deploy scripts</div>
+        <button className="btn">{cta}</button>
+      </div>
+    </div>
+  );
+}
+
+/* Lightweight connect prompt */
+function ConnectGitHubPage() {
+  return (
+    <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center px-4">
+      <div className="card w-full max-w-md text-center">
+        <FiGithub size={48} className="mx-auto mb-4 text-[var(--color-primary)]" />
+        <h2 className="text-2xl font-bold mb-2 text-[var(--color-fg)]">Connect your GitHub account</h2>
+        <p className="text-[var(--color-fg-secondary)] mb-6">To import repositories and enable CodeHealth analysis, connect your GitHub account.</p>
+        <button
+          className="btn w-full"
+          onClick={() => (window.location.href = process.env.NEXT_PUBLIC_GITHUB_AUTH_URL!)}
+        >
+          Connect GitHub
+        </button>
       </div>
     </div>
   );
