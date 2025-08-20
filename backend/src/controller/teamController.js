@@ -149,3 +149,94 @@ export const acceptInvite = async (req, res) => {
 
     }
 }
+
+export const listTeamMembers = async (req, res) => {
+    try {
+        const teamId = req.params.teamId || req.query.teamId;
+        if (!teamId) return res.status(400).json({ error: "teamId is required" });
+
+        const team = await Team.findByPk(teamId, {
+            include: [{
+                model: User,
+                as: "members",
+                attributes: ["id", "name", "email"],
+                through: { attributes: ["role"] },
+            }],
+        });
+
+        if (!team) return res.status(404).json({ error: "Team not found" });
+
+        const members = (team.members || []).map(u => ({
+            id: u.id,
+            name: u.name || u.email.split("@")[0],
+            email: u.email,
+            role: u.TeamMember.role,
+        }));
+
+        return res.json(members);
+    } catch (err) {
+        console.error(err)
+    }
+};
+
+export const updateRole = async (req, res) => {
+    try {
+
+        const teamId = req.params.teamId || req.body.teamId;
+        const memberId = req.params.memberId || req.body.memberId;
+        const newRole = req.body;
+
+        const authUserId = req.user?.id;
+
+        if (!authUserId) return res.status(401).json({ message: "Unauthorized" });
+        if (!teamId) return res.status(400).json({ message: "teamId is required" });
+        if (!newRole) return res.status(400).json({ message: "No new role provided" });
+        if (!memberId && !targetUserId) {
+            return res.status(400).json({ message: "memberId or userId is required" });
+        }
+
+        const requesterMembership = await TeamMember.findOne({
+            where: { teamId, userId: authUserId },
+            attributes: ["id", "role"],
+        });
+        if (!requesterMembership) {
+            return res.status(403).json({ message: "Not a team member" });
+        }
+        if (requesterMembership.role !== "Owner") {
+            return res.status(403).json({ message: "Only Owners can update roles" });
+        }
+
+        const targetWhere = memberId
+            ? { id: memberId, teamId }
+            : { teamId, userId: targetUserId };
+
+        const targetMembership = await TeamMember.findOne({
+            where: targetWhere,
+            attributes: ["id", "userId", "teamId", "role"],
+        });
+
+        if (!targetMembership) {
+            return res.status(404).json({ message: "Target membership not found" });
+        }
+
+        if (targetMembership.userId === authUserId) {
+            return res.status(400).json({ message: "Owners cannot change their own role" });
+        }
+
+
+        targetMembership.role = newRole;
+        await targetMembership.save();
+
+        return res.json({
+            id: targetMembership.id,
+            teamId: targetMembership.teamId,
+            userId: targetMembership.userId,
+            role: targetMembership.role,
+            message: "Role updated",
+        });
+
+    } catch (error) {
+        console.error("updateRole error:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+}
