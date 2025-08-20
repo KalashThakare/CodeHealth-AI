@@ -1,4 +1,4 @@
-import TeamMember from "../database/models/teamMember";
+import TeamMember from "../database/models/teamMember.js";
 
 export const canInvite = async (req, res, next) => {
   try {

@@ -12,11 +12,11 @@ router.post(
   canInvite,
   sendInvite
 );
-router.get(
-  "/teams/:teamId/invites",
-  protectRoute,
-  canInvite,
-  listInvites
-);
+// router.get(
+//   "/teams/:teamId/invites",
+//   protectRoute,
+//   canInvite,
+//   listInvites
+// );
 
 export default router;
