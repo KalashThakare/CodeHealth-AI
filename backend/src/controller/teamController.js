@@ -240,3 +240,68 @@ export const updateRole = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error" });
     }
 }
+
+export const leaveTeam = async (req, res) => {
+    try {
+        const { teamId } = req.params.teamId || req.body
+        const authUserId = req.user?.id
+        if (!authUserId) return res.status(400).json({ message: "Unauthorised" });
+        if (!teamId) return res.status(400).json({ message: "teamId is required" });
+
+        const membership = TeamMember.findOne({
+            where: {
+                teamId,
+                userId: authUserId
+            },
+            attributes: [
+                "id", "role", "userId", "teamId"
+            ]
+        })
+
+        if (!membership) return res.status(404).json({ message: "not a member" });
+
+        if (membership.role == "Owner") return res.status(400).json({ message: "Cannot leave you are the owner" });
+
+        await TeamMember.destroy({ where: { id: membership.id } });
+
+        return res.status(204).send();
+
+    } catch (error) {
+
+        console.error("leaveTeam error:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+
+    }
+}
+
+export const deleteTeam = async(req,res)=>{
+    try {
+        const {teamId} = req.params.teamId || req.body.teamId;
+        const authUserId = req.user?.id;
+
+        if (!authUserId) return res.status(400).json({ message: "Unauthorised" });
+        if (!teamId) return res.status(400).json({ message: "teamId is required" });
+
+        const membership = TeamMember.findOne({
+            where: {
+                teamId,
+                userId: authUserId
+            },
+            attributes: [
+                "id", "role", "userId", "teamId"
+            ]
+        })
+
+        if(membership.role == "Member" || membership.role == "Manager") return res.status(400).json({message:"You dont have permission"});
+
+        await Team.destroy({
+            where:{
+                
+            }
+        })
+
+
+    } catch (error) {
+        
+    }
+}
