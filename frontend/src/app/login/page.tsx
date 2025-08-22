@@ -4,6 +4,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useState } from "react";
 import { FaGoogle, FaGithub } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import { DashboardThemeToggle } from "@/components/ui/DashboardThemeToggle";
 
 export default function Login() {
   const router = useRouter();
@@ -42,6 +43,11 @@ export default function Login() {
 
   return (
     <div className="App">
+      {/* Theme Toggle in Top Right Corner */}
+      <div className="absolute top-4 right-4 z-50">
+        <DashboardThemeToggle />
+      </div>
+      
       <div className="w-fit" style={{ width: "100%", maxWidth: "320px" }}>
         <h1
           className="text-center"

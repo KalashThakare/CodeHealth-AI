@@ -4,12 +4,13 @@ import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FaGoogle, FaGithub } from "react-icons/fa";
+import { DashboardThemeToggle } from "@/components/ui/DashboardThemeToggle";
 
 export default function SignUp() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const[loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const signup = useAuthStore((state) => state.signup);
   const router = useRouter();
 
@@ -42,6 +43,11 @@ export default function SignUp() {
 
   return (
     <div className="App">
+      {/* Theme Toggle in Top Right Corner */}
+      <div className="absolute top-4 right-4 z-50">
+        <DashboardThemeToggle />
+      </div>
+
       <div className="" style={{ width: "100%", maxWidth: "320px" }}>
         <h1
           className="text-center"

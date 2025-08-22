@@ -957,6 +957,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useGitHubStore } from "@/store/githubStore";
+import { DashboardThemeToggle } from "@/components/ui/DashboardThemeToggle";
 import {
   FiGithub,
   FiSearch,
@@ -1011,14 +1012,19 @@ export default function GitHubImportPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] py-10">
+      {/* Theme Toggle in Top Right Corner */}
+      <div className="absolute top-4 right-4 z-50">
+        <DashboardThemeToggle />
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <header className="mb-8">
           <h1 className="text-4xl font-bold text-[var(--color-fg)]">
             Let's build something new.
           </h1>
           <p className="text-sm text-[var(--color-fg-secondary)] mt-2">
-            To deploy a new Project, import an existing Git Repository or try one
-            of the curated templates on the right.
+            To deploy a new Project, import an existing Git Repository or try
+            one of the curated templates on the right.
           </p>
         </header>
 
@@ -1037,7 +1043,9 @@ export default function GitHubImportPage() {
                 >
                   <FiRefreshCw
                     size={16}
-                    className={`${isLoading || isRefreshing ? "animate-spin" : ""}`}
+                    className={`${
+                      isLoading || isRefreshing ? "animate-spin" : ""
+                    }`}
                   />
                   <span className="ml-2 hidden sm:inline">Refresh</span>
                 </button>
@@ -1069,7 +1077,9 @@ export default function GitHubImportPage() {
 
             <div className="divide-y divide-[var(--color-border)]">
               {isLoading && (
-                <div className="py-6 text-[var(--color-fg-secondary)]">Loading repositories…</div>
+                <div className="py-6 text-[var(--color-fg-secondary)]">
+                  Loading repositories…
+                </div>
               )}
 
               {!isLoading && filteredRepos.length === 0 && (
@@ -1091,16 +1101,25 @@ export default function GitHubImportPage() {
               {!isLoading &&
                 filteredRepos.map((repo: any) => {
                   const name = repo.repoName ?? repo.name ?? "Repository";
-                  const date = repo.updatedAt ?? repo.updated_at ?? repo.createdAt ?? "";
+                  const date =
+                    repo.updatedAt ?? repo.updated_at ?? repo.createdAt ?? "";
                   const prettyDate = date
-                    ? new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+                    ? new Date(date).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })
                     : "";
                   const isPrivate = Boolean(
-                    repo.isPrivate ?? repo.private ?? repo.visibility === "private"
+                    repo.isPrivate ??
+                      repo.private ??
+                      repo.visibility === "private"
                   );
 
                   return (
-                    <div key={repo.id} className="flex items-center justify-between py-4">
+                    <div
+                      key={repo.id}
+                      className="flex items-center justify-between py-4"
+                    >
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-10 h-10 rounded-lg bg-[var(--color-bg-secondary)] flex items-center justify-center font-bold text-[var(--color-fg)]">
                           {name[0]?.toUpperCase()}
@@ -1108,7 +1127,9 @@ export default function GitHubImportPage() {
                         <div className="min-w-0">
                           <div className="flex items-center gap-3">
                             <span className="font-medium truncate">{name}</span>
-                            <span className="text-xs text-[var(--color-fg-secondary)]">{prettyDate}</span>
+                            <span className="text-xs text-[var(--color-fg-secondary)]">
+                              {prettyDate}
+                            </span>
                             <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-bg-tertiary)] text-[var(--color-fg-secondary)]">
                               {isPrivate ? "Private" : "Public"}
                             </span>
@@ -1141,8 +1162,12 @@ export default function GitHubImportPage() {
           {/* Right: Clone Template (NEW polished tiles) */}
           <aside className="card">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-[var(--color-fg)]">Clone Template</h2>
-              <div className="text-sm text-[var(--color-fg-secondary)]">Framework ▾</div>
+              <h2 className="text-xl font-semibold text-[var(--color-fg)]">
+                Clone Template
+              </h2>
+              <div className="text-sm text-[var(--color-fg-secondary)]">
+                Framework ▾
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1199,11 +1224,17 @@ function TemplateTile({
       <div className="flex items-start justify-between mb-3">
         <div>
           <div className="text-sm text-[var(--color-fg-secondary)]">{tag}</div>
-          <h3 className="text-lg font-semibold text-[var(--color-fg)] mt-1">{title}</h3>
+          <h3 className="text-lg font-semibold text-[var(--color-fg)] mt-1">
+            {title}
+          </h3>
         </div>
         <div className="flex-shrink-0">
           <div className="w-12 h-12 rounded-md bg-[var(--color-bg-secondary)] flex items-center justify-center text-[var(--color-fg)] font-bold">
-            {title.split(" ").map(s=>s[0]).slice(0,2).join("")}
+            {title
+              .split(" ")
+              .map((s) => s[0])
+              .slice(0, 2)
+              .join("")}
           </div>
         </div>
       </div>
@@ -1211,7 +1242,9 @@ function TemplateTile({
       <p className="text-sm text-[var(--color-fg-secondary)] mb-4">{summary}</p>
 
       <div className="flex items-center justify-between">
-        <div className="text-xs text-[var(--color-fg-secondary)]">Includes CI & deploy scripts</div>
+        <div className="text-xs text-[var(--color-fg-secondary)]">
+          Includes CI & deploy scripts
+        </div>
         <button className="btn">{cta}</button>
       </div>
     </div>
@@ -1223,12 +1256,22 @@ function ConnectGitHubPage() {
   return (
     <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center px-4">
       <div className="card w-full max-w-md text-center">
-        <FiGithub size={48} className="mx-auto mb-4 text-[var(--color-primary)]" />
-        <h2 className="text-2xl font-bold mb-2 text-[var(--color-fg)]">Connect your GitHub account</h2>
-        <p className="text-[var(--color-fg-secondary)] mb-6">To import repositories and enable CodeHealth analysis, connect your GitHub account.</p>
+        <FiGithub
+          size={48}
+          className="mx-auto mb-4 text-[var(--color-primary)]"
+        />
+        <h2 className="text-2xl font-bold mb-2 text-[var(--color-fg)]">
+          Connect your GitHub account
+        </h2>
+        <p className="text-[var(--color-fg-secondary)] mb-6">
+          To import repositories and enable CodeHealth analysis, connect your
+          GitHub account.
+        </p>
         <button
           className="btn w-full"
-          onClick={() => (window.location.href = process.env.NEXT_PUBLIC_GITHUB_AUTH_URL!)}
+          onClick={() =>
+            (window.location.href = process.env.NEXT_PUBLIC_GITHUB_AUTH_URL!)
+          }
         >
           Connect GitHub
         </button>

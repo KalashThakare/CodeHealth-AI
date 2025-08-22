@@ -3,12 +3,15 @@ import { axiosInstance } from "@/lib/axios";
 
 type Team = {
   id: string;
+  _id?: string; // For MongoDB compatibility
   name: string;
   description: string;
   slug: string;
   userId: string;
   createdAt: string;
   updatedAt: string;
+  members?: Member[];
+  projects?: any[];
 };
 
 type Member = {
@@ -36,6 +39,7 @@ type TeamStore = {
   error: string | null;
 
   fetchTeams: () => Promise<void>;
+  fetchInvites: () => Promise<void>;
   fetchTeamMembers: (teamId: string) => Promise<void>;
   fetchTeamInvites: (teamId: string) => Promise<void>;
   createTeam: (data: {
@@ -86,6 +90,21 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
     } catch (err: any) {
       set({
         error: err?.response?.data?.message || "Failed to fetch teams",
+        loading: false,
+      });
+    }
+  },
+
+  fetchInvites: async () => {
+    set({ loading: true, error: null });
+    try {
+      const res = await axiosInstance.get("/teams/invites", {
+        headers: getAuthHeaders(),
+      });
+      set({ invites: res.data.invites || res.data, loading: false });
+    } catch (err: any) {
+      set({
+        error: err?.response?.data?.message || "Failed to fetch invites",
         loading: false,
       });
     }
