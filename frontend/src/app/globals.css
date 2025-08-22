@@ -368,3 +368,191 @@ html {
 .terminal-window:hover .bg-green-500 {
   background-color: rgb(74 222 128);
 }
+
+
+
+/* Add these glassmorphism styles to your globals.css */
+
+/* Glassmorphism Navbar */
+.glassmorphism-navbar {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+[data-theme="light"] .glassmorphism-navbar {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(160, 132, 232, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(160, 132, 232, 0.1);
+}
+
+[data-theme="dark"] .glassmorphism-navbar {
+  background: rgba(17, 17, 17, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(51, 51, 51, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Glassmorphism Buttons */
+.glassmorphism-button {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--color-fg-secondary);
+}
+
+.glassmorphism-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--color-fg);
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .glassmorphism-button {
+  background: rgba(160, 132, 232, 0.1);
+  border: 1px solid rgba(160, 132, 232, 0.2);
+}
+
+[data-theme="light"] .glassmorphism-button:hover {
+  background: rgba(160, 132, 232, 0.2);
+  border: 1px solid rgba(160, 132, 232, 0.4);
+}
+
+[data-theme="dark"] .glassmorphism-button {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+[data-theme="dark"] .glassmorphism-button:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+}
+
+/* Glassmorphism Primary Button */
+.glassmorphism-button-primary {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  box-shadow: 0 8px 32px 0 rgba(160, 132, 232, 0.2);
+}
+
+.glassmorphism-button-primary:hover {
+  background: linear-gradient(135deg, var(--color-primary-hover), var(--color-primary));
+  box-shadow: 0 12px 40px 0 rgba(160, 132, 232, 0.3);
+  transform: translateY(-2px);
+}
+
+[data-theme="dark"] .glassmorphism-button-primary {
+  background: linear-gradient(135deg, var(--color-accent), #8b5cf6);
+  box-shadow: 0 8px 32px 0 rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="dark"] .glassmorphism-button-primary:hover {
+  background: linear-gradient(135deg, #7c3aed, var(--color-accent));
+  box-shadow: 0 12px 40px 0 rgba(99, 102, 241, 0.4);
+}
+
+/* Glassmorphism Dropdown */
+.glassmorphism-dropdown {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 0 0 16px 16px;
+  margin-top: 1px;
+}
+
+[data-theme="light"] .glassmorphism-dropdown {
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid rgba(160, 132, 232, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(160, 132, 232, 0.15);
+}
+
+[data-theme="dark"] .glassmorphism-dropdown {
+  background: rgba(17, 17, 17, 0.95);
+  border-top: 1px solid rgba(51, 51, 51, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Enhanced Nav Links */
+.nav-link {
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-link::before {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.nav-link:hover::before {
+  width: 100%;
+}
+
+/* Subtle neon glow for logo */
+.neon-glow-subtle {
+  filter: drop-shadow(0 0 8px var(--color-primary));
+  transition: filter 0.3s ease;
+}
+
+.neon-glow-subtle:hover {
+  filter: drop-shadow(0 0 12px var(--color-primary)) drop-shadow(0 0 20px var(--color-primary));
+}
+
+/* Enhanced scrolling effect */
+.glassmorphism-navbar.scrolled {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .glassmorphism-navbar.scrolled {
+  background: rgba(17, 17, 17, 0.95);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Smooth animations for mobile menu */
+.glassmorphism-dropdown {
+  animation: slideDown 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fix for Safari blur support */
+@supports not (backdrop-filter: blur(20px)) {
+  .glassmorphism-navbar {
+    background: var(--color-card);
+  }
+  
+  .glassmorphism-button {
+    background: var(--color-bg-secondary);
+  }
+  
+  .glassmorphism-dropdown {
+    background: var(--color-card);
+  }
+}
