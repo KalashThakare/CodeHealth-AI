@@ -39,6 +39,6 @@ export async function startApp() {
 app.use("/auth",OAuth);
 app.use("/manual-auth",Auth);
 app.use("/github",githubRoutes)
-app.use("/team",teamRoutes)
+app.use("/teams",teamRoutes)
 
 export default app;
