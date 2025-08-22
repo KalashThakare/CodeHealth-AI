@@ -36,4 +36,5 @@ const TeamMember = sequelize.define("TeamMember", {
 User.belongsToMany(Team, { through: TeamMember, foreignKey: "userId", as: "teams" });
 Team.belongsToMany(User, { through: TeamMember, foreignKey: "teamId", as: "members" });
 
+
 export default TeamMember;

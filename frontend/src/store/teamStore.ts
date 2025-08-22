@@ -83,7 +83,7 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
   fetchTeams: async () => {
     set({ loading: true, error: null });
     try {
-      const res = await axiosInstance.get("/teams", {
+      const res = await axiosInstance.get("/teams/my/teams", {
         headers: getAuthHeaders(),
       });
       set({ teams: res.data.teams || res.data, loading: false });

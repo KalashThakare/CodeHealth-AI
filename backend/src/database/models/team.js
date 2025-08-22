@@ -18,7 +18,7 @@ const Team = sequelize.define("Team", {
         type: DataTypes.STRING, allowNull: false
     },
     slug: {
-        type: DataTypes.STRING, allowNull: false, unique: true
+        type: DataTypes.STRING, allowNull: true, unique: true
     },
     description: {
         type: DataTypes.TEXT, allowNull: true

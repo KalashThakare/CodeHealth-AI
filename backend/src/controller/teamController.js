@@ -5,8 +5,15 @@ import TeamInvite from "../database/models/teamInvite.js";
 import TeamMember from "../database/models/teamMember.js";
 import { sendInviteMail } from "../lib/mail/noodemailer.js";
 import { generateInviteToken } from "../lib/mail/inviteToken.js";
+import sequelize from "../database/db.js";
+
+Team.sync();
+TeamMember.sync();
+TeamInvite.sync();
+User.sync();
 
 export const createTeam = async (req, res) => {
+    const t = await sequelize.transaction();
     try {
         const userId = req.user?.id;
         const { name, description } = req.body;
@@ -32,7 +39,16 @@ export const createTeam = async (req, res) => {
             userId,
             name,
             description
-        });
+        },
+            { transaction: t }
+        );
+
+        await TeamMember.create(
+            { teamId: team.id, userId, role: "Owner" },
+            { transaction: t }
+        );
+
+        await t.commit();
 
         return res.status(201).json({
             message: "Team created",
@@ -40,7 +56,7 @@ export const createTeam = async (req, res) => {
         });
 
     } catch (error) {
-
+        await t.rollback();
         console.error("createTeam error:", error);
 
         if (error?.name === "SequelizeValidationError") {
@@ -148,6 +164,37 @@ export const acceptInvite = async (req, res) => {
         console.error(error);
 
     }
+}
+
+export const listMyTeams = async(req,res)=>{
+    try {
+    const authUserId = req.user?.id;
+    if (!authUserId) return res.status(401).json({ message: "Unauthorized" });
+
+    const limit = Math.min(parseInt(req.query.limit || "50", 10), 100);
+    const offset = Math.max(parseInt(req.query.offset || "0", 10), 0);
+
+    const { rows, count } = await Team.findAndCountAll({
+      where: { userId: authUserId },
+      attributes: ["id", "name", "slug", "description", "createdAt", "updatedAt"],
+      order: [["name", "ASC"]],
+      limit,
+      offset,
+    });
+
+    return res.json({
+      userId: authUserId,
+      count,
+      limit,
+      offset,
+      teams: rows,
+    });
+
+   
+  } catch (err) {
+    console.error("listMyTeams error:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 }
 
 export const listTeamMembers = async (req, res) => {
