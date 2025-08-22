@@ -274,13 +274,18 @@ export const leaveTeam = async (req, res) => {
     }
 }
 
-export const deleteTeam = async(req,res)=>{
+export const deleteTeam = async (req, res) => {
     try {
-        const {teamId} = req.params.teamId || req.body.teamId;
+        const { teamId } = req.params.teamId || req.body.teamId;
         const authUserId = req.user?.id;
 
         if (!authUserId) return res.status(400).json({ message: "Unauthorised" });
         if (!teamId) return res.status(400).json({ message: "teamId is required" });
+
+        const team = await Team.findOne({ where: { id: teamId } });
+        if (!team) {
+            return res.status(404).json({ message: "Team not found" });
+        }
 
         const membership = TeamMember.findOne({
             where: {
@@ -292,16 +297,14 @@ export const deleteTeam = async(req,res)=>{
             ]
         })
 
-        if(membership.role == "Member" || membership.role == "Manager") return res.status(400).json({message:"You dont have permission"});
+        if (membership.role == "Member" || membership.role == "Manager") return res.status(400).json({ message: "You dont have permission" });
 
-        await Team.destroy({
-            where:{
-                
-            }
-        })
+        await team.destroy();
 
+        return res.status(200).json({ message: "Team deleted successfully" });
 
     } catch (error) {
-        
+        console.error("deleteTeam error:", error);
+        return res.status(500).json({ message: "Internal server error" });
     }
 }
