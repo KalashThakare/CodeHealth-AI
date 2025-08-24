@@ -1,6 +1,6 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
-import { acceptInvite, createTeam, deleteTeam, listMyTeams, listTeamMembers, sendInvite, updateRole } from "../controller/teamController.js";
+import { acceptInvite, createTeam, deleteTeam, leaveTeam, listMyTeams, listTeamMembers, sendInvite, updateRole } from "../controller/teamController.js";
 import { canInvite } from "../middleware/invitePermission.js";
 
 const router = express.Router();
@@ -32,6 +32,12 @@ router.patch(
   "/:teamId/members/:memberId/role",
   protectRoute, 
   updateRole
+)
+
+router.post(
+  "/:teamId/leave",
+  protectRoute,
+  leaveTeam
 )
 
 router.delete(
