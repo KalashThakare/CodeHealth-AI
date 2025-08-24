@@ -165,7 +165,7 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const res = await axiosInstance.post(
-        `/teams/send-invite`,
+        `/teams/${teamId}/invites`,
         { email, role, teamId },
         { headers: getAuthHeaders() }
       );
