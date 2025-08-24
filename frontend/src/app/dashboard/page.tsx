@@ -64,7 +64,7 @@ const Dashboard = () => {
       fetchTeams();
       fetchInvites();
     }
-  }, [authUser, isInitializing, fetchTeams, fetchInvites]);
+  }, [authUser, isInitializing]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -299,7 +299,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {teams.slice(0, 3).map((team) => (
                 <Link
-                  key={team._id}
+                  key={team._id || team.id}
                   href={`/dashboard/teams/${team._id}`}
                   className="group"
                 >

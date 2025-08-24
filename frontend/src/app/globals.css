@@ -329,6 +329,7 @@ a:focus {
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
+  data-scroll-behavior: "smooth";
 }
 
 @keyframes fadeIn {
