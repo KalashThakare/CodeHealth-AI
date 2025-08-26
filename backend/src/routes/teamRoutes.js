@@ -1,11 +1,11 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
-import { acceptInvite, createTeam, deleteTeam, leaveTeam, listMyTeams, listTeamMembers, sendInvite, updateRole } from "../controller/teamController.js";
+import { acceptInvite, createTeam, deleteTeam, leaveTeam, listMyTeams, listTeamMembers, removeMember, sendInvite, updateRole } from "../controller/teamController.js";
 import { canInvite } from "../middleware/invitePermission.js";
 
 const router = express.Router();
 
-router.post("/create-team",protectRoute,createTeam);
+router.post("/create-team", protectRoute, createTeam);
 
 router.get("/my/teams", protectRoute, listMyTeams);
 
@@ -17,7 +17,7 @@ router.post(
 );
 
 router.post(
-  "/invites/accept", 
+  "/invites/accept",
   protectRoute,
   acceptInvite
 );
@@ -30,7 +30,7 @@ router.get(
 
 router.patch(
   "/:teamId/members/:memberId/role",
-  protectRoute, 
+  protectRoute,
   updateRole
 )
 
@@ -41,9 +41,15 @@ router.post(
 )
 
 router.delete(
-  "/:teamId", 
-  protectRoute, 
+  "/:teamId",
+  protectRoute,
   deleteTeam
+);
+
+router.delete(
+  "/teams/:teamId/members/:memberId",
+  protectRoute,
+  removeMember
 );
 
 export default router;

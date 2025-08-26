@@ -166,35 +166,80 @@ export const acceptInvite = async (req, res) => {
     }
 }
 
-export const listMyTeams = async(req,res)=>{
+export const removeMember = async (req, res) => {
     try {
-    const authUserId = req.user?.id;
-    if (!authUserId) return res.status(401).json({ message: "Unauthorized" });
+        const teamId = req.params.teamId || req.body.teamId;
+        const authUser = req.user?.id;
+        const memberId = req.params.memberId;
 
-    const limit = Math.min(parseInt(req.query.limit || "50", 10), 100);
-    const offset = Math.max(parseInt(req.query.offset || "0", 10), 0);
+        if (!teamId) return res.status(400).json({ message: "teamId is required" });
+        if (!authUser) return res.status(400).json({ message: "Unauthorised" });
+        if (!memberId) return res.status(400).json({ message: "memberId is required" });
 
-    const { rows, count } = await Team.findAndCountAll({
-      where: { userId: authUserId },
-      attributes: ["id", "name", "slug", "description", "createdAt", "updatedAt"],
-      order: [["name", "ASC"]],
-      limit,
-      offset,
-    });
+        const requester = await TeamMember.findOne({
+            where: { teamId, userId: authUser },
+            attributes: ["id", "userId", "role"],
+        });
+        if (!requester) return res.status(403).json({ message: "Not a team member" });
 
-    return res.json({
-      userId: authUserId,
-      count,
-      limit,
-      offset,
-      teams: rows,
-    });
+        const canManage = requester.role === "Owner" || requester.role === "Manager";
+        if (!canManage) return res.status(403).json({ message: "Insufficient permissions" });
 
-   
-  } catch (err) {
-    console.error("listMyTeams error:", err);
-    return res.status(500).json({ message: "Internal server error" });
-  }
+        const target = await TeamMember.findOne({
+            where: {
+                teamId,
+                id: memberId
+            },
+            attributes: ["id", "userId", "role"],
+        });
+        if (!target) return res.status(404).json({ message: "Target membership not found" });
+
+        if (target.userId === authUser) {
+            return res.status(400).json({ message: "Use leave endpoint to remove yourself" });
+        }
+
+        await TeamMember.destroy({ where: { id: target.id } });
+
+        return res.status(204).send();
+
+
+    } catch (error) {
+
+        console.error("removeMember error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+
+    }
+}
+
+export const listMyTeams = async (req, res) => {
+    try {
+        const authUserId = req.user?.id;
+        if (!authUserId) return res.status(401).json({ message: "Unauthorized" });
+
+        const limit = Math.min(parseInt(req.query.limit || "50", 10), 100);
+        const offset = Math.max(parseInt(req.query.offset || "0", 10), 0);
+
+        const { rows, count } = await Team.findAndCountAll({
+            where: { userId: authUserId },
+            attributes: ["id", "name", "slug", "description", "createdAt", "updatedAt"],
+            order: [["name", "ASC"]],
+            limit,
+            offset,
+        });
+
+        return res.json({
+            userId: authUserId,
+            count,
+            limit,
+            offset,
+            teams: rows,
+        });
+
+
+    } catch (err) {
+        console.error("listMyTeams error:", err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
 }
 
 export const listTeamMembers = async (req, res) => {
