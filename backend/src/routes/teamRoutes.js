@@ -47,7 +47,7 @@ router.delete(
 );
 
 router.delete(
-  "/teams/:teamId/members/:memberId",
+  "/:teamId/members/:memberId",
   protectRoute,
   removeMember
 );
