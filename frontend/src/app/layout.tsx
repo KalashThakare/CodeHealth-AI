@@ -4,6 +4,7 @@ import "./globals.css";
 // import { Toggle } from "@/components/ui/themeToggle";
 import { Toaster } from "sonner";
 import "@/app/glass.css"
+import { LenisProvider } from "@/components/ui/LenisProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,9 +48,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Toaster />
-        {/* <Toggle /> */}
-        {children}
+        <LenisProvider>
+          <Toaster />
+          {children}
+        </LenisProvider>
       </body>
     </html>
   );

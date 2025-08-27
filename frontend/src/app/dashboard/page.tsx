@@ -1,31 +1,10 @@
-// 'use client'
-// import { useAuthStore } from "@/store/authStore";
-// import { useRouter } from "next/navigation";
-// const Dashboard = () => {
-//   const router = useRouter()
-//   const logout = useAuthStore((state) => state.logout);
-//   const handleLogOut = () => {
-//     logout();
-//     router.replace("/");
-//   };
-//   return (
-//     <div className='flex flex-col items-center justify-center h-screen'>
-//         <h1 className='font-semibold text-2xl'>Dashboard</h1>
-//         <button onClick={handleLogOut} className='mt-4 px-4 py-2 rounded'>
-//           Log Out
-//         </button>
-//     </div>
-//   );
-// };
-
-// export default Dashboard;
-
 "use client";
 import { useAuthStore } from "@/store/authStore";
 import { useTeamStore } from "@/store/teamStore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { DashboardNavbar } from "./_components/DashboardNavbar";
 import { DashboardThemeToggle } from "@/components/ui/DashboardThemeToggle";
 
 const Dashboard = () => {
@@ -81,12 +60,10 @@ const Dashboard = () => {
   // Show loading while initializing or checking auth
   if (isInitializing || isloggingin) {
     return (
-      <div className="min-h-screen glass-bg flex flex-col items-center justify-center">
-        <div className="glass-card p-8 rounded-2xl shadow-xl">
+        <div className="min-h-screen glass-bg flex flex-col items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-center">Loading dashboard...</p>
+          <p className="mt-4 text-center">Loading Dashboard...</p>
         </div>
-      </div>
     );
   }
 
@@ -113,25 +90,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen glass-bg">
       {/* Header */}
-      <div className="glass-nav sticky top-0 backdrop-blur-md border-b border-white/10 p-4 z-50">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-primary">
-            CodeHealth AI
-          </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-text/70 hidden sm:block">
-              Welcome, {authUser.name}!
-            </span>
-            <DashboardThemeToggle />
-            <button
-              onClick={handleLogOut}
-              className="glass-btn glass-btn-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
-            >
-              Log Out
-            </button>
-          </div>
-        </div>
-      </div>
+      <DashboardNavbar currentTeam={teams[0]} />
 
       <div className="max-w-7xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-8 text-center">Dashboard</h1>

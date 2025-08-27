@@ -211,9 +211,9 @@ function Features() {
         <div className="absolute inset-0 pointer-events-none opacity-30">
           <Particles
             particleColors={[`var(--color-primary)`, `var(--color-accent)`]}
-            particleCount={80}
+            particleCount={180}
             particleSpread={15}
-            speed={0.1}
+            speed={0.2}
             particleBaseSize={120}
             moveParticlesOnHover={false}
             alphaParticles={true}

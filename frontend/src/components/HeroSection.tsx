@@ -7,6 +7,43 @@ import Particles from "./ui/Particles";
 
 export default function HeroSection() {
   const heroRef = useRef<HTMLDivElement>(null);
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+
+  useEffect(() => {
+    // Function to get current theme from DOM attribute
+    const getCurrentTheme = (): "light" | "dark" => {
+      return (
+        (document.documentElement.getAttribute("data-theme") as
+          | "light"
+          | "dark") || "dark"
+      );
+    };
+
+    // Set initial theme
+    setTheme(getCurrentTheme());
+
+    // Create observer to watch for data-theme attribute changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (
+          mutation.type === "attributes" &&
+          mutation.attributeName === "data-theme"
+        ) {
+          const newTheme = getCurrentTheme();
+          console.log("Theme changed to:", newTheme);
+          setTheme(newTheme);
+        }
+      });
+    });
+
+    // Start observing
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   useGSAP(
     () => {
@@ -51,9 +88,9 @@ export default function HeroSection() {
       className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 pt-16 sm:pt-20 overflow-hidden"
     >
       {/* Lightning Background - Option 1: Full Screen */}
-      <div className="absolute inset-0 pointer-events-none opacity-75 z-0">
-        <Lightning speed={1.6} intensity={0.9} size={3.5} xOffset={0} />
-      </div>
+      {theme == 'dark' && <div className="absolute inset-0 pointer-events-none opacity-75 z-0">
+        <Lightning speed={2.0} intensity={1.2} size={3.5} xOffset={0} />
+      </div>}
 
       {/* Background Particles */}
       <div className="absolute inset-0 pointer-events-none">
