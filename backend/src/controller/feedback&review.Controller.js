@@ -2,7 +2,8 @@ import { receiveFeedbackMail } from "../lib/mail/noodemailer.js";
 
 export const receiveFeedbackController = async (req, res) => {
   try {
-    const { userEmail, message } = req.body;
+    const { message } = req.body;
+    const userEmail = req.user?.email;
 
     if (!isNonEmpty(userEmail)) {
       return res.status(400).json({ error: "userEmail is required" });
