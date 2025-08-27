@@ -36,3 +36,44 @@ export const sendInviteMail = async (email, role, inviteLink) => {
 
     await transporter.sendMail(mailOptions);
 };
+
+export const receiveFeedbackMail = async (userEmail, message) => {
+
+  const TEAM_INBOX = "clouddrop.s3@gmail.com"; 
+
+  const safeUser = typeof userEmail === "string" ? userEmail.trim() : "";
+  const safeMsg = typeof message === "string" ? message.trim() : "";
+
+  if (!safeUser) throw new Error("User email is required");
+  if (!safeMsg) throw new Error("Feedback message is required");
+
+  const subject = "New user feedback";
+
+  const text = `New feedback received
+
+From: ${safeUser}
+
+${safeMsg}
+`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height:1.6; color:#111;">
+      <h3 style="margin:0 0 8px 0;">New feedback received</h3>
+      <p><b>From:</b> ${safeUser}</p>
+      <p style="white-space:pre-wrap">${safeMsg.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0;" />
+      <small style="color:#6b7280;">Reply directly to reach the user.</small>
+    </div>
+  `;
+
+  const mailOptions = {
+    from: '"CodeHealth AI" <clouddrop.s3@gmail.com>', 
+    to: TEAM_INBOX,                                  
+    subject,
+    text,
+    html,
+    replyTo: safeUser,                             
+  };
+
+  await transporter.sendMail(mailOptions);
+};

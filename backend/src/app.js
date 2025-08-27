@@ -8,6 +8,8 @@ import OAuth from "./routes/OAuth.routes.js"
 import githubRoutes from "./routes/githubRoutes.js";
 import Auth from "../src/routes/authRoutes.js"
 import teamRoutes from "./routes/teamRoutes.js";
+import { protectRoute } from "./middleware/auth.middleware.js";
+import { receiveFeedbackController } from "./controller/feedback&review.Controller.js";
 
 dotenv.config();
 
@@ -40,5 +42,7 @@ app.use("/auth",OAuth);
 app.use("/manual-auth",Auth);
 app.use("/github",githubRoutes)
 app.use("/teams",teamRoutes)
+
+app.post("/feedback",protectRoute,receiveFeedbackController);
 
 export default app;
