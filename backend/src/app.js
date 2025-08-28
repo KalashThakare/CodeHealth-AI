@@ -10,6 +10,7 @@ import Auth from "../src/routes/authRoutes.js"
 import teamRoutes from "./routes/teamRoutes.js";
 import { protectRoute } from "./middleware/auth.middleware.js";
 import { receiveFeedbackController } from "./controller/feedback&review.Controller.js";
+import accountRoutes from "../src/routes/account.Routes.js"
 
 dotenv.config();
 
@@ -44,5 +45,7 @@ app.use("/github",githubRoutes)
 app.use("/teams",teamRoutes)
 
 app.post("/feedback",protectRoute,receiveFeedbackController);
+
+app.use("/account",accountRoutes)
 
 export default app;
