@@ -1,5 +1,11 @@
 import { receiveFeedbackMail } from "../lib/mail/noodemailer.js";
 
+const isNonEmpty = (value) => {
+  return (
+    value !== null && value !== undefined && value.toString().trim() !== ""
+  );
+};
+
 export const receiveFeedbackController = async (req, res) => {
   try {
     const { message } = req.body;
