@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
@@ -17,7 +17,10 @@ import {
   LifeBuoy,
   LogOut,
   X,
+  Menu,
 } from "lucide-react";
+import { submitFeedbackAPI } from "@/services/feedbackService";
+import { toast } from "sonner";
 
 interface DashboardNavbarProps {
   currentTeam?: {
@@ -26,6 +29,14 @@ interface DashboardNavbarProps {
     slug: string;
   } | null;
 }
+
+const navLinks = [
+  { name: "Overview", href: "/dashboard" },
+  { name: "Activity", href: "/dashboard/activity" },
+  { name: "Observability", href: "/dashboard/observability" },
+  { name: "Support", href: "/dashboard/support" },
+  { name: "Settings", href: "/dashboard/settings" },
+];
 
 export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
   currentTeam,
@@ -39,9 +50,55 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false); // Add this
+
+  // Sliding highlight effect state
+  const navLinksRef = useRef<HTMLDivElement>(null);
+  const [highlightStyle, setHighlightStyle] = useState<React.CSSProperties>({});
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const teamDropdownRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Update highlight position based on active or hovered link
+  useLayoutEffect(() => {
+    if (!navLinksRef.current) return;
+
+    const activeIndex = navLinks.findIndex((link) => isActive(link.href));
+    const targetIndex = hoveredIndex !== null ? hoveredIndex : activeIndex;
+
+    if (targetIndex === -1) {
+      setHighlightStyle({ opacity: 0 });
+      return;
+    }
+
+    const linkElements =
+      navLinksRef.current.querySelectorAll<HTMLAnchorElement>("a");
+    const targetElement = linkElements[targetIndex];
+
+    if (targetElement) {
+      const containerRect = navLinksRef.current.getBoundingClientRect();
+      const targetRect = targetElement.getBoundingClientRect();
+
+      setHighlightStyle({
+        position: "absolute",
+        left: targetRect.left - containerRect.left,
+        top: 0,
+        width: targetRect.width,
+        height: targetRect.height,
+        backgroundColor:
+          hoveredIndex !== null
+            ? "var(--color-primary-hover)"
+            : "var(--color-bg-secondary)",
+        borderRadius: "0.375rem",
+        transition: "all 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+        opacity: 1,
+        zIndex: 0,
+      });
+    }
+  }, [pathname, hoveredIndex]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -58,6 +115,12 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
       ) {
         setIsProfileDropdownOpen(false);
       }
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsMobileMenuOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -69,45 +132,77 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
     router.replace("/");
   };
 
-  const submitFeedback = () => {
-    if (feedbackText.trim()) {
-      console.log("Feedback submitted:", feedbackText);
+  const submitFeedback = async () => {
+    if (!feedbackText.trim()) return;
+
+    setIsSubmittingFeedback(true);
+
+    try {
+      await submitFeedbackAPI(feedbackText.trim());
+
+      // Success feedback
+      toast.success(
+        "Feedback submitted successfully! Thank you for your input."
+      );
+
+      // Reset form and close modal
       setFeedbackText("");
       setIsFeedbackOpen(false);
+    } catch (error) {
+      // Error feedback
+      console.error("Failed to submit feedback:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to submit feedback. Please try again."
+      );
+    } finally {
+      setIsSubmittingFeedback(false);
     }
   };
 
-  const isActive = (path: string) =>
-    pathname === path || pathname.startsWith(path);
+  const isActive = (path: string) => {
+    if (path === "/dashboard") {
+      return pathname === path;
+    }
+    return pathname.startsWith(path);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <>
       {/* Main Navbar */}
       <nav
-        className="sticky p-4 top-0 z-50 border-b transition-all duration-200"
+        className="sticky h-fit p-3 top-0 z-50 border-b transition-all duration-200"
         style={{
           backgroundColor: "var(--color-bg)",
           borderColor: "var(--color-border)",
         }}
       >
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between h-12">
-            {/* Left Section */}
-            <div className="flex items-center space-x-8">
+        <div className="h-fit mx-auto px-1 sm:px-6">
+          <div className="flex-col items-center justify-between">
+            <div className="flex justify-between items-center space-x-8">
+              {/* Left Section */}
               {/* Logo & Project Name */}
               <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-xs">J</span>
+                <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-xs">
+                    {authUser?.name?.charAt(0).toUpperCase() || "U"}
+                  </span>
                 </div>
+                {/* Project Name - Hidden below md breakpoint */}
                 <span
-                  className="text-base font-medium"
+                  className="hidden min-[440px]:block text-sm font-medium"
                   style={{ color: "var(--color-fg)" }}
                 >
-                  {authUser?.name?.split(" ")[0] || "TestAcc0"}'s projects
+                  {authUser?.name?.split(" ")[0] || "Your"}'s projects
                 </span>
                 <div className="flex items-center space-x-1">
                   <span
-                    className="text-xs px-2 py-1 rounded font-medium"
+                    className="text-xs px-2 py-1 rounded-full font-medium"
                     style={{
                       backgroundColor: "var(--color-bg-secondary)",
                       color: "var(--color-fg-secondary)",
@@ -122,302 +217,302 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
                 </div>
               </div>
 
-              {/* Navigation Links */}
-              <div className="hidden lg:flex items-center space-x-8">
-                <Link
-                  href="/dashboard"
-                  className={`text-sm transition-colors pb-3 ${
-                    isActive("/dashboard") && pathname === "/dashboard"
-                      ? "border-b-2 font-medium"
-                      : "hover:opacity-70"
-                  }`}
-                  style={{
-                    color:
-                      isActive("/dashboard") && pathname === "/dashboard"
-                        ? "var(--color-fg)"
-                        : "var(--color-fg-secondary)",
-                    borderColor:
-                      isActive("/dashboard") && pathname === "/dashboard"
-                        ? "var(--color-primary)"
+              {/* Right Section */}
+              <div className="flex items-center space-x-3">
+                {/* Desktop Right Options - Hidden on small screens, visible from sm+ */}
+                <div className="hidden sm:flex items-center space-x-3">
+                  {/* Feedback Button */}
+                  <button
+                    onClick={() => setIsFeedbackOpen(true)}
+                    className="!py-1 !px-2 !font-normal !text-sm rounded-lg border transition-all hover:opacity-80"
+                    style={{
+                      backgroundColor: "transparent",
+                      color: "var(--color-fg)",
+                      borderColor: "var(--color-border)",
+                      boxShadow: "none !important",
+                    }}
+                  >
+                    Feedback
+                  </button>
+
+                  {/* Notifications */}
+                  <button
+                    className="!p-1 !rounded-full border hover:opacity-80 transition-all relative"
+                    style={{
+                      backgroundColor: "transparent",
+                      color: "var(--color-fg)",
+                      borderColor: "var(--color-border)",
+                    }}
+                  >
+                    <Bell
+                      className="w-5 h-5"
+                      style={{
+                        backgroundColor: "transparent !important",
+                        color: "var(--color-fg)",
+                        borderColor: "var(--color-border)",
+                      }}
+                    />
+                    <span className="absolute top-0.75 right-0.75 w-2 h-2 bg-green-500 rounded-full"></span>
+                  </button>
+
+                  {/* Profile */}
+                  <div className="relative" ref={profileDropdownRef}>
+                    <button
+                      onClick={() =>
+                        setIsProfileDropdownOpen(!isProfileDropdownOpen)
+                      }
+                      className="!px-3 !py-1 !font-normal !text-sm !rounded-full border transition-all hover:opacity-80"
+                      style={{
+                        backgroundColor: "var(--color-primary)",
+                        color: "var(--color-fg)",
+                        borderColor: "var(--color-border)",
+                        boxShadow: "none !important",
+                      }}
+                    >
+                      <span
+                        className="text-white font-bold text-lg"
+                        style={{
+                          color: "var(--color-fg)",
+                        }}
+                      >
+                        {authUser?.name?.charAt(0).toUpperCase() || "T"}
+                      </span>
+                    </button>
+
+                    {/* Profile Dropdown Menu */}
+                    {isProfileDropdownOpen && (
+                      <div
+                        className="absolute top-full right-0 mt-2 w-64 rounded-lg shadow-lg p-2 z-50 border"
+                        style={{
+                          backgroundColor: "var(--color-card)",
+                          borderColor: "var(--color-border)",
+                          boxShadow: "var(--shadow)",
+                        }}
+                      >
+                        <div
+                          className="px-4 py-3 border-b"
+                          style={{ borderColor: "var(--color-border)" }}
+                        >
+                          <div
+                            className="font-medium"
+                            style={{ color: "var(--color-fg)" }}
+                          >
+                            {authUser?.name || "TestAcc0"}
+                          </div>
+                          <div
+                            className="text-sm"
+                            style={{ color: "var(--color-fg-secondary)" }}
+                          >
+                            {authUser?.email || "test@example.com"}
+                          </div>
+                        </div>
+
+                        <div
+                          className="border-t pt-2"
+                          style={{ borderColor: "var(--color-border)" }}
+                        >
+                          <button
+                            onClick={() => {
+                              setIsProfileDropdownOpen(false);
+                              handleLogOut();
+                            }}
+                            className="flex items-center space-x-3 px-4 py-2 w-full transition-colors text-red-400"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            <span>Log Out</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Theme Toggle */}
+                  <div className="flex items-center">
+                    <Toggle />
+                  </div>
+                </div>
+
+                {/* Mobile Menu Button - Visible only below sm breakpoint */}
+                <div className="sm:hidden relative" ref={mobileMenuRef}>
+                  <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="!p-2 !rounded-lg border transition-all hover:opacity-80"
+                    style={{
+                      backgroundColor: isMobileMenuOpen
+                        ? "var(--color-bg-secondary)"
                         : "transparent",
-                  }}
-                >
-                  Overview
-                </Link>
+                      color: "var(--color-fg)",
+                      borderColor: "var(--color-border)",
+                      boxShadow: "none !important",
+                    }}
+                  >
+                    <Menu className="w-4 h-4" />
+                  </button>
 
-                <Link
-                  href="/dashboard/activity"
-                  className={`text-sm transition-colors pb-3 ${
-                    isActive("/dashboard/activity")
-                      ? "border-b-2 font-medium"
-                      : "hover:opacity-70"
-                  }`}
-                  style={{
-                    color: isActive("/dashboard/activity")
-                      ? "var(--color-fg)"
-                      : "var(--color-fg-secondary)",
-                    borderColor: isActive("/dashboard/activity")
-                      ? "var(--color-primary)"
-                      : "transparent",
-                  }}
-                >
-                  Activity
-                </Link>
+                  {/* Mobile Dropdown Menu */}
+                  {isMobileMenuOpen && (
+                    <div
+                      className="absolute top-full right-0 mt-2 w-64 min-[220px]:w-50 min-[260px]:w-60 min-[300px]:w-66 min-[340px]:w-72 min-[380px]:w-80 rounded-lg shadow-lg py-1 z-50 border"
+                      style={{
+                        backgroundColor: "var(--color-card)",
+                        borderColor: "var(--color-border)",
+                        boxShadow: "var(--shadow)",
+                      }}
+                    >
+                      {/* User Info */}
+                      <div
+                        className="px-3 py-2 border-b"
+                        style={{ borderColor: "var(--color-border)" }}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">
+                              {authUser?.name?.charAt(0).toUpperCase() || "U"}
+                            </span>
+                          </div>
+                          <div>
+                            <div
+                              className="font-medium text-xs"
+                              style={{ color: "var(--color-fg)" }}
+                            >
+                              {authUser?.name || "TestAcc0"}
+                            </div>
+                            <div
+                              className="text-xs"
+                              style={{ color: "var(--color-fg-secondary)" }}
+                            >
+                              {authUser?.email || "test@example.com"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
-                <Link
-                  href="/dashboard/observability"
-                  className={`text-sm transition-colors pb-3 ${
-                    isActive("/dashboard/observability")
-                      ? "border-b-2 font-medium"
-                      : "hover:opacity-70"
-                  }`}
-                  style={{
-                    color: isActive("/dashboard/observability")
-                      ? "var(--color-fg)"
-                      : "var(--color-fg-secondary)",
-                    borderColor: isActive("/dashboard/observability")
-                      ? "var(--color-primary)"
-                      : "transparent",
-                  }}
-                >
-                  Observability
-                </Link>
+                      {/* Navigation Links */}
+                      <div className="min-[520px]:hidden py-1">
+                        <h4
+                          className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide"
+                          style={{ color: "var(--color-fg-secondary)" }}
+                        >
+                          Navigation
+                        </h4>
 
-                <Link
-                  href="/dashboard/support"
-                  className={`text-sm transition-colors pb-3 ${
-                    isActive("/dashboard/support")
-                      ? "border-b-2 font-medium"
-                      : "hover:opacity-70"
-                  }`}
-                  style={{
-                    color: isActive("/dashboard/support")
-                      ? "var(--color-fg)"
-                      : "var(--color-fg-secondary)",
-                    borderColor: isActive("/dashboard/support")
-                      ? "var(--color-primary)"
-                      : "transparent",
-                  }}
-                >
-                  Support
-                </Link>
+                        {navLinks.map((link, index) => (
+                          <Link
+                            key={link.name}
+                            href={link.href}
+                            className="flex items-center space-x-2 px-3 py-2 transition-colors text-sm rounded-md mx-1"
+                            style={{
+                              color: isActive(link.href)
+                                ? "var(--color-fg)"
+                                : "var(--color-fg-secondary)",
+                              backgroundColor: isActive(link.href)
+                                ? "var(--color-bg-secondary)"
+                                : "transparent",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.backgroundColor =
+                                "var(--color-bg-secondary)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.backgroundColor = isActive(
+                                link.href
+                              )
+                                ? "var(--color-bg-secondary)"
+                                : "transparent")
+                            }
+                            onClick={closeMobileMenu}
+                          >
+                            <Activity className="w-3.5 h-3.5" />
+                            <span className="text-xs font-medium">
+                              {link.name}
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
 
-                <Link
-                  href="/dashboard/settings"
-                  className={`text-sm transition-colors pb-3 ${
-                    isActive("/dashboard/settings")
-                      ? "border-b-2 font-medium"
-                      : "hover:opacity-70"
-                  }`}
-                  style={{
-                    color: isActive("/dashboard/settings")
-                      ? "var(--color-fg)"
-                      : "var(--color-fg-secondary)",
-                    borderColor: isActive("/dashboard/settings")
-                      ? "var(--color-primary)"
-                      : "transparent",
-                  }}
-                >
-                  Settings
-                </Link>
+                      {/* Actions */}
+                      <div
+                        className="border-t py-1 px-2 flex flex-col items-center gap-2"
+                        style={{ borderColor: "var(--color-border)" }}
+                      >
+                        <button
+                          onClick={() => {
+                            setIsFeedbackOpen(true);
+                            closeMobileMenu();
+                          }}
+                          className="flex justify-center items-center space-x-2 px-3 py-2 w-3/4 transition-colors text-sm rounded-md mx-1 hover:opacity-80"
+                          style={{
+                            color: "var(--color-fg)",
+                            backgroundColor: "transparent",
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.backgroundColor =
+                              "var(--color-bg-secondary)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.backgroundColor =
+                              "transparent")
+                          }
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span className="text-xs font-medium">Feedback</span>
+                        </button>
+
+                        <Toggle />
+
+                        <button
+                          onClick={() => {
+                            closeMobileMenu();
+                            handleLogOut();
+                          }}
+                          className="flex items-center justify-center space-x-2 px-3 py-2 w-3/4 transition-colors text-sm rounded-md mx-1 hover:opacity-80"
+                          style={{
+                            color: "#ef4444",
+                            backgroundColor: "transparent",
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.backgroundColor =
+                              "var(--color-bg-secondary)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.backgroundColor =
+                              "transparent")
+                          }
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span className="text-xs font-medium">Log Out</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Right Section */}
-            <div className="flex items-center space-x-3">
-              {/* Feedback Button */}
-              <button
-                onClick={() => setIsFeedbackOpen(true)}
-                className="text-sm px-3 py-1 rounded border transition-colors hover:opacity-80"
-                style={{
-                  backgroundColor: "transparent",
-                  color: "var(--color-fg)",
-                  borderColor: "var(--color-border)",
-                }}
-              >
-                Feedback
-              </button>
+            {/* Navigation Links */}
+            <div
+              className="hidden min-[520px]:flex items-center space-x-0 relative mt-2"
+              ref={navLinksRef}
+              onMouseLeave={() => setHoveredIndex(null)}
+            >
+              {/* Moving highlight background */}
+              <div style={highlightStyle} />
 
-              {/* Notifications */}
-              <button className="p-2 rounded hover:opacity-70 transition-opacity relative">
-                <Bell
-                  className="w-4 h-4"
-                  style={{ color: "var(--color-fg-secondary)" }}
-                />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-
-              {/* Theme Toggle */}
-              <div className="flex items-center">
-                <Toggle />
-              </div>
-
-              {/* Profile */}
-              <div className="relative" ref={profileDropdownRef}>
-                <button
-                  onClick={() =>
-                    setIsProfileDropdownOpen(!isProfileDropdownOpen)
-                  }
-                  className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity"
+              {navLinks.map((link, index) => (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="relative text-sm px-4 py-2 rounded transition-colors z-10"
+                  style={{
+                    color: isActive(link.href)
+                      ? "var(--color-fg)"
+                      : "var(--color-fg-secondary)",
+                  }}
+                  onMouseEnter={() => setHoveredIndex(index)}
                 >
-                  <span className="text-white font-bold text-sm">
-                    {authUser?.name?.charAt(0).toUpperCase() || "T"}
-                  </span>
-                </button>
-
-                {/* Profile Dropdown Menu */}
-                {isProfileDropdownOpen && (
-                  <div
-                    className="absolute top-full right-0 mt-2 w-64 rounded-lg shadow-lg py-2 z-50 border"
-                    style={{
-                      backgroundColor: "var(--color-card)",
-                      borderColor: "var(--color-border)",
-                      boxShadow: "var(--shadow)",
-                    }}
-                  >
-                    <div
-                      className="px-4 py-3 border-b"
-                      style={{ borderColor: "var(--color-border)" }}
-                    >
-                      <div
-                        className="font-medium"
-                        style={{ color: "var(--color-fg)" }}
-                      >
-                        {authUser?.name || "TestAcc0"}
-                      </div>
-                      <div
-                        className="text-sm"
-                        style={{ color: "var(--color-fg-secondary)" }}
-                      >
-                        {authUser?.email || "test@example.com"}
-                      </div>
-                    </div>
-
-                    <div className="py-2">
-                      <h4
-                        className="px-4 py-2 text-xs font-semibold uppercase tracking-wide"
-                        style={{ color: "var(--color-fg-secondary)" }}
-                      >
-                        NavBar Options
-                      </h4>
-
-                      <Link
-                        href="/dashboard"
-                        className="flex items-center space-x-3 px-4 py-2 transition-colors"
-                        style={{ color: "var(--color-fg)" }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "var(--color-bg-secondary)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "transparent")
-                        }
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                      >
-                        <Activity className="w-4 h-4" />
-                        <span>1. Overview</span>
-                      </Link>
-
-                      <Link
-                        href="/dashboard/activity"
-                        className="flex items-center space-x-3 px-4 py-2 transition-colors"
-                        style={{ color: "var(--color-fg)" }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "var(--color-bg-secondary)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "transparent")
-                        }
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                      >
-                        <Activity className="w-4 h-4" />
-                        <span>2. Activity</span>
-                      </Link>
-
-                      <Link
-                        href="/dashboard/observability"
-                        className="flex items-center space-x-3 px-4 py-2 transition-colors"
-                        style={{ color: "var(--color-fg)" }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "var(--color-bg-secondary)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "transparent")
-                        }
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                      >
-                        <Eye className="w-4 h-4" />
-                        <span>3. Observability</span>
-                      </Link>
-
-                      <Link
-                        href="/dashboard/support"
-                        className="flex items-center space-x-3 px-4 py-2 transition-colors"
-                        style={{ color: "var(--color-fg)" }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "var(--color-bg-secondary)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "transparent")
-                        }
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                      >
-                        <LifeBuoy className="w-4 h-4" />
-                        <span>4. Support</span>
-                      </Link>
-
-                      <Link
-                        href="/dashboard/settings"
-                        className="flex items-center space-x-3 px-4 py-2 transition-colors"
-                        style={{ color: "var(--color-fg)" }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "var(--color-bg-secondary)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "transparent")
-                        }
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                      >
-                        <Settings className="w-4 h-4" />
-                        <span>5. Settings</span>
-                      </Link>
-                    </div>
-
-                    <div
-                      className="border-t pt-2"
-                      style={{ borderColor: "var(--color-border)" }}
-                    >
-                      <button
-                        onClick={() => {
-                          setIsProfileDropdownOpen(false);
-                          handleLogOut();
-                        }}
-                        className="flex items-center space-x-3 px-4 py-2 w-full transition-colors text-red-400"
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "var(--color-bg-secondary)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "transparent")
-                        }
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span>Log Out</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                  {link.name}
+                </Link>
+              ))}
             </div>
           </div>
         </div>
@@ -429,7 +524,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
           <div
             className="fixed inset-0 backdrop-blur-sm"
             style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
-            onClick={() => setIsFeedbackOpen(false)}
+            onClick={() => !isSubmittingFeedback && setIsFeedbackOpen(false)}
           />
           <div
             className="relative rounded-2xl shadow-2xl w-full max-w-md p-6"
@@ -447,10 +542,14 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
                 Send Feedback
               </h3>
               <button
-                onClick={() => setIsFeedbackOpen(false)}
-                className="p-2 rounded-lg transition-colors"
+                onClick={() =>
+                  !isSubmittingFeedback && setIsFeedbackOpen(false)
+                }
+                disabled={isSubmittingFeedback}
+                className="p-2 rounded-lg transition-colors disabled:opacity-50"
                 style={{ color: "var(--color-fg-secondary)" }}
                 onMouseEnter={(e) =>
+                  !isSubmittingFeedback &&
                   (e.currentTarget.style.backgroundColor =
                     "var(--color-bg-secondary)")
                 }
@@ -465,8 +564,9 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
             <textarea
               value={feedbackText}
               onChange={(e) => setFeedbackText(e.target.value)}
+              disabled={isSubmittingFeedback}
               placeholder="Share your thoughts, report bugs, or suggest improvements..."
-              className="w-full h-32 px-4 py-3 rounded-xl resize-none focus:outline-none transition-all duration-200 border"
+              className="w-full h-32 px-4 py-3 rounded-xl resize-none focus:outline-none transition-all duration-200 border disabled:opacity-50"
               style={{
                 background: "var(--color-input-bg)",
                 borderColor: "var(--color-input-border)",
@@ -477,13 +577,15 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
             <div className="flex items-center justify-end space-x-3 mt-4">
               <button
                 onClick={() => setIsFeedbackOpen(false)}
-                className="px-4 py-2 rounded-lg transition-colors border"
+                disabled={isSubmittingFeedback}
+                className="px-4 py-2 rounded-lg transition-colors border disabled:opacity-50"
                 style={{
                   color: "var(--color-fg)",
                   borderColor: "var(--color-border)",
                   backgroundColor: "transparent",
                 }}
                 onMouseEnter={(e) =>
+                  !isSubmittingFeedback &&
                   (e.currentTarget.style.backgroundColor =
                     "var(--color-bg-secondary)")
                 }
@@ -495,27 +597,34 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
               </button>
               <button
                 onClick={submitFeedback}
-                disabled={!feedbackText.trim()}
-                className="px-6 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!feedbackText.trim() || isSubmittingFeedback}
+                className="px-6 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 style={{
                   backgroundColor: "var(--color-btn-bg)",
                   color: "var(--color-btn-fg)",
                   border: "1px solid var(--color-btn-border)",
                 }}
                 onMouseEnter={(e) =>
-                  !feedbackText.trim()
+                  !feedbackText.trim() || isSubmittingFeedback
                     ? null
                     : (e.currentTarget.style.backgroundColor =
                         "var(--color-btn-bg-hover)")
                 }
                 onMouseLeave={(e) =>
-                  !feedbackText.trim()
+                  !feedbackText.trim() || isSubmittingFeedback
                     ? null
                     : (e.currentTarget.style.backgroundColor =
                         "var(--color-btn-bg)")
                 }
               >
-                Send
+                {isSubmittingFeedback ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  <span>Send</span>
+                )}
               </button>
             </div>
           </div>

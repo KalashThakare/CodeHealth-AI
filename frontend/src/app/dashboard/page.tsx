@@ -71,7 +71,6 @@ const Dashboard = () => {
   if (!authUser) {
     return (
       <div className="min-h-screen glass-bg flex flex-col items-center justify-center">
-        <div className="glass-card p-8 rounded-2xl shadow-xl text-center">
           <h1 className="font-semibold text-2xl mb-4">Access Denied</h1>
           <p className="mb-6 text-text/70">
             Please log in to access the dashboard.
@@ -82,7 +81,6 @@ const Dashboard = () => {
           >
             Go to Login
           </button>
-        </div>
       </div>
     );
   }
