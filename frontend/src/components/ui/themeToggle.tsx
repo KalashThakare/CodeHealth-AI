@@ -37,7 +37,7 @@ export const Toggle = () => {
   return (
     <button
       type="button"
-      className="absolute top-4 right-4"
+      className="absolute top-2 right-2"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
       style={{ background: "none", border: "none", padding: 0 }}
     >
