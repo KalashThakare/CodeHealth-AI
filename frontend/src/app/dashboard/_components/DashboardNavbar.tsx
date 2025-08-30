@@ -176,9 +176,9 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
     <>
       {/* Main Navbar */}
       <nav
-        className="sticky h-fit p-3 top-0 z-50 border-b transition-all duration-200"
+        className="sticky h-fit pt-3 px-4 pb-1.5 top-0 z-50 border-b transition-all duration-200"
         style={{
-          backgroundColor: "var(--color-bg)",
+          backgroundColor: "var(--color-bg-secondary)",
           borderColor: "var(--color-border)",
         }}
       >
@@ -188,7 +188,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
               {/* Left Section */}
               {/* Logo & Project Name */}
               <div className="flex items-center space-x-3">
-                <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                   <span className="text-white font-bold text-xs">
                     {authUser?.name?.charAt(0).toUpperCase() || "U"}
                   </span>
@@ -204,7 +204,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
                   <span
                     className="text-xs px-2 py-1 rounded-full font-medium"
                     style={{
-                      backgroundColor: "var(--color-bg-secondary)",
+                      backgroundColor: "var(--color-bg-tertiary)",
                       color: "var(--color-fg-secondary)",
                     }}
                   >
@@ -224,7 +224,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
                   {/* Feedback Button */}
                   <button
                     onClick={() => setIsFeedbackOpen(true)}
-                    className="!py-1 !px-2 !font-normal !text-sm rounded-lg border transition-all hover:opacity-80"
+                    className="!py-1.5 !px-3 !font-normal !text-sm rounded-lg border transition-all hover:opacity-80"
                     style={{
                       backgroundColor: "transparent",
                       color: "var(--color-fg)",
@@ -237,7 +237,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
 
                   {/* Notifications */}
                   <button
-                    className="!p-1 !rounded-full border hover:opacity-80 transition-all relative"
+                    className="!p-1.5 !rounded-full border hover:opacity-80 transition-all relative"
                     style={{
                       backgroundColor: "transparent",
                       color: "var(--color-fg)",
@@ -491,27 +491,49 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
 
             {/* Navigation Links */}
             <div
-              className="hidden min-[520px]:flex items-center space-x-0 relative mt-2"
+              className="hidden min-[520px]:flex items-center space-x-0 relative mt-1.5"
               ref={navLinksRef}
               onMouseLeave={() => setHoveredIndex(null)}
             >
               {/* Moving highlight background */}
-              <div style={highlightStyle} />
+              <div
+                className="transition-all !duration-130"
+                style={{
+                  ...highlightStyle,
+                  opacity: hoveredIndex !== null ? 0.5 : 0,
+                }}
+              />
 
               {navLinks.map((link, index) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className="relative text-sm px-4 py-2 rounded transition-colors z-10"
-                  style={{
-                    color: isActive(link.href)
-                      ? "var(--color-fg)"
-                      : "var(--color-fg-secondary)",
-                  }}
-                  onMouseEnter={() => setHoveredIndex(index)}
-                >
-                  {link.name}
-                </Link>
+                <div key={link.name} className="relative text-center h-fit flex items-center justify-center">
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    className="relative text-sm px-4 py-2 rounded transition-colors duration-150 z-10"
+                    style={{
+                      color:
+                        hoveredIndex === index || isActive(link.href)
+                          ? "var(--color-fg)"
+                          : "var(--color-fg-secondary)",
+                      textDecoration: "none",
+                    }}
+                    onMouseEnter={() => setHoveredIndex(index)}
+                  >
+                    {link.name}
+                  </Link>
+
+                  <div
+                    className="absolute bottom-0 left-0 w-full transition-all duration-200"
+                    style={{
+                      height: "1px",
+                      backgroundColor: isActive(link.href)
+                        ? "var(--color-fg)"
+                        : "transparent",
+                      transform: "translateY(5px)", // Position it 4px below
+                      opacity: isActive(link.href) ? 1 : 0,
+                    }}
+                  />
+                </div>
               ))}
             </div>
           </div>
