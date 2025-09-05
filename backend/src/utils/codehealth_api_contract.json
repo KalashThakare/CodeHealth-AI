@@ -1,0 +1,330 @@
+{
+  "version": "v1.2",
+  "services": {
+    "ingest": {
+      "description": "Receives GitHub App webhooks, validates signatures, IP allowlist, idempotency, enqueues jobs.",
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/webhooks/github",
+          "headers": {
+            "X-GitHub-Event": "string",
+            "X-GitHub-Delivery": "uuid",
+            "X-Hub-Signature-256": "sha256",
+            "Idempotency-Key": "uuid|optional"
+          },
+          "req_body": {
+            "raw_payload": "object"
+          },
+          "controller": "verify_ip_allowlist -> verify_signature -> check_idempotency(X-GitHub-Delivery or Idempotency-Key) -> persist webhook -> route_by_event -> enqueue(job) -> ack",
+          "responses": [
+            { "status": 202, "body": { "ok": true, "deliveryId": "uuid" } },
+            { "status": 400, "body": { "error": "invalid_signature|bad_payload" } },
+            { "status": 409, "body": { "error": "duplicate_event" } }
+          ]
+        },
+        {
+          "method": "POST",
+          "path": "/webhooks/retry/:deliveryId",
+          "params": { "deliveryId": "uuid" },
+          "controller": "manual retry: re-enqueue if previously failed",
+          "responses": [
+            { "status": 202, "body": { "ok": true, "requeued": true } },
+            { "status": 404, "body": { "error": "not_found" } }
+          ]
+        }
+      ]
+    },
+    "projects": {
+      "description": "Manage connected repos (installed via GitHub App).",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/projects",
+          "query": { "page": "int", "limit": "int" },
+          "controller": "list projects for user/team; join latest_analysis",
+          "responses": [
+            { "status": 200, "body": { "items": "Project[]", "total": "int" } }
+          ]
+        },
+        {
+          "method": "POST",
+          "path": "/projects/:id/analyze",
+          "params": { "id": "uuid" },
+          "query": { "mode": "full|incremental", "headSha": "sha", "baseSha": "sha|optional" },
+          "controller": "lookup project -> get installation token -> enqueue full or incremental analysis job",
+          "responses": [
+            { "status": 202, "body": { "jobId": "string", "scheduled": true } }
+          ]
+        }
+      ]
+    },
+    "analysis": {
+      "description": "Execute code + process analysis pipeline (worker).",
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/internal/analysis/run",
+          "req_body": {
+            "projectId": "uuid",
+            "installationId": "int",
+            "repoFullName": "owner/name",
+            "mode": "full|incremental",
+            "baseSha": "sha|null",
+            "headSha": "sha",
+            "trigger": "webhook_push|webhook_pr|manual"
+          },
+          "controller": "fetch->compute->store->emit events (including ai-insights seed and team-health refresh)",
+          "responses": [
+            { "status": 200, "body": { "analysisResultId": "uuid", "status": "completed" } }
+          ]
+        }
+      ]
+    },
+    "ai-insights": {
+      "description": "Model-backed predictions for business impact, risk, and refactor prioritization.",
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/internal/ai/score-impact",
+          "req_body": {
+            "analysisResultId": "uuid",
+            "context": {
+              "engineeringRatesPerHour": "float",
+              "currency": "string",
+              "sprintVelocityHistory": "array<float>",
+              "deploymentFailureCost": "float|optional"
+            }
+          },
+          "controller": "compute slowdown forecast, monthly debt cost, and risk score per module/file; store BusinessImpact",
+          "responses": [
+            {
+              "status": 200,
+              "body": {
+                "businessImpactId": "uuid",
+                "predictions": {
+                  "velocitySlowdownPctNext30d": "float",
+                  "monthlyDebtCost": "float",
+                  "currency": "string"
+                },
+                "riskByModule": "array<{path:string, riskPct:float}>"
+              }
+            }
+          ]
+        },
+        {
+          "method": "POST",
+          "path": "/internal/ai/prioritize-refactors",
+          "req_body": {
+            "analysisResultId": "uuid",
+            "context": {
+              "upcomingEpics": "array<{id:string,name:string,files:string[]}>",
+              "riskTolerance": "low|medium|high",
+              "maxWeeklyRefactorCapacityHours": "float"
+            }
+          },
+          "controller": "rank technical debt fix candidates by business impact, effort, risk of breakage, future dependency",
+          "responses": [
+            {
+              "status": 200,
+              "body": {
+                "prioritizationId": "uuid",
+                "items": "array<{path:string, priority:int, rationale:string, estEffortHours:float, impactScore:float, breakageRiskPct:float, dependencies:string[]}>"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "team-health": {
+      "description": "DORA metrics, workload/ownership, burnout and knowledge gap insights.",
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/internal/team-health/refresh",
+          "req_body": {
+            "projectId": "uuid",
+            "windowDays": "int",
+            "sources": {
+              "commits": "bool",
+              "prs": "bool",
+              "deploys": "bool",
+              "incidents": "bool",
+              "calendar": "bool|optional",
+              "issueTracker": "bool|optional"
+            }
+          },
+          "controller": "aggregate DORA + ownership + workload signals; compute burnout/knowledge risk; store TeamHealthSnapshot",
+          "responses": [
+            {
+              "status": 200,
+              "body": { "teamHealthSnapshotId": "uuid", "status": "ok" }
+            }
+          ]
+        },
+        {
+          "method": "GET",
+          "path": "/projects/:id/team-health/latest",
+          "params": { "id": "uuid" },
+          "controller": "return latest DORA metrics, ownership distribution, burnout risk, gaps",
+          "responses": [
+            {
+              "status": 200,
+              "body": {
+                "dora": {
+                  "deploymentFrequency": "float",
+                  "leadTimeHoursP50": "float",
+                  "changeFailureRatePct": "float",
+                  "mttrHoursP50": "float"
+                },
+                "ownership": "array<{owner:string, files:int, busFactor:int}>",
+                "burnoutRisk": "float",
+                "knowledgeGaps": "array<{area:string, risk:string}>",
+                "windowDays": "int",
+                "asOf": "datetime"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "coaching": {
+      "description": "Guidelines, personalized coaching, executive summaries, learning resources.",
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/internal/coaching/generate",
+          "req_body": {
+            "projectId": "uuid",
+            "analysisResultId": "uuid",
+            "teamHealthSnapshotId": "uuid",
+            "businessImpactId": "uuid",
+            "prioritizationId": "uuid",
+            "persona": "developer|tech_lead|exec",
+            "style": "concise|detailed"
+          },
+          "controller": "LLM generates team-specific guidelines, individual suggestions, exec summary, and resource links",
+          "responses": [
+            {
+              "status": 200,
+              "body": {
+                "coachingId": "uuid",
+                "guidelines": "string[]",
+                "personalized": "array<{userId:string, suggestions:string[]}>",
+                "executiveSummary": "string",
+                "learningResources": "array<{title:string, url:string, focus:string}>"
+              }
+            }
+          ]
+        },
+        {
+          "method": "GET",
+          "path": "/projects/:id/coaching/latest",
+          "params": { "id": "uuid" },
+          "controller": "return latest coaching artifacts",
+          "responses": [
+            {
+              "status": 200,
+              "body": {
+                "coachingId": "uuid",
+                "guidelines": "string[]",
+                "executiveSummary": "string",
+                "asOf": "datetime"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "results": {
+      "description": "Read analysis results, AI insights, and trends.",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/projects/:id/results/latest",
+          "params": { "id": "uuid" },
+          "controller": "return latest repo-level metrics, score, top recommendations + business impact snapshot",
+          "responses": [
+            {
+              "status": 200,
+              "body": {
+                "score": "float",
+                "metrics": "object",
+                "recommendations": "string[]",
+                "commitSha": "sha",
+                "businessImpact": {
+                  "velocitySlowdownPctNext30d": "float",
+                  "monthlyDebtCost": "float",
+                  "currency": "string",
+                  "topRisks": "array<{path:string, riskPct:float}>"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "method": "GET",
+          "path": "/projects/:id/results/history",
+          "params": { "id": "uuid" },
+          "query": { "days": "int" },
+          "controller": "time-series query: score, duplication, complexity, churn, DORA",
+          "responses": [
+            {
+              "status": 200,
+              "body": { "series": "array<point>", "from": "date", "to": "date" }
+            }
+          ]
+        },
+        {
+          "method": "GET",
+          "path": "/projects/:id/hotspots",
+          "params": { "id": "uuid" },
+          "controller": "top files by (complexity * churn * coupling)",
+          "responses": [
+            { "status": 200, "body": { "files": "array<{path,score,metrics}>" } }
+          ]
+        },
+        {
+          "method": "GET",
+          "path": "/projects/:id/refactor-priorities",
+          "params": { "id": "uuid" },
+          "controller": "return latest prioritized refactor list with effort and impact",
+          "responses": [
+            {
+              "status": 200,
+              "body": {
+                "items": "array<{path:string, priority:int, estEffortHours:float, impactScore:float, breakageRiskPct:float, dependencies:string[], rationale:string}>",
+                "asOf": "datetime"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "admin": {
+      "description": "Operational diagnostics.",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/healthz",
+          "controller": "readiness/liveness",
+          "responses": [ { "status": 200, "body": { "ok": true } } ]
+        },
+        {
+          "method": "GET",
+          "path": "/metrics",
+          "controller": "prometheus style metrics",
+          "responses": [ { "status": 200, "body": "text/plain" } ]
+        },
+        {
+          "method": "GET",
+          "path": "/admin/webhooks/dead-letter",
+          "controller": "list failed webhook deliveries and reasons",
+          "responses": [
+            { "status": 200, "body": { "items": "array<{deliveryId:string, reason:string, lastAttempt:datetime}>" } }
+          ]
+        }
+      ]
+    }
+  }
+}
