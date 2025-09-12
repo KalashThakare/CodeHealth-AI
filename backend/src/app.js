@@ -11,6 +11,7 @@ import teamRoutes from "./routes/teamRoutes.js";
 import { protectRoute } from "./middleware/auth.middleware.js";
 import { receiveFeedbackController } from "./controller/feedback&review.Controller.js";
 import accountRoutes from "../src/routes/account.Routes.js"
+import { client } from "./lib/redis.js";
 
 dotenv.config();
 
@@ -31,6 +32,8 @@ export async function startApp() {
   try {
     await sequelize.authenticate();
     console.log("Database connected successfully.");
+    await client.connect();
+    client.on('ready', () => console.log('Redis ready'));
     return app;
   } catch (err) {
     console.error("Database connection failed:", err);
