@@ -1,15 +1,13 @@
-import { createClient } from 'redis';
+import { Queue } from "bullmq";
+import IORedis from "ioredis";
 import dotenv from "dotenv";
 dotenv.config();
 
-export const client = createClient({
-    username: 'default',
-    password: process.env.REDIS_PASSWORD,
-    socket: {
-        host: process.env.REDIS_HOST,
-        port: process.env.REDIS_PORT
-    }
+export const connection = new IORedis({
+  host: process.env.REDIS_HOST,
+  port: Number(process.env.REDIS_PORT),
+  username: "default",
+  password: process.env.REDIS_PASSWORD,
 });
 
-
-
+export const webhookQueue = new Queue("webhooks", { connection });
