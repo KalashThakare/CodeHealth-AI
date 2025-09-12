@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { submitFeedbackAPI } from "@/services/feedbackService";
 import { toast } from "sonner";
+import TeamPersonalProfile from "./TeamPersonalProfile";
 
 interface DashboardNavbarProps {
   currentTeam?: {
@@ -52,6 +53,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
   const [feedbackText, setFeedbackText] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false); // Add this
+  const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
 
   // Sliding highlight effect state
   const navLinksRef = useRef<HTMLDivElement>(null);
@@ -61,6 +63,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
   const teamDropdownRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const projectDropdownRef = useRef<HTMLDivElement>(null);
 
   // Update highlight position based on active or hovered link
   useLayoutEffect(() => {
@@ -120,6 +123,12 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
         !mobileMenuRef.current.contains(event.target as Node)
       ) {
         setIsMobileMenuOpen(false);
+      }
+      if (
+        projectDropdownRef.current &&
+        !projectDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsProjectDropdownOpen(false);
       }
     };
 
@@ -187,12 +196,16 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
             <div className="flex justify-between items-center space-x-8">
               {/* Left Section */}
               {/* Logo & Project Name */}
-              <div className="flex items-center space-x-3">
+              <div
+                className="flex items-center space-x-3"
+                ref={projectDropdownRef}
+              >
                 <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                   <span className="text-white font-bold text-xs">
                     {authUser?.name?.charAt(0).toUpperCase() || "U"}
                   </span>
                 </div>
+
                 {/* Project Name - Hidden below md breakpoint */}
                 <span
                   className="hidden min-[440px]:block text-sm font-medium"
@@ -200,7 +213,11 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
                 >
                   {authUser?.name?.split(" ")[0] || "Your"}'s projects
                 </span>
-                <div className="flex items-center space-x-1">
+
+                <div
+                  onClick={() => setIsTeamDropdownOpen(true)}
+                  className="flex items-center space-x-1 relative"
+                >
                   <span
                     className="text-xs px-2 py-1 rounded-full font-medium"
                     style={{
@@ -210,9 +227,19 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
                   >
                     Hobby
                   </span>
-                  <ChevronDown
-                    className="w-3 h-3"
-                    style={{ color: "var(--color-fg-secondary)" }}
+                  <div className="p-1 hover:opacity-70 transition-opacity">
+                    <ChevronDown
+                      className={`w-3 h-3 transition-transform duration-200 ${
+                        isTeamDropdownOpen ? "rotate-180" : ""
+                      }`}
+                      style={{ color: "var(--color-fg-secondary)" }}
+                    />
+                  </div>
+
+                  {/* Project Dropdown Menu */}
+                  <TeamPersonalProfile
+                    isOpen={isTeamDropdownOpen}
+                    setIsOpen={setIsTeamDropdownOpen}
                   />
                 </div>
               </div>
@@ -505,7 +532,10 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
               />
 
               {navLinks.map((link, index) => (
-                <div key={link.name} className="relative text-center h-fit flex items-center justify-center">
+                <div
+                  key={link.name}
+                  className="relative text-center h-fit flex items-center justify-center"
+                >
                   <Link
                     key={link.name}
                     href={link.href}

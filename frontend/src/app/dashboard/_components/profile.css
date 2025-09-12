@@ -1,0 +1,9 @@
+.input{
+    padding: 0;
+    padding-left: 0.5rem;
+    border: none;
+    background-color: transparent;
+    color: var(--color-fg);
+    font-size: medium;
+    margin-bottom: 0;
+}
