@@ -4,19 +4,20 @@ import User from "./User.js";
 
 export const Project = sequelize.define("Project", {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
-  userId: { type: DataTypes.UUID, allowNull: false },
+  userId: { type: DataTypes.UUID, allowNull: true }, 
+  installationId: { type: DataTypes.BIGINT, allowNull: false },
+  repoId: { type: DataTypes.BIGINT, allowNull: false }, 
+  fullName: { type: DataTypes.STRING, allowNull: false },
   repoName: { type: DataTypes.STRING, allowNull: false },
   repoUrl: { type: DataTypes.STRING, allowNull: false },
-  installationId: { type: DataTypes.BIGINT, allowNull: false,},
 }, {
   tableName: "projects",
   timestamps: true,
   indexes: [
-    {
-      unique: true,
-      fields: ['userId', 'repoName']
-    }
-  ]
+    { unique: true, fields: ["repoId"] },
+    { fields: ["installationId"] },
+    { unique: false, fields: ["userId", "repoName"] },
+  ],
 });
 
 User.hasMany(Project, { foreignKey: "userId" });

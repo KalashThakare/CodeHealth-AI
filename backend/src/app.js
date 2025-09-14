@@ -1,3 +1,4 @@
+"use client"
 import express from "express";
 import dotenv from "dotenv";
 import cookieparser from "cookie-parser";
@@ -15,6 +16,7 @@ import accountRoutes from "../src/routes/account.Routes.js"
 dotenv.config();
 
 const app = express();
+
 
 app.use(cors({
   origin:"http://localhost:3000",

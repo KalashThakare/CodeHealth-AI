@@ -4,9 +4,44 @@ import { github } from "../lib/OAuth/github.js";
 import crypto from 'crypto';
 import User from "../database/models/User.js";
 import { Project } from "../database/models/project.js";
+import { WebhookEvent } from "../database/models/webhookEvents.js";
+import { webhookQueue } from "../lib/redis.js";
 
 await User.sync();
 await Project.sync();
+await WebhookEvent.sync();
+
+function eventToJobName(event) {
+  switch (event) {
+    case 'push':
+      return 'repo.push';
+    case 'pull_request':
+      return 'repo.pull_request';
+    case 'issues':
+      return 'repo.issues';
+    default:
+      return 'misc.unhandled';
+  }
+}
+
+function isRepoScoped(event) {
+  return event === 'push' || event === 'pull_request' || event === 'issues';
+}
+
+function mapRepo(payload) {
+  const repo = payload?.repository;
+  if (!repo) return { repoId: null, fullName: null, repoUrl: null, repoName: null };
+  const fullName = repo.full_name;
+  const repoName = fullName?.split('/')?.[10] ?? null;
+  return {
+    repoId: repo.id ?? null,
+    fullName,
+    repoName,
+    repoUrl: repo.html_url || (fullName ? `https://github.com/${fullName}` : null),
+  };
+}
+
+
 
 export const ListRepos = async (req, res) => {
   try {
@@ -100,13 +135,13 @@ export const githubWebhookController = async (req, res) => {
   try {
     const signature = req.headers["x-hub-signature-256"];
     const event = req.headers["x-github-event"];
+    const deliveryId = req.headers["x-github-delivery"];
     const payload = req.body;
 
     if (!signature) {
       return res.status(401).send("No X-Hub-Signature-256 header found");
     }
 
-    // Verify signature
     const secret = process.env.GITHUB_WEBHOOK_SECRET;
     const hmac = crypto.createHmac("sha256", secret);
     const digest = "sha256=" + hmac.update(JSON.stringify(payload)).digest("hex");
@@ -121,85 +156,116 @@ export const githubWebhookController = async (req, res) => {
       return res.status(401).send("Invalid signature");
     }
 
-    console.log(`📦 Received GitHub event: ${event}, action: ${payload.action}`);
+    const installationId = payload?.installation?.id ?? null;
+    const { repoId, fullName, repoName } = mapRepo(payload);
 
-    const processRepos = async (repos, installationId, accountId) => {
-      const user = await User.findOne({
-        where: { oauthProviderId: accountId.toString() }
+    let project = null;
+    if (isRepoScoped(event)) {
+      if (repoId) project = await Project.findOne({ where: { repoId } });
+      if (!project && repoName) project = await Project.findOne({ where: { repoName } });
+      if (!project) return res.status(404).send("Repository not registered");
+
+      await WebhookEvent.create({
+        deliveryId,
+        event,
+        installationId,
+        projectId: project?.id ?? null,
+        repoId,
+        fullName,
+        status: "received",
+        payload,
       });
 
+    }
+
+    if (event === "installation" || event === "installation_repositories") {
+      const action = payload.action; 
+      const accountId = payload.installation?.account?.id?.toString() ?? null;
+
+      if (!accountId) {
+        return res.status(400).json({ error: "Missing installation account id" });
+      } 
+
+      const user = await User.findOne({ where: { oauthProviderId: accountId } }); 
       if (!user) {
-        console.warn(`⚠️ No user with oauthProviderId=${accountId} found in DB`);
-        return false;
+        return res.status(404).json({ error: "User not found for this installation account" });
       }
 
-      console.log(`✅ Found user: ${user.email || user.id}`);
-
-      for (const repo of repos) {
-        const repoUrl = repo.html_url || `https://github.com/${repo.full_name}`;
-        const [project, created] = await Project.findOrCreate({
-          where: { repoName: repo.name, userId: user.id },
-          defaults: {
-            userId: user.id,
-            repoName: repo.name,
-            repoUrl,
-            installationId
-          }
-        });
-
-        console.log(created
-          ? `📌 Added repo ${repo.name} for ${user.email}`
-          : `ℹ️ Repo ${repo.name} already exists for ${user.email}`);
+      if (event === "installation" && action === "created") {
+        const repos = payload.repositories || [];
+        for (const repo of repos) {
+          const repoUrl = repo.html_url || `https://github.com/${repo.full_name}`;
+          await Project.findOrCreate({
+            where: { repoId: repo.id }, 
+            defaults: {
+              userId: user?.id ?? null,
+              repoId: repo.id,
+              repoName: repo.name,
+              fullName: repo.full_name,
+              repoUrl,
+              installationId,
+            },
+          });
+        }
       }
 
-      return true;
-    };
+      if (event === "installation_repositories" && action === "added") {
+        const repos = payload.repositories_added || [];
+        for (const repo of repos) {
+          const repoUrl = repo.html_url || `https://github.com/${repo.full_name}`;
+          await Project.findOrCreate({
+            where: { repoId: repo.id },
+            defaults: {
+              userId: user?.id ?? null,
+              repoId: repo.id,
+              repoName: repo.name,
+              fullName: repo.full_name,
+              repoUrl,
+              installationId,
+            },
+          });
+        }
+      }
 
-    // 1. Initial installation
-    if (event === "installation" && payload.action === "created") {
-      const ok = await processRepos(
-        payload.repositories || [],
-        payload.installation.id,
-        payload.installation.account.id
-      );
-      return res.status(ok ? 200 : 404).send("Installation event processed");
+      if (event === "installation_repositories" && action === "removed") {
+        const repos = payload.repositories_removed || [];
+        for (const repo of repos) {
+          await Project.destroy({ where: { repoId: repo.id } });
+        }
+      }
+
+      if (event === "installation" && action === "deleted") {
+        await Project.destroy({ where: { installationId } });
+      }
     }
 
-    // 2. Repo added to app
-    if (event === "installation_repositories" && payload.action === "added") {
-      const ok = await processRepos(
-        payload.repositories_added || [],
-        payload.installation.id,
-        payload.installation.account.id
-      );
-      return res.status(ok ? 200 : 404).send("Repos added");
+    const jobName = eventToJobName(event);
+    await webhookQueue.add(jobName, { event, payload }, { jobId: deliveryId });
+    await WebhookEvent.update({ status: "enqueued" }, { where: { deliveryId } });
+
+    return res.status(202).send("ACK");
+  } catch (err) {
+    console.error("webhook error:", err);
+    return res.status(500).send("Internal Server Error");
+  }
+};
+
+export const retryWebhookDelivery = async (req, res) => {
+  try {
+    const { deliveryId } = req.params;
+    const evt = await WebhookEvent.findByPk(deliveryId);
+    if (!evt) return res.status(404).send('Delivery not found');
+
+    if (isRepoScoped(evt.event) && !evt.projectId) {
+      return res.status(409).send('Cannot retry: repository not registered');
     }
 
-    // 3. Repo removed from app
-    if (event === "installation_repositories" && payload.action === "removed") {
-      const accountId = payload.installation.account.id;
-      const reposRemoved = payload.repositories_removed || [];
-      const user = await User.findOne({
-        where: { oauthProviderId: accountId.toString() }
-      });
-
-      if (!user) {
-        console.warn(`⚠️ No user found for accountId ${accountId}`);
-        return res.status(404).send("User not found");
-      }
-
-      for (const repo of reposRemoved) {
-        await Project.destroy({
-          where: { repoName: repo.name, userId: user.id }
-        });
-        console.log(`🗑 Removed repo ${repo.name} for ${user.email}`);
-      }
-      return res.status(200).send("Repos removed");
-    }
-
-    res.status(200).send("Event received (unhandled type)");
-  } catch (error) {
-    console.error("❌ Error processing webhook:", error);
-    res.status(500).send("Internal Server Error");
+    const jobName = eventToJobName(evt.event);
+    await webhookQueue.add(jobName, { event: evt.event, payload: evt.payload }, { jobId: deliveryId });
+    await WebhookEvent.update({ status: 'enqueued' }, { where: { deliveryId } });
+    return res.status(202).send('Re-enqueued');
+  } catch (err) {
+    console.error('retry error:', err);
+    return res.status(500).send('Internal Server Error');
   }
 };
