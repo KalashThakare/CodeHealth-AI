@@ -22,3 +22,6 @@ export const worker = new Worker('webhooks', async job => {
       return;
   }
 }, { connection });
+
+worker.on('completed', job => console.log('completed', job.id));
+worker.on('failed', (job, err) => console.error('failed', job?.id, err));
