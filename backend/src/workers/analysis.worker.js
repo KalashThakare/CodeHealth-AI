@@ -7,9 +7,9 @@ dotenv.config();
 const CONCURRENCY = Number(process.env.ANALYSIS_CONCURRENCY || 4);
 const DEADLINE_MS = Number(process.env.ANALYSIS_DEADLINE_MS || 15 * 60 * 1000);
 
-const AnalysisWorker = new Worker("analysis", async job => {
+export const PushAnalysisWorker = new Worker("pushAnalysis", async job => {
 
-    if (job.name != "analysis.run") {
+    if (job.name != "analysis.push") {
         return {
             skipped: true,
             reason: "Unkonwn-job",
@@ -83,22 +83,146 @@ const AnalysisWorker = new Worker("analysis", async job => {
 
 );
 
-const events = new QueueEvents('analysis', { connection });
+const events = new QueueEvents('pushAnalysis', { connection });
 events.on('completed', ({ jobId }) => {
   console.log(`[analysis] completed ${jobId}`);
 });
 events.on('failed', ({ jobId, failedReason }) => {
-  console.error(`[analysis] failed ${jobId}: ${failedReason}`);
+  console.error(`[pushAnalysis] failed ${jobId}: ${failedReason}`);
 });
-events.on('waiting', ({ jobId }) => console.log(`[analysis] waiting ${jobId}`));
-events.on('progress', ({ jobId, data }) => console.log(`[analysis] progress ${jobId}`, data));
+events.on('waiting', ({ jobId }) => console.log(`[pushAnalysis] waiting ${jobId}`));
+events.on('progress', ({ jobId, data }) => console.log(`[pushAnalysis] progress ${jobId}`, data));
 
 // Basic worker-level logs
-AnalysisWorker.on('failed', (job, err) => {
+PushAnalysisWorker.on('failed', (job, err) => {
   console.error(`[analysis] job failed ${job?.id}`, err);
 });
-AnalysisWorker.on('completed', job => {
+PushAnalysisWorker.on('completed', job => {
   console.log(`[analysis] job completed ${job.id}`);
 });
 
-export default AnalysisWorker;
+export const pullAnalysisWorker = new Worker("pullAnalysis",async job=>{
+
+    if (job.name !== "analysis.pr") {
+      return { skipped: true, reason: "unknown-job", name: job.name };
+    }
+
+    // Validate job data
+    const {
+      repo,
+      repoId,
+      installationId,
+      prNumber,
+      action,
+      sender,
+      head,
+      base,
+      isFromFork,
+    } = job.data || {};
+
+    if (!repo || !installationId || !prNumber || !head || !base) {
+      throw new Error(
+        `Invalid job data: repo=${repo} installationId=${installationId} prNumber=${prNumber} head=${!!head} base=${!!base}`
+      );
+    }
+
+    const headSha = head.sha || null;
+    const baseSha = base.sha || null;
+    const headRef = head.ref || null;
+    const baseRef = base.ref || null;
+
+    // Optional: emit initial progress
+    await job.updateProgress({ stage: "init", repo, prNumber, headSha, baseRef, headRef });
+
+    // Set up deadline/abort control for the downstream call(s)
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), DEADLINE_MS);
+
+    try {
+      const runPayload = {
+        type: "pull_request",
+        repoFullName: repo,
+        repoId,
+        installationId,
+        prNumber,
+        action,
+        sender,
+        isFromFork,
+        head: {
+          ref: headRef,
+          sha: headSha,
+          repoId: head.repoId || (head.repo && head.repo.id) || null,
+          repoFullName: head.repoFullName || (head.repo && head.repo.full_name) || null,
+        },
+        base: {
+          ref: baseRef,
+          sha: baseSha,
+          repoId: base.repoId || (base.repo && base.repo.id) || null,
+          repoFullName: base.repoFullName || (base.repo && base.repo.full_name) || null,
+        },
+      };
+
+      await job.updateProgress({ stage: "dispatch", to: "/internal/analysis/pr" });
+
+      const url = process.env.ANALYSIS_INTERNAL_URL + "/internal/analysis/pr";
+      const resp = await axios.post(url, runPayload, {
+        timeout: Math.min(DEADLINE_MS - 1000, 30_000),
+        signal: controller.signal,
+      });
+
+      await job.updateProgress({ stage: "completed", status: resp.status });
+
+      return {
+        ok: true,
+        repo,
+        prNumber,
+        headSha,
+        baseRef,
+        summary: resp.data && resp.data.summary ? resp.data.summary : null,
+      };
+    } catch (err) {
+      // Recognize deadline timeouts and mark accordingly
+      if (err && err.name === "AbortError") {
+        err.message = `PR analysis deadline exceeded (${DEADLINE_MS}ms)`;
+      } else if (axios.isAxiosError && axios.isAxiosError(err)) {
+        // Add context for axios failures
+        const code = err.code || "AXIOS_ERR";
+        const status = err.response && err.response.status;
+        err.message = `PR analysis axios error code=${code} status=${status || "n/a"}: ${err.message}`;
+      }
+      // Let BullMQ handle retries/backoff per job options
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
+  },
+  {
+    connection,
+    concurrency: CONCURRENCY,
+    // lockDuration can be tuned if the job holds the lock longer than default
+    // lockDuration: 600000,
+  }
+)
+
+export const pullAnalysisEvents = new QueueEvents(QUEUE_NAME, { connection });
+pullAnalysisEvents.on("completed", ({ jobId, returnvalue }) => {
+  console.log(`[pullAnalysis] completed ${jobId}`, returnvalue);
+});
+pullAnalysisEvents.on("failed", ({ jobId, failedReason }) => {
+  console.error(`[pullAnalysis] failed ${jobId}: ${failedReason}`);
+});
+pullAnalysisEvents.on("progress", ({ jobId, data }) => {
+  console.log(`[pullAnalysis] progress ${jobId}`, data);
+});
+
+// Worker-level events
+pullAnalysisWorker.on("failed", (job, err) => {
+  console.error(`[pullAnalysis] job failed ${job ? job.id : "unknown"}`, err);
+});
+pullAnalysisWorker.on("completed", job => {
+  console.log(`[pullAnalysis] job completed ${job.id}`);
+});
+pullAnalysisWorker.on("error", err => {
+  // Important to avoid unhandled error events that can stop processing
+  console.error(`[pullAnalysis] worker error`, err);
+});

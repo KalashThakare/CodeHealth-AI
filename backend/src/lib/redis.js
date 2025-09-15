@@ -11,4 +11,5 @@ export const connection = new IORedis({
 });
 
 export const webhookQueue = new Queue("webhooks", { connection });
-export const analysisQueue = new Queue("analysis", {connection});
+export const pushAnalysisQueue = new Queue("pushAnalysis", {connection});
+export const pullAnalysisQueue = new Queue("pullAnalysis", {connection});

@@ -1,4 +1,4 @@
-import { analysisQueue } from "../../lib/redis";
+import { pushAnalysisQueue } from "../../lib/redis";
 
 export async function handlePush(payload) {
 
@@ -29,7 +29,7 @@ export async function handlePush(payload) {
   }
 
   const jobId = headCommit ? `analysis:${repo}:${headCommit}` : `analysis:${repo}:${branch}:${Date.now()}`;
-  await analysisQueue.add('analysis.run', jobData, { jobId });
+  await pushAnalysisQueue.add('analysis.push', jobData, { jobId });
 
   return { enqueued: true, repo, branch, headCommit };
 
