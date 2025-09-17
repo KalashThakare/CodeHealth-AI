@@ -5,7 +5,8 @@ import crypto from 'crypto';
 import User from "../database/models/User.js";
 import { Project } from "../database/models/project.js";
 import { WebhookEvent } from "../database/models/webhookEvents.js";
-import { webhookQueue } from "../lib/redis.js";
+import { pushAnalysisQueue, webhookQueue } from "../lib/redis.js";
+import { handlePush } from "../services/handlers/push.handler.js";
 
 await User.sync();
 await Project.sync();
@@ -239,9 +240,15 @@ export const githubWebhookController = async (req, res) => {
       }
     }
 
-    const jobName = eventToJobName(event);
-    await webhookQueue.add(jobName, { event, payload }, { jobId: deliveryId });
-    await WebhookEvent.update({ status: "enqueued" }, { where: { deliveryId } });
+  
+    if (event === "push") {
+      const result = await handlePush(payload);
+      return res.status(200).json(result);
+    }
+    if (event === "pull_request") {
+      const result = await handlePullRequest(payload);
+      return res.status(200).json(result);
+    }
 
     return res.status(202).send("ACK");
   } catch (err) {

@@ -1,4 +1,4 @@
-import { pushAnalysisQueue } from "../../lib/redis";
+import { pushAnalysisQueue } from "../../lib/redis.js";
 
 export async function handlePush(payload) {
 
