@@ -9,19 +9,23 @@ import { DashboardThemeToggle } from "@/components/ui/DashboardThemeToggle";
 const InvitesPage = () => {
   const router = useRouter();
   const { authUser } = useAuthStore();
-  const { invites, loading, error, fetchInvites, acceptInvite } =
+  const { invites, 
+    loading, 
+    error, 
+    // fetchInvites, 
+    acceptInvite } =
     useTeamStore();
 
-  useEffect(() => {
-    if (authUser) {
-      fetchInvites();
-    }
-  }, [authUser, fetchInvites]);
+  // useEffect(() => {
+  //   if (authUser) {
+  //     fetchInvites();
+  //   }
+  // }, [authUser, fetchInvites]);
 
   const handleAcceptInvite = async (token: string) => {
     const result = await acceptInvite(token);
     if (result) {
-      fetchInvites(); // Refresh invites
+      // fetchInvites(); // Refresh invites
       // Optionally redirect to the team page
       // router.push(`/dashboard/teams/${result.teamId}`);
     }
@@ -32,10 +36,10 @@ const InvitesPage = () => {
     console.log("Decline invite:", inviteId);
   };
 
-  if (!authUser) {
-    router.replace("/login");
-    return null;
-  }
+  // if (!authUser) {
+  //   router.replace("/login");
+  //   return null;
+  // }
 
   return (
     <div className="min-h-screen glass-bg">
@@ -76,7 +80,7 @@ const InvitesPage = () => {
               <h3 className="text-xl font-semibold mb-4 text-red-500">Error</h3>
               <p className="text-text/70 mb-6">{error}</p>
               <button
-                onClick={() => fetchInvites()}
+                // onClick={() => fetchInvites()}
                 className="glass-btn glass-btn-primary px-6 py-3 rounded-lg font-medium transition-all"
               >
                 Try Again

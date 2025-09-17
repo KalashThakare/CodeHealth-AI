@@ -152,9 +152,9 @@ function Features() {
               <div className="text-4xl font-bold text-[var(--color-primary)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
                 <span
                   className="stat-number neon-glow-subtle"
-                  data-value="10000"
+                  data-value="1000"
                 >
-                  10,000
+                  1000
                 </span>
                 +
               </div>
@@ -167,9 +167,9 @@ function Features() {
               <div className="text-4xl font-bold text-[var(--color-primary)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
                 <span
                   className="stat-number neon-glow-subtle"
-                  data-value="50000"
+                  data-value="5000"
                 >
-                  50,000
+                  5000
                 </span>
                 +
               </div>
@@ -180,8 +180,8 @@ function Features() {
 
             <div className="glass-subtle glass-theme p-6 rounded-2xl group transition-all duration-300 hover:scale-105">
               <div className="text-4xl font-bold text-[var(--color-primary)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
-                <span className="stat-number neon-glow-subtle" data-value="99">
-                  99
+                <span className="stat-number neon-glow-subtle" data-value="90">
+                  90
                 </span>
                 %
               </div>

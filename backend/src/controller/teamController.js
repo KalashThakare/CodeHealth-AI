@@ -1,5 +1,5 @@
-import Team from "../database/models/team.js"
-import User from "../database/models/User.js"
+import Team from "../database/models/team.js";
+import User from "../database/models/User.js";
 import crypto from "crypto";
 import TeamInvite from "../database/models/teamInvite.js";
 import TeamMember from "../database/models/teamMember.js";
@@ -13,390 +13,402 @@ TeamInvite.sync();
 User.sync();
 
 export const createTeam = async (req, res) => {
-    const t = await sequelize.transaction();
-    try {
-        const userId = req.user?.id;
-        const { name, description } = req.body;
+  const t = await sequelize.transaction();
+  try {
+    const userId = req.user?.id;
+    const { name, description } = req.body;
 
-        if (!userId) {
-            res.status(404).json({ message: "Unauthorised" });
-        }
-        if (!name || !description) {
-            res.status(404).json({ message: "Body looks empty" });
-        }
-
-        const user = await User.findOne({
-            where: {
-                id: userId
-            }
-        });
-
-        if (!user) {
-            res.status(400).json({ message: "User not found" });
-        }
-
-        const team = await Team.create({
-            userId,
-            name,
-            description
-        },
-            { transaction: t }
-        );
-
-        await TeamMember.create(
-            { teamId: team.id, userId, role: "Owner" },
-            { transaction: t }
-        );
-
-        await t.commit();
-
-        return res.status(201).json({
-            message: "Team created",
-            team
-        });
-
-    } catch (error) {
-        await t.rollback();
-        console.error("createTeam error:", error);
-
-        if (error?.name === "SequelizeValidationError") {
-            return res.status(400).json({
-                message: "Validation error",
-                errors: error.errors?.map(e => e.message) || []
-            });
-        }
-
-        if (error?.name === "SequelizeForeignKeyConstraintError") {
-            return res.status(400).json({ message: "Invalid userId" });
-        }
-
-        return res.status(500).json({ message: "Internal server error" });
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
-}
-
-export const sendInvite = async (req, res) => {
-    try {
-        const { email, role, teamId } = req.body;
-
-        if (!email || !role || !teamId) {
-            return res.status(400).json({ error: "email, role, teamId are required" });
-        }
-
-        const { raw, hash } = generateInviteToken();
-        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-        const invite = await TeamInvite.create({
-            teamId,
-            email: email.toLowerCase().trim(),
-            role,
-            tokenHash: hash,
-            invitedBy: req.user.id,
-            expiresAt,
-        });
-
-        const base = process.env.FRONTEND_INVITE_BASE_URL || "http://localhost:3000/invite/accept";
-        const inviteLink = `${base}?token=${raw}`;
-
-        await sendInviteMail(email, role, inviteLink);
-
-        res.status(201).json({
-            id: invite.id,
-            teamId: invite.teamId,
-            email: invite.email,
-            role: invite.role,
-            expiresAt: invite.expiresAt,
-            status: "sent",
-        });
-
-
-    } catch (error) {
-
-        res.status(500).json({ message: "send Invite controller error" });
-        console.error(error);
-
+    if (!name || !description) {
+      return res
+        .status(400)
+        .json({ message: "Name and description are required" });
     }
-}
 
-export const acceptInvite = async (req, res) => {
-    try {
-        const { token } = req.body;
+    const user = await User.findOne({
+      where: { id: userId },
+    });
 
-        if (!token) return res.status(400).json({ error: "token is required" });
-
-        const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-
-        const invite = await TeamInvite.findOne({ where: { tokenHash } });
-
-        if (!invite) return res.status(400).json({ error: "Invalid invite" });
-        if (invite.revokedAt) return res.status(400).json({ error: "Invite revoked" });
-        if (invite.acceptedAt) return res.status(400).json({ error: "Invite already accepted" });
-        if (new Date() > invite.expiresAt) return res.status(400).json({ error: "Invite expired" });
-
-        const user = await User.findByPk(req.user.id);
-        if (!user) return res.status(404).json({ error: "User not found" });
-        if (user.email.toLowerCase() !== invite.email.toLowerCase()) {
-            return res.status(403).json({ error: "Invite email does not match your account" });
-        }
-
-        const [member, created] = await TeamMember.findOrCreate({
-            where: { userId: user.id, teamId: invite.teamId },
-            defaults: { role: invite.role },
-        });
-
-        if (!created) {
-            member.role = invite.role;
-            await member.save();
-        }
-
-        invite.acceptedAt = new Date();
-        await invite.save();
-
-        res.json({
-            teamId: invite.teamId,
-            user: { id: user.id, name: user.name, email: user.email },
-            role: member.role,
-            status: "accepted",
-        });
-
-    } catch (error) {
-
-        res.status(500).json({ message: "accept Invite error" });
-        console.error(error);
-
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
     }
-}
 
-export const removeMember = async (req, res) => {
-    try {
-        const teamId = req.params.teamId || req.body.teamId;
-        const authUser = req.user?.id;
-        const memberId = req.params.memberId;
+    const team = await Team.create(
+      {
+        userId,
+        name,
+        description,
+      },
+      { transaction: t }
+    );
 
-        if (!teamId) return res.status(400).json({ message: "teamId is required" });
-        if (!authUser) return res.status(400).json({ message: "Unauthorised" });
-        if (!memberId) return res.status(400).json({ message: "memberId is required" });
+    await TeamMember.create(
+      { teamId: team.id, userId, role: "Owner" },
+      { transaction: t }
+    );
 
-        const requester = await TeamMember.findOne({
-            where: { teamId, userId: authUser },
-            attributes: ["id", "userId", "role"],
-        });
-        if (!requester) return res.status(403).json({ message: "Not a team member" });
+    await t.commit();
 
-        const canManage = requester.role === "Owner" || requester.role === "Manager";
-        if (!canManage) return res.status(403).json({ message: "Insufficient permissions" });
+    return res.status(201).json({
+      message: "Team created",
+      team,
+    });
+  } catch (error) {
+    await t.rollback();
+    console.error("createTeam error:", error);
 
-        const target = await TeamMember.findOne({
-            where: {
-                teamId,
-                id: memberId
-            },
-            attributes: ["id", "userId", "role"],
-        });
-        if (!target) return res.status(404).json({ message: "Target membership not found" });
-
-        if (target.userId === authUser) {
-            return res.status(400).json({ message: "Use leave endpoint to remove yourself" });
-        }
-
-        await TeamMember.destroy({ where: { id: target.id } });
-
-        return res.status(204).send();
-
-
-    } catch (error) {
-
-        console.error("removeMember error:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-
+    if (error?.name === "SequelizeValidationError") {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: error.errors?.map((e) => e.message) || [],
+      });
     }
-}
+
+    if (error?.name === "SequelizeForeignKeyConstraintError") {
+      return res.status(400).json({ message: "Invalid userId" });
+    }
+
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 export const listMyTeams = async (req, res) => {
-    try {
-        const authUserId = req.user?.id;
-        if (!authUserId) return res.status(401).json({ message: "Unauthorized" });
-
-        const limit = Math.min(parseInt(req.query.limit || "50", 10), 100);
-        const offset = Math.max(parseInt(req.query.offset || "0", 10), 0);
-
-        const { rows, count } = await Team.findAndCountAll({
-            where: { userId: authUserId },
-            attributes: ["id", "name", "slug", "description", "createdAt", "updatedAt"],
-            order: [["name", "ASC"]],
-            limit,
-            offset,
-        });
-
-        return res.json({
-            userId: authUserId,
-            count,
-            limit,
-            offset,
-            teams: rows,
-        });
-
-
-    } catch (err) {
-        console.error("listMyTeams error:", err);
-        return res.status(500).json({ message: "Internal server error" });
+  try {
+    const authUserId = req.user?.id;
+    if (!authUserId) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
-}
+
+    console.log("Fetching teams for user:", authUserId);
+
+    const limit = Math.min(parseInt(req.query.limit || "50", 10), 100);
+    const offset = Math.max(parseInt(req.query.offset || "0", 10), 0);
+
+    const { rows, count } = await Team.findAndCountAll({
+      where: { userId: authUserId },
+      attributes: [
+        "id",
+        "name",
+        "slug",
+        "description",
+        "createdAt",
+        "updatedAt",
+      ],
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset,
+    });
+
+    console.log("Found teams:", rows.length);
+
+    return res.status(200).json({
+      message: "Teams fetched successfully",
+      userId: authUserId,
+      count,
+      limit,
+      offset,
+      teams: rows,
+    });
+  } catch (err) {
+    console.error("listMyTeams error:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const sendInvite = async (req, res) => {
+  try {
+    const { email, role, teamId } = req.body;
+
+    if (!email || !role || !teamId) {
+      return res
+        .status(400)
+        .json({ error: "email, role, teamId are required" });
+    }
+
+    const { raw, hash } = generateInviteToken();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const invite = await TeamInvite.create({
+      teamId,
+      email: email.toLowerCase().trim(),
+      role,
+      tokenHash: hash,
+      invitedBy: req.user.id,
+      expiresAt,
+    });
+
+    const base =
+      process.env.FRONTEND_INVITE_BASE_URL ||
+      "http://localhost:3000/invite/accept";
+    const inviteLink = `${base}?token=${raw}`;
+
+    await sendInviteMail(email, role, inviteLink);
+
+    return res.status(201).json({
+      message: "Invite sent successfully",
+      invite: {
+        id: invite.id,
+        teamId: invite.teamId,
+        email: invite.email,
+        role: invite.role,
+        expiresAt: invite.expiresAt,
+        status: "sent",
+      },
+    });
+  } catch (error) {
+    console.error("sendInvite error:", error);
+    return res.status(500).json({ message: "Send invite controller error" });
+  }
+};
+
+export const acceptInvite = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ error: "token is required" });
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const invite = await TeamInvite.findOne({ where: { tokenHash } });
+
+    if (!invite) return res.status(400).json({ error: "Invalid invite" });
+    if (invite.revokedAt)
+      return res.status(400).json({ error: "Invite revoked" });
+    if (invite.acceptedAt)
+      return res.status(400).json({ error: "Invite already accepted" });
+    if (new Date() > invite.expiresAt)
+      return res.status(400).json({ error: "Invite expired" });
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (user.email.toLowerCase() !== invite.email.toLowerCase()) {
+      return res
+        .status(403)
+        .json({ error: "Invite email does not match your account" });
+    }
+
+    const [member, created] = await TeamMember.findOrCreate({
+      where: { userId: user.id, teamId: invite.teamId },
+      defaults: { role: invite.role },
+    });
+
+    if (!created) {
+      member.role = invite.role;
+      await member.save();
+    }
+
+    invite.acceptedAt = new Date();
+    await invite.save();
+
+    return res.status(200).json({
+      message: "Invite accepted successfully",
+      teamId: invite.teamId,
+      user: { id: user.id, name: user.name, email: user.email },
+      role: member.role,
+      status: "accepted",
+    });
+  } catch (error) {
+    console.error("acceptInvite error:", error);
+    return res.status(500).json({ message: "Accept invite error" });
+  }
+};
 
 export const listTeamMembers = async (req, res) => {
-    try {
-        const teamId = req.params.teamId || req.query.teamId;
-        if (!teamId) return res.status(400).json({ error: "teamId is required" });
-
-        const team = await Team.findByPk(teamId, {
-            include: [{
-                model: User,
-                as: "members",
-                attributes: ["id", "name", "email"],
-                through: { attributes: ["role"] },
-            }],
-        });
-
-        if (!team) return res.status(404).json({ error: "Team not found" });
-
-        const members = (team.members || []).map(u => ({
-            id: u.id,
-            name: u.name || u.email.split("@")[0],
-            email: u.email,
-            role: u.TeamMember.role,
-        }));
-
-        return res.json(members);
-    } catch (err) {
-        console.error(err)
+  try {
+    const teamId = req.params.teamId;
+    if (!teamId) {
+      return res.status(400).json({ error: "teamId is required" });
     }
+
+    const team = await Team.findByPk(teamId, {
+      include: [
+        {
+          model: User,
+          as: "members",
+          attributes: ["id", "name", "email"],
+          through: { attributes: ["role"] },
+        },
+      ],
+    });
+
+    if (!team) {
+      return res.status(404).json({ error: "Team not found" });
+    }
+
+    const members = (team.members || []).map((u) => ({
+      id: u.id,
+      name: u.name || u.email.split("@")[0],
+      email: u.email,
+      role: u.TeamMember.role,
+    }));
+
+    return res.status(200).json({
+      message: "Members fetched successfully",
+      members,
+    });
+  } catch (err) {
+    console.error("listTeamMembers error:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const removeMember = async (req, res) => {
+  try {
+    const teamId = req.params.teamId;
+    const authUser = req.user?.id;
+    const memberId = req.params.memberId;
+
+    if (!teamId) return res.status(400).json({ message: "teamId is required" });
+    if (!authUser) return res.status(401).json({ message: "Unauthorized" });
+    if (!memberId)
+      return res.status(400).json({ message: "memberId is required" });
+
+    const requester = await TeamMember.findOne({
+      where: { teamId, userId: authUser },
+      attributes: ["id", "userId", "role"],
+    });
+    if (!requester)
+      return res.status(403).json({ message: "Not a team member" });
+
+    const canManage =
+      requester.role === "Owner" || requester.role === "Manager";
+    if (!canManage)
+      return res.status(403).json({ message: "Insufficient permissions" });
+
+    const target = await TeamMember.findOne({
+      where: { teamId, id: memberId },
+      attributes: ["id", "userId", "role"],
+    });
+    if (!target)
+      return res.status(404).json({ message: "Target membership not found" });
+
+    if (target.userId === authUser) {
+      return res
+        .status(400)
+        .json({ message: "Use leave endpoint to remove yourself" });
+    }
+
+    await TeamMember.destroy({ where: { id: target.id } });
+    return res.status(204).send();
+  } catch (error) {
+    console.error("removeMember error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 
 export const updateRole = async (req, res) => {
-    try {
+  try {
+    const teamId = req.params.teamId;
+    const memberId = req.params.memberId;
+    const { role: newRole } = req.body;
+    const authUserId = req.user?.id;
 
-        const teamId = req.params.teamId || req.body.teamId;
-        const memberId = req.params.memberId || req.body.memberId;
-        const newRole = req.body;
+    if (!authUserId) return res.status(401).json({ message: "Unauthorized" });
+    if (!teamId) return res.status(400).json({ message: "teamId is required" });
+    if (!newRole)
+      return res.status(400).json({ message: "No new role provided" });
+    if (!memberId)
+      return res.status(400).json({ message: "memberId is required" });
 
-        const authUserId = req.user?.id;
-
-        if (!authUserId) return res.status(401).json({ message: "Unauthorized" });
-        if (!teamId) return res.status(400).json({ message: "teamId is required" });
-        if (!newRole) return res.status(400).json({ message: "No new role provided" });
-        if (!memberId && !targetUserId) {
-            return res.status(400).json({ message: "memberId or userId is required" });
-        }
-
-        const requesterMembership = await TeamMember.findOne({
-            where: { teamId, userId: authUserId },
-            attributes: ["id", "role"],
-        });
-        if (!requesterMembership) {
-            return res.status(403).json({ message: "Not a team member" });
-        }
-        if (requesterMembership.role !== "Owner") {
-            return res.status(403).json({ message: "Only Owners can update roles" });
-        }
-
-        const targetWhere = memberId
-            ? { id: memberId, teamId }
-            : { teamId, userId: targetUserId };
-
-        const targetMembership = await TeamMember.findOne({
-            where: targetWhere,
-            attributes: ["id", "userId", "teamId", "role"],
-        });
-
-        if (!targetMembership) {
-            return res.status(404).json({ message: "Target membership not found" });
-        }
-
-        if (targetMembership.userId === authUserId) {
-            return res.status(400).json({ message: "Owners cannot change their own role" });
-        }
-
-
-        targetMembership.role = newRole;
-        await targetMembership.save();
-
-        return res.json({
-            id: targetMembership.id,
-            teamId: targetMembership.teamId,
-            userId: targetMembership.userId,
-            role: targetMembership.role,
-            message: "Role updated",
-        });
-
-    } catch (error) {
-        console.error("updateRole error:", error);
-        return res.status(500).json({ message: "Internal Server Error" });
+    const requesterMembership = await TeamMember.findOne({
+      where: { teamId, userId: authUserId },
+      attributes: ["id", "role"],
+    });
+    if (!requesterMembership) {
+      return res.status(403).json({ message: "Not a team member" });
     }
-}
+    if (requesterMembership.role !== "Owner") {
+      return res.status(403).json({ message: "Only Owners can update roles" });
+    }
+
+    const targetMembership = await TeamMember.findOne({
+      where: { id: memberId, teamId },
+      attributes: ["id", "userId", "teamId", "role"],
+    });
+
+    if (!targetMembership) {
+      return res.status(404).json({ message: "Target membership not found" });
+    }
+
+    if (targetMembership.userId === authUserId) {
+      return res
+        .status(400)
+        .json({ message: "Owners cannot change their own role" });
+    }
+
+    targetMembership.role = newRole;
+    await targetMembership.save();
+
+    return res.status(200).json({
+      message: "Role updated successfully",
+      id: targetMembership.id,
+      teamId: targetMembership.teamId,
+      userId: targetMembership.userId,
+      role: targetMembership.role,
+    });
+  } catch (error) {
+    console.error("updateRole error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 export const leaveTeam = async (req, res) => {
-    try {
-        const { teamId } = req.params.teamId || req.body
-        const authUserId = req.user?.id
-        if (!authUserId) return res.status(400).json({ message: "Unauthorised" });
-        if (!teamId) return res.status(400).json({ message: "teamId is required" });
+  try {
+    const teamId = req.params.teamId;
+    const authUserId = req.user?.id;
 
-        const membership = TeamMember.findOne({
-            where: {
-                teamId,
-                userId: authUserId
-            },
-            attributes: [
-                "id", "role", "userId", "teamId"
-            ]
-        })
+    if (!authUserId) return res.status(401).json({ message: "Unauthorized" });
+    if (!teamId) return res.status(400).json({ message: "teamId is required" });
 
-        if (!membership) return res.status(404).json({ message: "not a member" });
+    const membership = await TeamMember.findOne({
+      where: { teamId, userId: authUserId },
+      attributes: ["id", "role", "userId", "teamId"],
+    });
 
-        if (membership.role == "Owner") return res.status(400).json({ message: "Cannot leave you are the owner" });
+    if (!membership) return res.status(404).json({ message: "Not a member" });
+    if (membership.role === "Owner")
+      return res
+        .status(400)
+        .json({ message: "Cannot leave, you are the owner" });
 
-        await TeamMember.destroy({ where: { id: membership.id } });
-
-        return res.status(204).send();
-
-    } catch (error) {
-
-        console.error("leaveTeam error:", error);
-        return res.status(500).json({ message: "Internal Server Error" });
-
-    }
-}
+    await TeamMember.destroy({ where: { id: membership.id } });
+    return res.status(204).send();
+  } catch (error) {
+    console.error("leaveTeam error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 export const deleteTeam = async (req, res) => {
-    try {
-        const { teamId } = req.params.teamId || req.body.teamId;
-        const authUserId = req.user?.id;
+  try {
+    const teamId = req.params.teamId;
+    const authUserId = req.user?.id;
 
-        if (!authUserId) return res.status(400).json({ message: "Unauthorised" });
-        if (!teamId) return res.status(400).json({ message: "teamId is required" });
+    if (!authUserId) return res.status(401).json({ message: "Unauthorized" });
+    if (!teamId) return res.status(400).json({ message: "teamId is required" });
 
-        const team = await Team.findOne({ where: { id: teamId } });
-        if (!team) {
-            return res.status(404).json({ message: "Team not found" });
-        }
-
-        const membership = TeamMember.findOne({
-            where: {
-                teamId,
-                userId: authUserId
-            },
-            attributes: [
-                "id", "role", "userId", "teamId"
-            ]
-        })
-
-        if (membership.role == "Member" || membership.role == "Manager") return res.status(400).json({ message: "You dont have permission" });
-
-        await team.destroy();
-
-        return res.status(200).json({ message: "Team deleted successfully" });
-
-    } catch (error) {
-        console.error("deleteTeam error:", error);
-        return res.status(500).json({ message: "Internal server error" });
+    const team = await Team.findOne({ where: { id: teamId } });
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
     }
-}
+
+    const membership = await TeamMember.findOne({
+      where: { teamId, userId: authUserId },
+      attributes: ["id", "role", "userId", "teamId"],
+    });
+
+    if (!membership)
+      return res.status(403).json({ message: "Not a team member" });
+    if (membership.role !== "Owner")
+      return res.status(403).json({ message: "You don't have permission" });
+
+    await team.destroy();
+    return res.status(200).json({ message: "Team deleted successfully" });
+  } catch (error) {
+    console.error("deleteTeam error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

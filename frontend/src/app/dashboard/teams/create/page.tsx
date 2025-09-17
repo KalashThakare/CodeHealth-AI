@@ -1,48 +1,55 @@
 "use client";
-import { useTeamStore } from "@/store/teamStore";
-import { useAuthStore } from "@/store/authStore";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import Link from "next/link";
-import { DashboardThemeToggle } from "@/components/ui/DashboardThemeToggle";
+import { useTeamStore } from "@/store/teamStore";
+import {
+  ArrowLeft,
+  Users,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 
 const CreateTeamPage = () => {
   const router = useRouter();
-  const { authUser } = useAuthStore();
-  const { createTeam, loading, error } = useTeamStore();
+  const { createTeam, loading, error, clearError } = useTeamStore();
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
   });
-
-  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
+  const [validationErrors, setValidationErrors] = useState<{
+    name?: string;
+    description?: string;
+  }>({});
 
   const validateForm = () => {
-    const errors: { [key: string]: string } = {};
+    const errors: typeof validationErrors = {};
 
     if (!formData.name.trim()) {
       errors.name = "Team name is required";
-    } else if (formData.name.trim().length < 3) {
+    } else if (formData.name.length < 3) {
       errors.name = "Team name must be at least 3 characters";
-    } else if (formData.name.trim().length > 50) {
+    } else if (formData.name.length > 50) {
       errors.name = "Team name must be less than 50 characters";
     }
 
     if (!formData.description.trim()) {
       errors.description = "Team description is required";
-    } else if (formData.description.trim().length < 10) {
+    } else if (formData.description.length < 10) {
       errors.description = "Description must be at least 10 characters";
-    } else if (formData.description.trim().length > 200) {
+    } else if (formData.description.length > 200) {
       errors.description = "Description must be less than 200 characters";
     }
 
-    setFormErrors(errors);
+    setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    clearError();
 
     if (!validateForm()) {
       return;
@@ -54,78 +61,128 @@ const CreateTeamPage = () => {
     });
 
     if (team) {
-      router.push(`/dashboard/teams/${team.id || team._id}`);
+      router.push(`/dashboard/teams/${team.id}`);
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-
-    // Clear field error when user starts typing
-    if (formErrors[field]) {
-      setFormErrors((prev) => ({
-        ...prev,
-        [field]: "",
-      }));
+  const handleChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear validation error when user starts typing
+    if (validationErrors[field as keyof typeof validationErrors]) {
+      setValidationErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
-
-  if (!authUser) {
-    router.replace("/login");
-    return null;
-  }
 
   return (
-    <div className="min-h-screen glass-bg">
-      {/* Header */}
-      <div className="glass-nav sticky top-0 backdrop-blur-md border-b border-white/10 p-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <div
+      className="min-h-screen p-6"
+      style={{ backgroundColor: "var(--color-bg)" }}
+    >
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
           <Link
             href="/dashboard/teams"
-            className="text-lg font-semibold text-primary hover:text-primary/80"
+            className="inline-flex items-center space-x-2 mb-4 text-sm hover:opacity-80 transition-opacity"
+            style={{ color: "var(--color-fg-secondary)" }}
           >
-            ← Back to Teams
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Teams</span>
           </Link>
-          <DashboardThemeToggle />
-        </div>
-      </div>
 
-      <div className="max-w-2xl mx-auto p-6">
-        {/* Page Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold mb-4">Create New Team</h1>
-          <p className="text-text/70">
-            Start collaborating by creating your team
-          </p>
+          <div className="flex items-center space-x-3">
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: "var(--color-card)" }}
+            >
+              <Users
+                className="w-6 h-6"
+                style={{ color: "var(--color-primary)" }}
+              />
+            </div>
+            <div>
+              <h1
+                className="text-3xl font-bold"
+                style={{ color: "var(--color-fg)" }}
+              >
+                Create New Team
+              </h1>
+              <p
+                className="mt-1"
+                style={{ color: "var(--color-fg-secondary)" }}
+              >
+                Set up a new team to collaborate with others
+              </p>
+            </div>
+          </div>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div
+            className="mb-6 p-4 rounded-lg border flex items-center space-x-3"
+            style={{
+              backgroundColor: "var(--color-card)",
+              borderColor: "#ef4444",
+              color: "#ef4444",
+            }}
+          >
+            <AlertCircle className="w-5 h-5" />
+            <span>{error}</span>
+            <button
+              onClick={clearError}
+              className="ml-auto text-sm underline hover:no-underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Form */}
-        <div className="glass-card p-8 rounded-2xl shadow-xl">
+        <div
+          className="p-8 rounded-lg border"
+          style={{
+            backgroundColor: "var(--color-card)",
+            borderColor: "var(--color-border)",
+          }}
+        >
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Team Name */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium mb-2"
+                style={{ color: "var(--color-fg)" }}
+              >
                 Team Name *
               </label>
               <input
                 type="text"
                 id="name"
                 value={formData.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
+                onChange={(e) => handleChange("name", e.target.value)}
                 placeholder="Enter team name"
-                className={`w-full bg-transparent border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all ${
-                  formErrors.name
-                    ? "border-red-400 focus:border-red-400"
-                    : "border-white/10 focus:border-transparent"
+                className={`w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 transition-colors ${
+                  validationErrors.name ? "border-red-500" : ""
                 }`}
+                style={{
+                  backgroundColor: "var(--color-bg)",
+                  borderColor: validationErrors.name
+                    ? "#ef4444"
+                    : "var(--color-border)",
+                  color: "var(--color-fg)",
+                }}
+                disabled={loading}
               />
-              {formErrors.name && (
-                <p className="text-red-400 text-sm mt-2">{formErrors.name}</p>
+              {validationErrors.name && (
+                <p className="mt-1 text-sm text-red-500">
+                  {validationErrors.name}
+                </p>
               )}
-              <p className="text-text/50 text-xs mt-1">
+              <p
+                className="mt-1 text-xs"
+                style={{ color: "var(--color-fg-secondary)" }}
+              >
                 {formData.name.length}/50 characters
               </p>
             </div>
@@ -135,49 +192,76 @@ const CreateTeamPage = () => {
               <label
                 htmlFor="description"
                 className="block text-sm font-medium mb-2"
+                style={{ color: "var(--color-fg)" }}
               >
-                Team Description *
+                Description *
               </label>
               <textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) =>
-                  handleInputChange("description", e.target.value)
-                }
-                placeholder="Describe what your team does..."
+                onChange={(e) => handleChange("description", e.target.value)}
+                placeholder="Describe what this team is for..."
                 rows={4}
-                className={`w-full bg-transparent border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none ${
-                  formErrors.description
-                    ? "border-red-400 focus:border-red-400"
-                    : "border-white/10 focus:border-transparent"
+                className={`w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 transition-colors resize-none ${
+                  validationErrors.description ? "border-red-500" : ""
                 }`}
+                style={{
+                  backgroundColor: "var(--color-bg)",
+                  borderColor: validationErrors.description
+                    ? "#ef4444"
+                    : "var(--color-border)",
+                  color: "var(--color-fg)",
+                }}
+                disabled={loading}
               />
-              {formErrors.description && (
-                <p className="text-red-400 text-sm mt-2">
-                  {formErrors.description}
+              {validationErrors.description && (
+                <p className="mt-1 text-sm text-red-500">
+                  {validationErrors.description}
                 </p>
               )}
-              <p className="text-text/50 text-xs mt-1">
+              <p
+                className="mt-1 text-xs"
+                style={{ color: "var(--color-fg-secondary)" }}
+              >
                 {formData.description.length}/200 characters
               </p>
             </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="p-4 bg-red-50/10 border border-red-400/20 rounded-lg">
-                <p className="text-red-400 text-sm">{error}</p>
+            {/* Info Box */}
+            <div
+              className="p-4 rounded-lg border"
+              style={{
+                backgroundColor: "var(--color-bg-secondary)",
+                borderColor: "var(--color-border)",
+              }}
+            >
+              <div className="flex items-start space-x-3">
+                <CheckCircle
+                  className="w-5 h-5 mt-0.5"
+                  style={{ color: "var(--color-primary)" }}
+                />
+                <div>
+                  <h4
+                    className="font-medium mb-1"
+                    style={{ color: "var(--color-fg)" }}
+                  >
+                    What happens after creating a team?
+                  </h4>
+                  <ul
+                    className="text-sm space-y-1"
+                    style={{ color: "var(--color-fg-secondary)" }}
+                  >
+                    <li>• You'll be automatically set as the team owner</li>
+                    <li>• You can invite members via email</li>
+                    <li>• Start collaborating on projects immediately</li>
+                    <li>• Manage roles and permissions</li>
+                  </ul>
+                </div>
               </div>
-            )}
+            </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-4 pt-4">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="flex-1 glass-btn glass-btn-secondary px-6 py-3 rounded-lg font-medium transition-all"
-              >
-                Cancel
-              </button>
+            {/* Form Actions */}
+            <div className="flex items-center space-x-4 pt-4">
               <button
                 type="submit"
                 disabled={
@@ -185,54 +269,38 @@ const CreateTeamPage = () => {
                   !formData.name.trim() ||
                   !formData.description.trim()
                 }
-                className={`flex-1 glass-btn glass-btn-primary px-6 py-3 rounded-lg font-medium transition-all ${
-                  loading ||
-                  !formData.name.trim() ||
-                  !formData.description.trim()
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                }`}
+                className="flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: "var(--color-primary)",
+                  color: "white",
+                }}
               >
                 {loading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Creating...
-                  </div>
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Creating...</span>
+                  </>
                 ) : (
-                  "Create Team"
+                  <>
+                    <Users className="w-4 h-4" />
+                    <span>Create Team</span>
+                  </>
                 )}
               </button>
+
+              <Link
+                href="/dashboard/teams"
+                className="px-6 py-3 rounded-lg border font-medium transition-colors"
+                style={{
+                  color: "var(--color-fg)",
+                  borderColor: "var(--color-border)",
+                  backgroundColor: "transparent",
+                }}
+              >
+                Cancel
+              </Link>
             </div>
           </form>
-
-          {/* Team Creation Tips */}
-          <div className="mt-8 pt-8 border-t border-white/10">
-            <h3 className="text-lg font-semibold mb-4">
-              Tips for Creating a Great Team
-            </h3>
-            <ul className="space-y-2 text-text/70 text-sm">
-              <li className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                <span>
-                  Choose a descriptive name that reflects your team's purpose
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                <span>
-                  Write a clear description to help members understand the
-                  team's goals
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                <span>
-                  You'll be able to invite members and add projects after
-                  creating the team
-                </span>
-              </li>
-            </ul>
-          </div>
         </div>
       </div>
     </div>
