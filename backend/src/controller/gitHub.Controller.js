@@ -7,6 +7,7 @@ import { Project } from "../database/models/project.js";
 import { WebhookEvent } from "../database/models/webhookEvents.js";
 import { pushAnalysisQueue, webhookQueue } from "../lib/redis.js";
 import { handlePush } from "../services/handlers/push.handler.js";
+import { handleIssues } from "../services/handlers/issues.handler.js";
 
 await User.sync();
 await Project.sync();
@@ -247,6 +248,10 @@ export const githubWebhookController = async (req, res) => {
     }
     if (event === "pull_request") {
       const result = await handlePullRequest(payload);
+      return res.status(200).json(result);
+    }
+    if (event === "issues") {
+      const result = await handleIssues(payload);
       return res.status(200).json(result);
     }
 
