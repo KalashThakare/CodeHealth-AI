@@ -1,0 +1,138 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class  # [web:1][web:2][web:4]
+
+# C extensions
+*.so  # [web:1][web:2][web:4]
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST  # [web:1][web:2][web:4]
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt  # [web:1][web:2][web:4]
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/  # [web:1][web:2][web:4]
+
+# Translations
+*.mo
+*.pot  # [web:1][web:2][web:4]
+
+# Django stuff
+local_settings.py
+db.sqlite3
+db.sqlite3-journal  # [web:1][web:20]
+
+# Flask stuff
+instance/
+.webassets-cache  # [web:1][web:2][web:4]
+
+# Scrapy stuff
+.scrapy  # [web:1][web:2][web:4]
+
+# Sphinx documentation
+docs/_build/
+doc/_build/  # [web:1][web:2][web:4]
+
+# Jupyter Notebook
+.ipynb_checkpoints  # [web:1][web:2][web:4]
+
+# IPython
+profile_default/
+ipython_config.py  # [web:1][web:2][web:4]
+
+# pyenv
+.python-version  # [web:1][web:2][web:4]
+
+# pipenv
+Pipfile.lock  # often committed in apps; ignore if preferring reproducible via requirements.txt only  # [web:1][web:2][web:4]
+
+# poetry
+poetry.lock  # same note as pipenv; choose per workflow  # [web:1][web:2][web:4]
+
+# PDM
+.pdm.toml
+__pypackages__/  # [web:1][web:2][web:4]
+
+# PEP 582; used by e.g. pdm
+__pypackages__/  # [web:1][web:2][web:4]
+
+# Celery
+celerybeat-schedule
+celerybeat.pid  # [web:1][web:2][web:4]
+
+# SageMath parsed files
+*.sage.py  # [web:1][web:2][web:4]
+
+# Environments
+.env
+.env.*
+.venv
+venv/
+ENV/
+env/
+.venv/
+venv.bak/
+env.bak/  # [web:1][web:2][web:4]
+
+# Virtualenv (explicit)
+bin/
+Include/
+Lib/
+Scripts/
+pyvenv.cfg  # [web:1][web:2][web:4]
+
+# Spyder
+.spyderproject
+.spyproject  # [web:1][web:2][web:4]
+
+# Rope
+.ropeproject  # [web:1][web:2][web:4]
+
+# mkdocs
+/site  # [web:1][web:2][web:4]
+
+# mypy / pytype / pyre
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.pyre/  # [web:1][web:2][web:4]
+
+# Cython
+cython_debug/  # [web:1][web:2][web:4]
+
+# Editors/IDE (prefer global gitignore; include here if project policy)
+.vscode/
+.idea/
+*.sublime-*  # [web:4][web:11][web:8]
