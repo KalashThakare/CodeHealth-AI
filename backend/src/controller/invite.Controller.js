@@ -3,11 +3,18 @@ import TeamInvite from "../database/models/teamInvite.js";
 import TeamMember from "../database/models/teamMember.js";
 import User from "../database/models/User.js";
 import { sendInviteMail } from "../lib/mail/noodemailer.js";
+import crypto from "crypto";
 
 Team.sync();
 TeamMember.sync();
 TeamInvite.sync();
 User.sync();
+
+export function generateInviteToken() {
+  const raw = crypto.randomBytes(32).toString('base64url');
+  const hash = crypto.createHash('sha256').update(raw).digest('hex'); 
+  return { raw, hash };
+}
 
 export const sendInvite = async (req, res) => {
   try {
