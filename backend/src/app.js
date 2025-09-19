@@ -11,6 +11,7 @@ import teamRoutes from "./routes/teamRoutes.js";
 import { protectRoute } from "./middleware/auth.middleware.js";
 import { receiveFeedbackController } from "./controller/feedback&review.Controller.js";
 import accountRoutes from "../src/routes/account.Routes.js"
+import "./database/models/index.js"
 
 
 dotenv.config();

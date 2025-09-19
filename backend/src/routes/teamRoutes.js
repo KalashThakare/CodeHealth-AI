@@ -20,7 +20,7 @@ router.get("/:teamId/members", protectRoute, listTeamMembers);
 
 router.post("/:teamId/invites", protectRoute, canInvite, sendInvite);
 router.post("/invites/accept", protectRoute, acceptInvite);
-router.get("/:teamId/invites", protectRoute, listTeamInvites);
+router.get("/:teamId/invites", listTeamInvites);
 router.get("/invites/received", protectRoute, listMyInvites);
 router.post("/invites/decline", protectRoute, declineInvite);
 router.delete("/:teamId/invites/:inviteId", protectRoute, deleteTeamInvite);

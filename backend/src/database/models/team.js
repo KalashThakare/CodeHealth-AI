@@ -32,7 +32,5 @@ const Team = sequelize.define("Team", {
     ],
 });
 
-User.hasMany(Team, { foreignKey: "userId", as: "createdTeams" });
-Team.belongsTo(User, { foreignKey: "userId", as: "creator" });
 
 export default Team;
