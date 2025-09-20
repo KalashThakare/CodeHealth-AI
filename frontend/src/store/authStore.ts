@@ -5,7 +5,7 @@ import { axiosInstance } from '@/lib/axios';
 import { toast } from 'sonner';
 
 interface User {
-  _id: string;
+  id: string;
   email: string;
   name: string;
 }
@@ -23,7 +23,7 @@ interface SignupData {
 
 interface AuthResponse {
   token?: string;
-  _id: string;
+  id: string;
   email: string;
   name: string;
 }
@@ -31,7 +31,9 @@ interface AuthResponse {
 interface AuthStore {
   authUser: User | null;
   isloggingin: boolean;
-  checkAuth: (router: NextRouter) => Promise<void>;
+  isHydrated: boolean;
+  setHydrated: () => void;
+  checkAuth: (router?: any) => Promise<void>;
   login: (data: LoginData) => Promise<AuthResponse | null>;
   logout: () => Promise<void>;
   signup: (data: SignupData) => Promise<number>;
@@ -43,17 +45,19 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       authUser: null,
       isloggingin: true,
+      isHydrated: false,
 
+      setHydrated: () => set({ isHydrated: true }),
 
       // Check Auth
-      checkAuth: async (router: NextRouter): Promise<void> => {
+      checkAuth: async (router?: any): Promise<void> => {
         set({ isloggingin: true });
         try {
           const token = localStorage.getItem("authToken");
 
           if (!token) {
             set({ authUser: null, isloggingin: false });
-            router.push("/");
+            // Don't auto-redirect here - let components handle it
             return;
           }
 
@@ -64,19 +68,39 @@ export const useAuthStore = create<AuthStore>()(
           if (res.data) {
             set({ authUser: res.data, isloggingin: false });
           } else {
+            // Token invalid but don't redirect automatically
+            localStorage.removeItem("authToken");
             set({ authUser: null, isloggingin: false });
           }
         } catch (error: any) {
+          console.error("Auth check error:", error);
+
           const status = error?.response?.status;
+
+          // FIXED: Only handle actual auth errors, not network issues
           if (status === 401 || status === 403) {
-            toast.warning("Session expired. Please login again.");
+            // Only show toast and remove token, don't auto-redirect
+            console.log("Authentication failed - token invalid");
+            localStorage.removeItem("authToken");
+            set({ authUser: null, isloggingin: false });
+
+            // Only redirect if router is provided and we're not already on auth page
+            if (
+              router &&
+              typeof window !== "undefined" &&
+              !window.location.pathname.includes("/login")
+            ) {
+              toast.warning("Session expired. Please login again.");
+              router.push("/login");
+            }
           } else {
-            toast.error("Failed to check authentication");
+            // Network error or other issue - don't log out
+            console.log(
+              "Network error during auth check, maintaining current state"
+            );
+            set({ isloggingin: false });
+            // Keep existing authUser state if it exists
           }
-          localStorage.removeItem("authToken");
-          set({ authUser: null, isloggingin: false });
-          localStorage.removeItem("useDefaultAfterLogin");
-          router.push("/Auth");
         }
       },
 
@@ -84,7 +108,10 @@ export const useAuthStore = create<AuthStore>()(
       login: async (data: LoginData): Promise<AuthResponse | null> => {
         set({ isloggingin: true });
         try {
-          const res = await axiosInstance.post<AuthResponse>("/manual-auth/login", data);
+          const res = await axiosInstance.post<AuthResponse>(
+            "/manual-auth/login",
+            data
+          );
           console.log("Login response:", res.data);
           if (res.data?.token) {
             console.log("User logged in:", res.data);
@@ -128,7 +155,10 @@ export const useAuthStore = create<AuthStore>()(
       signup: async (data: SignupData): Promise<number> => {
         set({ isloggingin: true });
         try {
-          const res = await axiosInstance.post<AuthResponse>("/manual-auth/signup", data);
+          const res = await axiosInstance.post<AuthResponse>(
+            "/manual-auth/signup",
+            data
+          );
           if (res.data?.token) {
             localStorage.setItem("authToken", res.data.token);
           }
@@ -152,6 +182,10 @@ export const useAuthStore = create<AuthStore>()(
       partialize: (state) => ({
         authUser: state.authUser,
       }),
+      onRehydrateStorage: () => (state) => {
+        // Set hydrated flag when store is rehydrated
+        state?.setHydrated();
+      },
     }
   )
 );

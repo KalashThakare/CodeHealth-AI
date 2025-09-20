@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useTeamStore } from "@/store/teamStore";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { DashboardNavbar } from "./_components/DashboardNavbar";
+import Link from "next/link";
 
 const Dashboard = () => {
   const router = useRouter();
@@ -13,17 +13,25 @@ const Dashboard = () => {
   const authUser = useAuthStore((s) => s.authUser);
   const isLoggingIn = useAuthStore((s) => s.isloggingin);
   const checkAuth = useAuthStore((s) => s.checkAuth);
-  const logout = useAuthStore((s) => s.logout);
 
   const teams = useTeamStore((s) => s.teams);
-  const invites = useTeamStore((s) => s.invites);
+  const myInvites = useTeamStore((s) => s.myInvites);
   const fetchTeams = useTeamStore((s) => s.fetchTeams);
+  const fetchMyInvites = useTeamStore((s) => s.fetchMyInvites);
   const teamsLoading = useTeamStore((s) => s.loading);
   const teamsLoaded = useTeamStore((s) => s.teamsLoaded);
+  const myInvitesLoaded = useTeamStore((s) => s.myInvitesLoaded);
 
   const [isInitializing, setIsInitializing] = useState(true);
   const initRef = useRef(false);
-  const teamsFetchRef = useRef(false);
+  const dataFetchRef = useRef(false);
+
+  // ✅ CHANGE: Enhanced debugging to understand invite flow
+  console.log("=== DASHBOARD DEBUG ===");
+  console.log("myInvites (invites I received):", myInvites);
+  console.log("myInvites length:", myInvites.length);
+  console.log("authUser email:", authUser?.email);
+  console.log("========================");
 
   // One-time initialization (guard StrictMode double-call)
   useEffect(() => {
@@ -48,13 +56,45 @@ const Dashboard = () => {
     initialize();
   }, [checkAuth, router]);
 
-  // Fetch teams once after auth resolved
   useEffect(() => {
     if (!authUser || isInitializing) return;
-    if (teamsLoaded || teamsFetchRef.current) return;
-    teamsFetchRef.current = true;
-    fetchTeams();
-  }, [authUser, isInitializing, fetchTeams, teamsLoaded]);
+    if (dataFetchRef.current) return; // Prevent multiple calls
+
+    dataFetchRef.current = true;
+
+    const fetchData = async () => {
+      try {
+        console.log("🔄 Dashboard: Starting data fetch...");
+
+        // Fetch teams and received invites concurrently
+        const promises = [];
+
+        if (!teamsLoaded) {
+          console.log("📋 Fetching teams...");
+          promises.push(fetchTeams());
+        }
+
+        if (!myInvitesLoaded) {
+          console.log("📨 Fetching my received invites...");
+          promises.push(fetchMyInvites());
+        }
+
+        await Promise.all(promises);
+        console.log("✅ Dashboard data fetch completed");
+      } catch (error) {
+        console.error("❌ Error fetching dashboard data:", error);
+      }
+    };
+
+    fetchData();
+  }, [
+    authUser,
+    isInitializing,
+    fetchTeams,
+    fetchMyInvites,
+    teamsLoaded,
+    myInvitesLoaded,
+  ]);
 
   // Redirect if not authenticated after init
   useEffect(() => {
@@ -89,6 +129,25 @@ const Dashboard = () => {
     );
   }
 
+  const pendingReceivedInvites = myInvites.filter((invite) => {
+    const now = new Date();
+    const expiresAt = new Date(invite.expiresAt);
+
+    const isPending =
+      invite.status === "pending" ||
+      (!invite.acceptedAt && !invite.revokedAt && now < expiresAt);
+
+    console.log(
+      `Invite ${invite.id}: email=${invite.email}, status=${invite.status}, isPending=${isPending}`
+    );
+    return isPending;
+  });
+
+  console.log(
+    "📊 Pending received invites count:",
+    pendingReceivedInvites.length
+  );
+
   return (
     <div className="min-h-screen glass-bg">
       <DashboardNavbar currentTeam={teams[0]} />
@@ -104,7 +163,7 @@ const Dashboard = () => {
           <div className="glass-card p-6 rounded-2xl shadow-xl text-center">
             <h3 className="text-lg font-semibold mb-2">Pending Invites</h3>
             <p className="text-3xl font-bold text-yellow-500">
-              {invites.length}
+              {pendingReceivedInvites.length}
             </p>
           </div>
           <div className="glass-card p-6 rounded-2xl shadow-xl text-center">
@@ -205,7 +264,8 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {invites.length > 0 && (
+          {/* FIX: Use pendingInvites instead of invites */}
+          {pendingReceivedInvites.length > 0 && (
             <Link href="/dashboard/invites" className="group">
               <div className="glass-card p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all group-hover:scale-105 border-2 border-yellow-400/30">
                 <div className="flex items-center mb-4">
@@ -227,8 +287,8 @@ const Dashboard = () => {
                   <h3 className="text-xl font-semibold">Invites</h3>
                 </div>
                 <p className="text-text/70 mb-4">
-                  You have {invites.length} pending team invitation
-                  {invites.length !== 1 ? "s" : ""}
+                  You have {pendingReceivedInvites.length} pending team invitation
+                  {pendingReceivedInvites.length !== 1 ? "s" : ""}
                 </p>
                 <div className="text-sm text-yellow-500 font-medium">
                   View Invites →

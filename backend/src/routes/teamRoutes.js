@@ -18,11 +18,14 @@ router.post("/create-team", protectRoute, createTeam);
 router.get("/my/teams", protectRoute, listMyTeams);
 router.get("/:teamId/members", protectRoute, listTeamMembers);
 
+router.get("/invites", protectRoute, listMyInvites);
+
 router.post("/:teamId/invites", protectRoute, canInvite, sendInvite);
 router.post("/invites/accept", protectRoute, acceptInvite);
-router.get("/:teamId/invites", listTeamInvites);
-router.get("/invites/received", protectRoute, listMyInvites);
 router.post("/invites/decline", protectRoute, declineInvite);
+
+router.get("/:teamId/invites", protectRoute, listTeamInvites);
+router.get("/invites/received", protectRoute, listMyInvites);
 router.delete("/:teamId/invites/:inviteId", protectRoute, deleteTeamInvite);
 
 router.patch("/:teamId/members/:memberId/role", protectRoute, updateRole);

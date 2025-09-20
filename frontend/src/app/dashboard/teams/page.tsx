@@ -1,35 +1,28 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { AuthGuard } from "@/services/AuthGuard";
 import { useAuthStore } from "@/store/authStore";
 import { useTeamStore } from "@/store/teamStore";
-import {
-  Plus,
-  Search,
-  Users,
-  Settings,
-  Trash2,
-  LogOut,
-  Mail,
-  Clock,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
+import Link from "next/link";
+import { DashboardNavbar } from "../_components/DashboardNavbar";
 
 const TeamsPage = () => {
   const router = useRouter();
   const { authUser } = useAuthStore();
   const {
     teams,
-    invites,
+    myInvites, 
     loading,
     error,
     fetchTeams,
-    // fetchInvites,
+    fetchMyInvites,
     deleteTeam,
     leaveTeam,
     clearError,
+    teamsLoaded,
+    myInvitesLoaded,
   } = useTeamStore();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,18 +30,26 @@ const TeamsPage = () => {
   const [leavingTeamId, setLeavingTeamId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!authUser) {
-      router.replace("/login");
-      return;
+    if (authUser) {
+      if (!teamsLoaded) {
+        console.log("🔄 Teams page: Fetching user teams...");
+        fetchTeams();
+      }
+      if (!myInvitesLoaded) {
+        console.log("🔄 Teams page: Fetching received invites...");
+        fetchMyInvites();
+      }
     }
+  }, [authUser, fetchTeams, fetchMyInvites, teamsLoaded, myInvitesLoaded]);
 
-    fetchTeams();
-    // fetchInvites();
-  }, [
-    authUser, 
-    fetchTeams, 
-    // fetchInvites
-  ]);
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        clearError();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, clearError]);
 
   const filteredTeams = teams.filter(
     (team) =>
@@ -70,7 +71,7 @@ const TeamsPage = () => {
     setDeletingTeamId(null);
 
     if (success) {
-      // Team will be automatically removed from the store
+      console.log("✅ Team deleted successfully");
     }
   };
 
@@ -84,380 +85,279 @@ const TeamsPage = () => {
     setLeavingTeamId(null);
 
     if (success) {
-      // Team will be automatically removed from the store
+      console.log("✅ Left team successfully");
     }
+  };
+
+  const pendingReceivedInvites = myInvites.filter((invite) => {
+    const now = new Date();
+    const expiresAt = new Date(invite.expiresAt);
+    return (
+      invite.status === "pending" ||
+      (!invite.acceptedAt && !invite.revokedAt && now < expiresAt)
+    );
+  });
+
+  const isUserOwner = (team: any) => {
+    return team.userId === authUser?.id;
   };
 
   if (!authUser) {
     return null;
   }
 
+  if (loading && teams.length === 0) {
+    return (
+      <div className="min-h-screen glass-bg">
+        <DashboardNavbar currentTeam={null} />
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className="min-h-screen p-6"
-      style={{ backgroundColor: "var(--color-bg)" }}
-    >
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen glass-bg">
+      <DashboardNavbar currentTeam={null} />
+
+      <div className="max-w-7xl mx-auto p-6">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1
-              className="text-3xl font-bold"
-              style={{ color: "var(--color-fg)" }}
-            >
-              Teams
-            </h1>
-            <p className="mt-2" style={{ color: "var(--color-fg-secondary)" }}>
+            <h1 className="text-3xl font-bold mb-2">Teams</h1>
+            <p className="text-text/70">
               Manage your teams and collaborate with others
             </p>
           </div>
           <Link
             href="/dashboard/teams/create"
-            className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors"
-            style={{
-              backgroundColor: "var(--color-primary)",
-              color: "white",
-            }}
+            className="glass-btn glass-btn-primary px-6 py-3 rounded-lg font-medium transition-all hover:scale-105"
           >
-            <Plus className="w-4 h-4" />
-            <span>Create Team</span>
+            Create Team
           </Link>
         </div>
 
-        {/* Error Display */}
         {error && (
-          <div
-            className="mb-6 p-4 rounded-lg border flex items-center space-x-3"
-            style={{
-              backgroundColor: "var(--color-card)",
-              borderColor: "#ef4444",
-              color: "#ef4444",
-            }}
-          >
-            <AlertCircle className="w-5 h-5" />
-            <span>{error}</span>
-            <button
-              onClick={clearError}
-              className="ml-auto text-sm underline hover:no-underline"
-            >
-              Dismiss
-            </button>
+          <div className="glass-card bg-red-500/10 border-red-500/30 p-4 rounded-lg mb-6">
+            <p className="text-red-400">{error}</p>
           </div>
         )}
 
-        {/* Search */}
-        <div className="mb-8">
-          <div className="relative max-w-md">
-            <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-              style={{ color: "var(--color-fg-secondary)" }}
-            />
+        {/* FIX: Show pending invites notification */}
+        {pendingReceivedInvites.length > 0 && (
+          <div className="glass-card bg-yellow-500/10 border-yellow-500/30 p-4 rounded-lg mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-yellow-400">
+                  Pending Invitations
+                </h3>
+                <p className="text-yellow-300/80">
+                  You have {pendingReceivedInvites.length} pending team
+                  invitation{pendingReceivedInvites.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+              <Link
+                href="/dashboard/invites"
+                className="glass-btn glass-btn-secondary px-4 py-2 rounded-lg text-sm"
+              >
+                View Invites
+              </Link>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="glass-card p-4 rounded-xl text-center">
+            <h3 className="text-sm font-medium text-text/70 mb-1">
+              Total Teams
+            </h3>
+            <p className="text-2xl font-bold text-primary">{teams.length}</p>
+          </div>
+          <div className="glass-card p-4 rounded-xl text-center">
+            <h3 className="text-sm font-medium text-text/70 mb-1">
+              Teams Owned
+            </h3>
+            <p className="text-2xl font-bold text-blue-400">
+              {teams.filter((t) => isUserOwner(t)).length}
+            </p>
+          </div>
+          <div className="glass-card p-4 rounded-xl text-center">
+            <h3 className="text-sm font-medium text-text/70 mb-1">
+              Total Members
+            </h3>
+            <p className="text-2xl font-bold text-green-400">
+              {teams.reduce(
+                (total, team) => total + (team.members?.length || 0),
+                0
+              )}
+            </p>
+          </div>
+          <div className="glass-card p-4 rounded-xl text-center">
+            <h3 className="text-sm font-medium text-text/70 mb-1">
+              Pending Invites
+            </h3>
+            <p className="text-2xl font-bold text-yellow-500">
+              {pendingReceivedInvites.length}
+            </p>
+          </div>
+        </div>
+
+        <div className="glass-card p-6 rounded-2xl shadow-xl mb-6">
+          <div className="relative">
             <input
               type="text"
               placeholder="Search teams..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2"
-              style={{
-                backgroundColor: "var(--color-card)",
-                borderColor: "var(--color-border)",
-                color: "var(--color-fg)",
-              }}
+              className="w-full glass-input pl-12 pr-4 py-3 rounded-lg"
             />
+            <svg
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-text/50"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
           </div>
         </div>
 
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div
-            className="p-6 rounded-lg border"
-            style={{
-              backgroundColor: "var(--color-card)",
-              borderColor: "var(--color-border)",
-            }}
-          >
-            <div className="flex items-center space-x-3">
-              <Users
-                className="w-8 h-8"
-                style={{ color: "var(--color-primary)" }}
-              />
-              <div>
-                <p
-                  className="text-2xl font-bold"
-                  style={{ color: "var(--color-fg)" }}
-                >
-                  {teams.length}
-                </p>
-                <p style={{ color: "var(--color-fg-secondary)" }}>
-                  Total Teams
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div
-            className="p-6 rounded-lg border"
-            style={{
-              backgroundColor: "var(--color-card)",
-              borderColor: "var(--color-border)",
-            }}
-          >
-            <div className="flex items-center space-x-3">
-              <Mail
-                className="w-8 h-8"
-                style={{ color: "var(--color-primary)" }}
-              />
-              <div>
-                <p
-                  className="text-2xl font-bold"
-                  style={{ color: "var(--color-fg)" }}
-                >
-                  {invites.length}
-                </p>
-                <p style={{ color: "var(--color-fg-secondary)" }}>
-                  Pending Invites
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div
-            className="p-6 rounded-lg border"
-            style={{
-              backgroundColor: "var(--color-card)",
-              borderColor: "var(--color-border)",
-            }}
-          >
-            <div className="flex items-center space-x-3">
-              <Settings
-                className="w-8 h-8"
-                style={{ color: "var(--color-primary)" }}
-              />
-              <div>
-                <p
-                  className="text-2xl font-bold"
-                  style={{ color: "var(--color-fg)" }}
-                >
-                  {teams.filter((t) => t.userId === authUser?._id).length}
-                </p>
-                <p style={{ color: "var(--color-fg-secondary)" }}>
-                  Owned Teams
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Pending Invites */}
-        {invites.length > 0 && (
-          <div className="mb-8">
-            <h2
-              className="text-xl font-semibold mb-4"
-              style={{ color: "var(--color-fg)" }}
-            >
-              Pending Invites
-            </h2>
-            <div className="space-y-3">
-              {invites.map((invite) => (
-                <div
-                  key={invite.id}
-                  className="p-4 rounded-lg border flex items-center justify-between"
-                  style={{
-                    backgroundColor: "var(--color-card)",
-                    borderColor: "var(--color-border)",
-                  }}
-                >
-                  <div className="flex items-center space-x-3">
-                    <Clock
-                      className="w-5 h-5"
-                      style={{ color: "var(--color-fg-secondary)" }}
-                    />
-                    <div>
-                      <p
-                        className="font-medium"
-                        style={{ color: "var(--color-fg)" }}
-                      >
-                        Team Invite
-                      </p>
-                      <p
-                        className="text-sm"
-                        style={{ color: "var(--color-fg-secondary)" }}
-                      >
-                        Role: {invite.role} • Expires:{" "}
-                        {new Date(invite.expiresAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    className="px-3 py-1 text-sm rounded-lg border transition-colors hover:opacity-80"
-                    style={{
-                      backgroundColor: "var(--color-primary)",
-                      color: "white",
-                      borderColor: "var(--color-primary)",
-                    }}
-                  >
-                    View Invite
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Teams Grid */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2
-              className="w-8 h-8 animate-spin"
-              style={{ color: "var(--color-primary)" }}
-            />
-          </div>
-        ) : filteredTeams.length === 0 ? (
-          <div
-            className="text-center py-12 rounded-lg border"
-            style={{
-              backgroundColor: "var(--color-card)",
-              borderColor: "var(--color-border)",
-            }}
-          >
-            <Users
-              className="w-12 h-12 mx-auto mb-4"
-              style={{ color: "var(--color-fg-secondary)" }}
-            />
-            <h3
-              className="text-lg font-medium mb-2"
-              style={{ color: "var(--color-fg)" }}
-            >
-              {searchTerm ? "No teams found" : "No teams yet"}
-            </h3>
-            <p className="mb-4" style={{ color: "var(--color-fg-secondary)" }}>
-              {searchTerm
-                ? "Try adjusting your search terms"
-                : "Create your first team to get started"}
-            </p>
-            {!searchTerm && (
+        {filteredTeams.length === 0 && searchTerm === "" ? (
+          <div className="text-center py-12">
+            <div className="glass-card p-8 rounded-2xl shadow-xl max-w-md mx-auto">
+              <h3 className="text-xl font-semibold mb-4">No Teams Yet</h3>
+              <p className="text-text/70 mb-6">
+                Create your first team or wait for an invitation to join a team.
+              </p>
               <Link
                 href="/dashboard/teams/create"
-                className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors"
-                style={{
-                  backgroundColor: "var(--color-primary)",
-                  color: "white",
-                }}
+                className="glass-btn glass-btn-primary px-6 py-3 rounded-lg font-medium transition-all inline-block"
               >
-                <Plus className="w-4 h-4" />
-                <span>Create Team</span>
+                Create Team
               </Link>
-            )}
+              {pendingReceivedInvites.length > 0 && (
+                <Link
+                  href="/dashboard/invites"
+                  className="glass-btn glass-btn-secondary px-6 py-3 rounded-lg font-medium transition-all inline-block"
+                >
+                  View Invites ({pendingReceivedInvites.length})
+                </Link>
+              )}
+            </div>
+          </div>
+        ) : filteredTeams.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="glass-card p-8 rounded-2xl shadow-xl max-w-md mx-auto">
+              <h3 className="text-xl font-semibold mb-4">No Results Found</h3>
+              <p className="text-text/70 mb-6">
+                No teams match your search criteria.
+              </p>
+              <button
+                onClick={() => setSearchTerm("")}
+                className="glass-btn glass-btn-secondary px-6 py-3 rounded-lg font-medium transition-all"
+              >
+                Clear Search
+              </button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTeams.map((team) => {
-              const isOwner = team.userId === authUser?._id;
-              const isDeleting = deletingTeamId === team.id;
-              const isLeaving = leavingTeamId === team.id;
-
-              return (
-                <div
-                  key={team.id}
-                  className="p-6 rounded-lg border hover:shadow-lg transition-all duration-200 group"
-                  style={{
-                    backgroundColor: "var(--color-card)",
-                    borderColor: "var(--color-border)",
-                  }}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3
-                        className="text-lg font-semibold group-hover:text-blue-600 transition-colors"
-                        style={{ color: "var(--color-fg)" }}
-                      >
-                        {team.name}
-                      </h3>
-                      <p
-                        className="text-sm mt-1"
-                        style={{ color: "var(--color-fg-secondary)" }}
-                      >
-                        {team.description}
-                      </p>
-                    </div>
-                    {isOwner && (
-                      <span
-                        className="px-2 py-1 text-xs rounded-full"
-                        style={{
-                          backgroundColor: "var(--color-primary)",
-                          color: "white",
-                        }}
-                      >
+            {filteredTeams.map((team) => (
+              <div
+                key={team.id || team._id}
+                className="glass-card p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all group"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
+                      {team.name}
+                    </h3>
+                    <p className="text-text/70 text-sm line-clamp-3">
+                      {team.description}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2 ml-4">
+                    {isUserOwner(team) && (
+                      <span className="bg-primary/20 text-primary px-2 py-1 rounded text-xs font-medium">
                         Owner
                       </span>
                     )}
                   </div>
-
-                  <div className="flex items-center space-x-4 mb-4 text-sm">
-                    <div className="flex items-center space-x-1">
-                      <Users
-                        className="w-4 h-4"
-                        style={{ color: "var(--color-fg-secondary)" }}
-                      />
-                      <span style={{ color: "var(--color-fg-secondary)" }}>
-                        {team.members?.length || 0} members
-                      </span>
-                    </div>
-                    <div style={{ color: "var(--color-fg-secondary)" }}>
-                      Created {new Date(team.createdAt).toLocaleDateString()}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Link
-                      href={`/dashboard/teams/${team.id}`}
-                      className="flex-1 px-3 py-2 text-sm rounded-lg border transition-colors text-center"
-                      style={{
-                        backgroundColor: "var(--color-primary)",
-                        color: "white",
-                        borderColor: "var(--color-primary)",
-                      }}
-                    >
-                      Manage
-                    </Link>
-
-                    {isOwner ? (
-                      <button
-                        onClick={() => handleDeleteTeam(team.id)}
-                        disabled={isDeleting}
-                        className="p-2 rounded-lg border transition-colors hover:bg-red-50 hover:border-red-300"
-                        style={{
-                          borderColor: "var(--color-border)",
-                          color: "#ef4444",
-                        }}
-                      >
-                        {isDeleting ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
-                        )}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleLeaveTeam(team.id)}
-                        disabled={isLeaving}
-                        className="p-2 rounded-lg border transition-colors hover:bg-red-50 hover:border-red-300"
-                        style={{
-                          borderColor: "var(--color-border)",
-                          color: "#ef4444",
-                        }}
-                      >
-                        {isLeaving ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <LogOut className="w-4 h-4" />
-                        )}
-                      </button>
-                    )}
-                  </div>
                 </div>
-              );
-            })}
+
+                <div className="flex items-center justify-between text-sm text-text/60 mb-4">
+                  <span>{team.members?.length || 0} members</span>
+                  <span>{team.projects?.length || 0} projects</span>
+                  <span>{new Date(team.createdAt).toLocaleDateString()}</span>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <Link
+                    href={`/dashboard/teams/${team.id || team._id}`}
+                    className="flex-1 glass-btn glass-btn-primary text-center py-2 rounded-lg text-sm transition-all hover:scale-105"
+                  >
+                    Manage Team
+                  </Link>
+
+                  {isUserOwner(team) ? (
+                    <button
+                      onClick={() => handleDeleteTeam(team.id || team._id!)}
+                      disabled={deletingTeamId === (team.id || team._id)}
+                      className="glass-btn glass-btn-danger px-4 py-2 rounded-lg text-sm transition-all hover:scale-105 disabled:opacity-50"
+                      title="Delete Team"
+                    >
+                      {deletingTeamId === (team.id || team._id) ? (
+                        <div className="w-4 h-4 border-2 border-red-300 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleLeaveTeam(team.id || team._id!)}
+                      disabled={leavingTeamId === (team.id || team._id)}
+                      className="glass-btn glass-btn-warning px-4 py-2 rounded-lg text-sm transition-all hover:scale-105 disabled:opacity-50"
+                      title="Leave Team"
+                    >
+                      {leavingTeamId === (team.id || team._id) ? (
+                        <div className="w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -465,4 +365,11 @@ const TeamsPage = () => {
   );
 };
 
-export default TeamsPage;
+// Wrap with AuthGuard
+export default function TeamsPageWithAuth() {
+  return (
+    <AuthGuard>
+      <TeamsPage />
+    </AuthGuard>
+  );
+}

@@ -1,377 +1,3 @@
-// import { create } from "zustand";
-// import { axiosInstance } from "@/lib/axios";
-
-// type Team = {
-//   id: string;
-//   _id?: string;
-//   name: string;
-//   description: string;
-//   slug: string;
-//   userId: string;
-//   createdAt: string;
-//   updatedAt: string;
-//   members?: Member[];
-//   projects?: any[];
-// };
-
-// type Member = {
-//   id: string;
-//   name: string;
-//   email: string;
-//   role: "Owner" | "Manager" | "Member";
-// };
-
-// type Invite = {
-//   id: string;
-//   teamId: string;
-//   email: string;
-//   role: string;
-//   expiresAt: string;
-//   status: string;
-// };
-
-// type TeamStore = {
-//   teams: Team[];
-//   currentTeam: Team | null;
-//   members: Member[];
-//   invites: Invite[];
-//   loading: boolean;
-//   error: string | null;
-
-//   teamsLoaded: boolean;
-//   teamMembersLoaded: Record<string, boolean>;
-//   teamInvitesLoaded: Record<string, boolean>;
-
-//   fetchTeams: () => Promise<void>;
-//   // fetchInvites: () => Promise<void>;
-//   fetchTeamMembers: (teamId: string) => Promise<void>;
-//   fetchTeamInvites: (teamId: string) => Promise<void>;
-//   createTeam: (data: {
-//     name: string;
-//     description: string;
-//   }) => Promise<Team | null>;
-//   sendInvite: (
-//     teamId: string,
-//     email: string,
-//     role: string
-//   ) => Promise<Invite | null>;
-//   acceptInvite: (token: string) => Promise<any>;
-//   updateMemberRole: (
-//     teamId: string,
-//     memberId: string,
-//     role: string
-//   ) => Promise<boolean>;
-//   deleteTeam: (teamId: string) => Promise<boolean>;
-//   leaveTeam: (teamId: string) => Promise<boolean>;
-//   removeMember: (teamId: string, memberId: string) => Promise<boolean>;
-//   cancelInvite: (inviteId: string) => Promise<boolean>;
-//   setCurrentTeam: (team: Team | null) => void;
-//   clearError: () => void;
-//   reset: () => void;
-// };
-
-// function getAuthHeaders() {
-//   const token =
-//     typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
-//   return token ? { Authorization: `Bearer ${token}` } : {};
-// }
-
-// export const useTeamStore = create<TeamStore>((set, get) => ({
-//   teams: [],
-//   currentTeam: null,
-//   members: [],
-//   invites: [],
-//   loading: false,
-//   error: null,
-
-//   teamsLoaded: false,
-//   teamMembersLoaded: {},
-//   teamInvitesLoaded: {},
-
-//   fetchTeams: async () => {
-//     set({ loading: true, error: null });
-//     try {
-//       console.log("Fetching teams...");
-//       const headers = getAuthHeaders();
-//       console.log("Auth headers:", headers);
-
-//       const res = await axiosInstance.get("/teams/my/teams", {
-//         headers,
-//       });
-
-//       console.log("Teams response:", res.data);
-
-//       // Handle both possible response formats
-//       const teams = res.data.teams || res.data || [];
-//       set({ teams, loading: false });
-
-//       console.log("Teams set in store:", teams);
-//     } catch (err: any) {
-//       console.error("fetchTeams error:", err);
-//       const errorMessage =
-//         err?.response?.data?.message || err?.message || "Failed to fetch teams";
-//       set({
-//         error: errorMessage,
-//         loading: false,
-//         teams: [], // Reset teams on error
-//       });
-//     }
-//   },
-
-//   // fetchInvites: async () => {
-//   //   set({ loading: true, error: null });
-//   //   try {
-//   //     const res = await axiosInstance.get("/teams/invites", {
-//   //       headers: getAuthHeaders(),
-//   //     });
-
-//   //     const invites = res.data.invites || res.data || [];
-//   //     set({ invites, loading: false });
-//   //   } catch (err: any) {
-//   //     console.error("fetchInvites error:", err);
-//   //     set({
-//   //       error: err?.response?.data?.message || "Failed to fetch invites",
-//   //       loading: false,
-//   //     });
-//   //   }
-//   // },
-
-//   fetchTeamMembers: async (teamId) => {
-//     set({ loading: true, error: null });
-//     try {
-//       const res = await axiosInstance.get(`/teams/${teamId}/members`, {
-//         headers: getAuthHeaders(),
-//       });
-
-//       const members = res.data.members || res.data || [];
-//       set({ members, loading: false });
-//     } catch (err: any) {
-//       console.error("fetchTeamMembers error:", err);
-//       set({
-//         error: err?.response?.data?.message || "Failed to fetch members",
-//         loading: false,
-//       });
-//     }
-//   },
-
-//   fetchTeamInvites: async (teamId) => {
-//     set({ loading: true, error: null });
-//     try {
-//       const res = await axiosInstance.get(`/teams/${teamId}/invites`, {
-//         headers: getAuthHeaders(),
-//       });
-
-//       const invites = res.data.invites || res.data || [];
-//       set({ invites, loading: false });
-//     } catch (err: any) {
-//       console.error("fetchTeamInvites error:", err);
-//       set({
-//         error: err?.response?.data?.message || "Failed to fetch invites",
-//         loading: false,
-//       });
-//     }
-//   },
-
-//   createTeam: async (data) => {
-//     set({ loading: true, error: null });
-//     try {
-//       const res = await axiosInstance.post("/teams/create-team", data, {
-//         headers: getAuthHeaders(),
-//       });
-
-//       const newTeam = res.data.team || res.data;
-//       set((state) => ({
-//         teams: [...state.teams, newTeam],
-//         loading: false,
-//       }));
-//       return newTeam;
-//     } catch (err: any) {
-//       console.error("createTeam error:", err);
-//       set({
-//         error: err?.response?.data?.message || "Failed to create team",
-//         loading: false,
-//       });
-//       return null;
-//     }
-//   },
-
-//   sendInvite: async (teamId, email, role) => {
-//     set({ loading: true, error: null });
-//     try {
-//       const res = await axiosInstance.post(
-//         `/teams/${teamId}/invites`,
-//         { email, role, teamId },
-//         { headers: getAuthHeaders() }
-//       );
-
-//       const newInvite = res.data.invite || res.data;
-//       set((state) => ({
-//         invites: [...state.invites, newInvite],
-//         loading: false,
-//       }));
-//       return newInvite;
-//     } catch (err: any) {
-//       console.error("sendInvite error:", err);
-//       set({
-//         error: err?.response?.data?.message || "Failed to send invite",
-//         loading: false,
-//       });
-//       return null;
-//     }
-//   },
-
-//   acceptInvite: async (token) => {
-//     set({ loading: true, error: null });
-//     try {
-//       const res = await axiosInstance.post(
-//         "/teams/invites/accept",
-//         { token },
-//         { headers: getAuthHeaders() }
-//       );
-//       set({ loading: false });
-//       // Refresh teams after accepting invite
-//       await get().fetchTeams();
-//       return res.data;
-//     } catch (err: any) {
-//       console.error("acceptInvite error:", err);
-//       set({
-//         error: err?.response?.data?.message || "Failed to accept invite",
-//         loading: false,
-//       });
-//       return null;
-//     }
-//   },
-
-//   updateMemberRole: async (teamId, memberId, role) => {
-//     set({ loading: true, error: null });
-//     try {
-//       await axiosInstance.patch(
-//         `/teams/${teamId}/members/${memberId}/role`,
-//         { role },
-//         { headers: getAuthHeaders() }
-//       );
-//       // Update member in local state
-//       set((state) => ({
-//         members: state.members.map((member) =>
-//           member.id === memberId ? { ...member, role: role as any } : member
-//         ),
-//         loading: false,
-//       }));
-//       return true;
-//     } catch (err: any) {
-//       console.error("updateMemberRole error:", err);
-//       set({
-//         error: err?.response?.data?.message || "Failed to update role",
-//         loading: false,
-//       });
-//       return false;
-//     }
-//   },
-
-//   deleteTeam: async (teamId) => {
-//     set({ loading: true, error: null });
-//     try {
-//       await axiosInstance.delete(`/teams/${teamId}`, {
-//         headers: getAuthHeaders(),
-//       });
-//       set((state) => ({
-//         teams: state.teams.filter((t) => t.id !== teamId),
-//         currentTeam:
-//           state.currentTeam?.id === teamId ? null : state.currentTeam,
-//         loading: false,
-//       }));
-//       return true;
-//     } catch (err: any) {
-//       console.error("deleteTeam error:", err);
-//       set({
-//         error: err?.response?.data?.message || "Failed to delete team",
-//         loading: false,
-//       });
-//       return false;
-//     }
-//   },
-
-//   leaveTeam: async (teamId) => {
-//     set({ loading: true, error: null });
-//     try {
-//       await axiosInstance.delete(`/teams/${teamId}/leave`, {
-//         headers: getAuthHeaders(),
-//       });
-//       set((state) => ({
-//         teams: state.teams.filter((t) => t.id !== teamId),
-//         currentTeam:
-//           state.currentTeam?.id === teamId ? null : state.currentTeam,
-//         loading: false,
-//       }));
-//       return true;
-//     } catch (err: any) {
-//       console.error("leaveTeam error:", err);
-//       set({
-//         error: err?.response?.data?.message || "Failed to leave team",
-//         loading: false,
-//       });
-//       return false;
-//     }
-//   },
-
-//   removeMember: async (teamId, memberId) => {
-//     set({ loading: true, error: null });
-//     try {
-//       await axiosInstance.delete(`/teams/${teamId}/members/${memberId}`, {
-//         headers: getAuthHeaders(),
-//       });
-//       set((state) => ({
-//         members: state.members.filter((m) => m.id !== memberId),
-//         loading: false,
-//       }));
-//       return true;
-//     } catch (err: any) {
-//       console.error("removeMember error:", err);
-//       set({
-//         error: err?.response?.data?.message || "Failed to remove member",
-//         loading: false,
-//       });
-//       return false;
-//     }
-//   },
-
-//   cancelInvite: async (inviteId) => {
-//     set({ loading: true, error: null });
-//     try {
-//       await axiosInstance.delete(`/teams/invites/${inviteId}`, {
-//         headers: getAuthHeaders(),
-//       });
-//       set((state) => ({
-//         invites: state.invites.filter((i) => i.id !== inviteId),
-//         loading: false,
-//       }));
-//       return true;
-//     } catch (err: any) {
-//       console.error("cancelInvite error:", err);
-//       set({
-//         error: err?.response?.data?.message || "Failed to cancel invite",
-//         loading: false,
-//       });
-//       return false;
-//     }
-//   },
-
-//   setCurrentTeam: (team) => set({ currentTeam: team }),
-
-//   clearError: () => set({ error: null }),
-
-//   reset: () =>
-//     set({
-//       teams: [],
-//       currentTeam: null,
-//       members: [],
-//       invites: [],
-//       loading: false,
-//       error: null,
-//     }),
-// }));
-
-
 import { create } from "zustand";
 import { axiosInstance } from "@/lib/axios";
 
@@ -390,9 +16,11 @@ type Team = {
 
 type Member = {
   id: string;
+  userId: string; // Add this for backend compatibility
   name: string;
   email: string;
   role: "Owner" | "Manager" | "Member";
+  joinedAt?: string;
 };
 
 type Invite = {
@@ -400,8 +28,15 @@ type Invite = {
   teamId: string;
   email: string;
   role: string;
+  invitedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
   expiresAt: string;
+  acceptedAt?: string | null;
+  revokedAt?: string | null;
   status: string;
+  team?: { id: string; name: string };
+  tokenHash?: string;
 };
 
 type TeamStore = {
@@ -409,36 +44,50 @@ type TeamStore = {
   currentTeam: Team | null;
   members: Member[];
   invites: Invite[];
+  myInvites: Invite[]; // Separate for received invites
+  teamInvites?: Record<string, Invite[]>;
   loading: boolean;
   error: string | null;
 
-  // lightweight flags to prevent duplicate fetches
   teamsLoaded: boolean;
   teamMembersLoaded: Record<string, boolean>;
   teamInvitesLoaded: Record<string, boolean>;
+  myInvitesLoaded: boolean;
 
+  // Core functions
   fetchTeams: () => Promise<void>;
   fetchTeamMembers: (teamId: string) => Promise<void>;
   fetchTeamInvites: (teamId: string) => Promise<void>;
+  fetchMyInvites: () => Promise<void>;
   createTeam: (data: {
     name: string;
     description: string;
   }) => Promise<Team | null>;
+
+  // Invite management
   sendInvite: (
     teamId: string,
     email: string,
     role: string
   ) => Promise<Invite | null>;
   acceptInvite: (token: string) => Promise<any>;
+  declineInvite: (token: string) => Promise<boolean>;
+  cancelInvite: (teamId: string, inviteId: string) => Promise<boolean>;
+
+  // Member management
   updateMemberRole: (
     teamId: string,
     memberId: string,
     role: string
   ) => Promise<boolean>;
+  removeMember: (teamId: string, memberId: string) => Promise<boolean>;
+
+  // Team management
   deleteTeam: (teamId: string) => Promise<boolean>;
   leaveTeam: (teamId: string) => Promise<boolean>;
-  removeMember: (teamId: string, memberId: string) => Promise<boolean>;
-  cancelInvite: (inviteId: string) => Promise<boolean>;
+
+  // Utilities
+  getTeamInvites: (teamId: string) => Invite[];
   setCurrentTeam: (team: Team | null) => void;
   clearError: () => void;
   reset: () => void;
@@ -455,28 +104,36 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
   currentTeam: null,
   members: [],
   invites: [],
+  myInvites: [],
+  teamInvites: {},
   loading: false,
   error: null,
 
   teamsLoaded: false,
   teamMembersLoaded: {},
   teamInvitesLoaded: {},
+  myInvitesLoaded: false,
 
   fetchTeams: async () => {
     const { teamsLoaded, loading } = get();
     if (teamsLoaded || loading) return;
+
     set({ loading: true, error: null });
     try {
       const res = await axiosInstance.get("/teams/my/teams", {
         headers: getAuthHeaders(),
       });
-      const teams = res.data?.teams || [];
+
+      const teams = res.data?.teams || res.data || [];
+      console.log("Fetched teams:", teams.length);
+
       set({
         teams,
         loading: false,
         teamsLoaded: true,
       });
     } catch (err: any) {
+      console.error("fetchTeams error:", err);
       set({
         error: err?.response?.data?.message || "Failed to fetch teams",
         loading: false,
@@ -489,18 +146,23 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
   fetchTeamMembers: async (teamId) => {
     const { teamMembersLoaded, loading } = get();
     if (teamMembersLoaded[teamId] || loading) return;
+
     set({ loading: true, error: null });
     try {
       const res = await axiosInstance.get(`/teams/${teamId}/members`, {
         headers: getAuthHeaders(),
       });
+
       const members = res.data.members || [];
+      console.log(`Fetched ${members.length} members for team ${teamId}`);
+
       set((state) => ({
         members,
         loading: false,
         teamMembersLoaded: { ...state.teamMembersLoaded, [teamId]: true },
       }));
     } catch (err: any) {
+      console.error("fetchTeamMembers error:", err);
       set((state) => ({
         error: err?.response?.data?.message || "Failed to fetch members",
         loading: false,
@@ -509,23 +171,66 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
     }
   },
 
+  fetchMyInvites: async () => {
+    const { myInvitesLoaded, loading } = get();
+    if (myInvitesLoaded || loading) return;
+
+    set({ loading: true, error: null });
+    try {
+      const res = await axiosInstance.get("/teams/invites", {
+        headers: getAuthHeaders(),
+      });
+
+      const myInvites = res.data?.invites || res.data?.items || res.data || [];
+      console.log(`Fetched ${myInvites.length} received invites`);
+
+      set({
+        myInvites,
+        loading: false,
+        myInvitesLoaded: true,
+      });
+    } catch (err: any) {
+      console.error("fetchMyInvites error:", err);
+      set({
+        error: err?.response?.data?.message || "Failed to fetch invites",
+        loading: false,
+        myInvitesLoaded: true,
+      });
+    }
+  },
+
+  // fetchInvites: async () => {
+  //   return get().fetchMyInvites();
+  // },
+
   fetchTeamInvites: async (teamId) => {
     const { teamInvitesLoaded, loading } = get();
     if (teamInvitesLoaded[teamId] || loading) return;
+
     set({ loading: true, error: null });
     try {
       const res = await axiosInstance.get(`/teams/${teamId}/invites`, {
         headers: getAuthHeaders(),
       });
-      const invites = res.data.invites || [];
+
+      const teamInvites =
+        res.data?.invites || res.data?.items || res.data || [];
+      console.log(`Fetched ${teamInvites.length} invites for team ${teamId}`);
+
+      // FIX: Don't overwrite global invites, store team-specific invites separately
       set((state) => ({
-        invites,
+        // Store team invites separately to avoid pollution
+        teamInvites: {
+          ...state.teamInvites,
+          [teamId]: teamInvites,
+        },
         loading: false,
         teamInvitesLoaded: { ...state.teamInvitesLoaded, [teamId]: true },
       }));
     } catch (err: any) {
+      console.error("fetchTeamInvites error:", err);
       set((state) => ({
-        error: err?.response?.data?.message || "Failed to fetch invites",
+        error: err?.response?.data?.message || "Failed to fetch team invites",
         loading: false,
         teamInvitesLoaded: { ...state.teamInvitesLoaded, [teamId]: true },
       }));
@@ -538,13 +243,17 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
       const res = await axiosInstance.post("/teams/create-team", data, {
         headers: getAuthHeaders(),
       });
-      const newTeam = res.data.team || res.data;
+
+      const newTeam = res.data?.team || res.data;
+      console.log("Created team:", newTeam?.name);
+
       set((state) => ({
         teams: [...state.teams, newTeam],
         loading: false,
       }));
       return newTeam;
     } catch (err: any) {
+      console.error("createTeam error:", err);
       set({
         error: err?.response?.data?.message || "Failed to create team",
         loading: false,
@@ -561,13 +270,21 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
         { email, role, teamId },
         { headers: getAuthHeaders() }
       );
-      const newInvite = res.data.invite || res.data;
+
+      const newInvite = res.data?.invite || res.data;
+      console.log("Sent invite to:", email);
+
       set((state) => ({
         invites: [...state.invites, newInvite],
+        teamInvites: {
+          ...(state.teamInvites || {}),
+          [teamId]: [...((state.teamInvites || {})[teamId] || []), newInvite],
+        },
         loading: false,
       }));
       return newInvite;
     } catch (err: any) {
+      console.error("sendInvite error:", err);
       set({
         error: err?.response?.data?.message || "Failed to send invite",
         loading: false,
@@ -584,15 +301,50 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
         { token },
         { headers: getAuthHeaders() }
       );
+
+      console.log("Accepted invite for team:", res.data?.teamId);
       set({ loading: false });
+
+      // Refresh data after accepting
       await get().fetchTeams();
+      set((state) => ({
+        myInvitesLoaded: false, // Force refresh
+      }));
+
       return res.data;
     } catch (err: any) {
+      console.error("acceptInvite error:", err);
       set({
         error: err?.response?.data?.message || "Failed to accept invite",
         loading: false,
       });
       return null;
+    }
+  },
+
+  declineInvite: async (token) => {
+    set({ loading: true, error: null });
+    try {
+      await axiosInstance.post(
+        "/teams/invites/decline",
+        { token },
+        { headers: getAuthHeaders() }
+      );
+
+      console.log("Declined invite");
+      set((state) => ({
+        loading: false,
+        myInvitesLoaded: false, // Force refresh
+      }));
+
+      return true;
+    } catch (err: any) {
+      console.error("declineInvite error:", err);
+      set({
+        error: err?.response?.data?.message || "Failed to decline invite",
+        loading: false,
+      });
+      return false;
     }
   },
 
@@ -604,6 +356,9 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
         { role },
         { headers: getAuthHeaders() }
       );
+
+      console.log(`Updated member ${memberId} role to ${role}`);
+
       set((state) => ({
         members: state.members.map((m) =>
           m.id === memberId ? { ...m, role: role as any } : m
@@ -612,6 +367,7 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
       }));
       return true;
     } catch (err: any) {
+      console.error("updateMemberRole error:", err);
       set({
         error: err?.response?.data?.message || "Failed to update role",
         loading: false,
@@ -626,6 +382,9 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
       await axiosInstance.delete(`/teams/${teamId}`, {
         headers: getAuthHeaders(),
       });
+
+      console.log("Deleted team:", teamId);
+
       set((state) => ({
         teams: state.teams.filter((t) => t.id !== teamId),
         currentTeam:
@@ -634,6 +393,7 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
       }));
       return true;
     } catch (err: any) {
+      console.error("deleteTeam error:", err);
       set({
         error: err?.response?.data?.message || "Failed to delete team",
         loading: false,
@@ -648,6 +408,9 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
       await axiosInstance.delete(`/teams/${teamId}/leave`, {
         headers: getAuthHeaders(),
       });
+
+      console.log("Left team:", teamId);
+
       set((state) => ({
         teams: state.teams.filter((t) => t.id !== teamId),
         currentTeam:
@@ -656,6 +419,7 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
       }));
       return true;
     } catch (err: any) {
+      console.error("leaveTeam error:", err);
       set({
         error: err?.response?.data?.message || "Failed to leave team",
         loading: false,
@@ -670,12 +434,16 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
       await axiosInstance.delete(`/teams/${teamId}/members/${memberId}`, {
         headers: getAuthHeaders(),
       });
+
+      console.log("Removed member:", memberId);
+
       set((state) => ({
         members: state.members.filter((m) => m.id !== memberId),
         loading: false,
       }));
       return true;
     } catch (err: any) {
+      console.error("removeMember error:", err);
       set({
         error: err?.response?.data?.message || "Failed to remove member",
         loading: false,
@@ -684,18 +452,25 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
     }
   },
 
-  cancelInvite: async (inviteId) => {
+  cancelInvite: async (teamId, inviteId) => {
     set({ loading: true, error: null });
     try {
-      await axiosInstance.delete(`/teams/invites/${inviteId}`, {
+      await axiosInstance.delete(`/teams/${teamId}/invites/${inviteId}`, {
         headers: getAuthHeaders(),
       });
+
+      console.log("Cancelled invite:", inviteId);
+
+      // Remove from both invites arrays
       set((state) => ({
         invites: state.invites.filter((i) => i.id !== inviteId),
+        myInvites: state.myInvites.filter((i) => i.id !== inviteId),
         loading: false,
       }));
+
       return true;
     } catch (err: any) {
+      console.error("cancelInvite error:", err);
       set({
         error: err?.response?.data?.message || "Failed to cancel invite",
         loading: false,
@@ -704,20 +479,30 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
     }
   },
 
+  getTeamInvites: (teamId: string) => {
+    const state = get();
+    return state.teamInvites?.[teamId] || [];
+  },
+
   setCurrentTeam: (team) => set({ currentTeam: team }),
 
   clearError: () => set({ error: null }),
 
-  reset: () =>
+  reset: () => {
+    console.log("Resetting team store");
     set({
       teams: [],
       currentTeam: null,
       members: [],
-      invites: [],
+      invites: [], // This should only be used for team-specific invites in team detail pages
+      myInvites: [], // This is for user's received invites
+      teamInvites: {}, // ADD: Store team-specific invites separately
       loading: false,
       error: null,
       teamsLoaded: false,
       teamMembersLoaded: {},
       teamInvitesLoaded: {},
-    }),
+      myInvitesLoaded: false,
+    });
+  },
 }));
