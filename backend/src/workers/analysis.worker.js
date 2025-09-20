@@ -1,5 +1,6 @@
 import axios from "axios";
 import { QueueEvents, Worker } from "bullmq";
+import { connection } from "../lib/redis.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -7,99 +8,75 @@ dotenv.config();
 const CONCURRENCY = Number(process.env.ANALYSIS_CONCURRENCY || 4);
 const DEADLINE_MS = Number(process.env.ANALYSIS_DEADLINE_MS || 15 * 60 * 1000);
 
-export const PushAnalysisWorker = new Worker("pushAnalysis", async job => {
+export const PushAnalysisWorker = new Worker(
+  "pushAnalysis",
+  async job => {
+    console.log("[push] worker received job", { id: job.id, name: job.name });
 
-    if (job.name != "analysis.push") {
-        return {
-            skipped: true,
-            reason: "Unkonwn-job",
-            name: job.name
-        }
+    if (job.name !== "analysis.push") {
+      return { skipped: true, reason: "unknown-job", name: job.name };
     }
 
-    const {
-        repo,
-        repoId,
-        branch,
-        headCommit,
-        installationId,
-        commits,
-        pusher
-    } = job.data || {};
-
+    const { repo, repoId, branch, headCommit, installationId, commits, pusher } = job.data || {};
     if (!repo || !branch || !installationId) {
-        throw new Error(
-            `Invalid job data: repo=${repo} branch=${branch} installationId=${installationId}`
-        );
+      throw new Error(`Invalid job data: repo=${repo} branch=${branch} installationId=${installationId}`);
     }
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort('deadline'), DEADLINE_MS);
+    const timer = setTimeout(() => controller.abort("deadline"), DEADLINE_MS);
 
     const runPayload = {
-        repoFullName: repo,
-        repoId,
-        installationId,
-        branch,
-        headCommitSha: headCommit?.id ?? null,
-        pushedBy: pusher,
-        commitCount: commits.length,
-        //including commit list if the pipeline needs it for selective fetch/analysis
-        commits: commits.map(c => ({
-            id: c.id,
-            message: c.message,
-            author: c.author?.username || c.author?.name,
-            added: c.added,
-            removed: c.removed,
-            modified: c.modified
-        }))
+      repoFullName: repo,
+      repoId,
+      installationId,
+      branch,
+      headCommitSha: headCommit?.id ?? headCommit?.sha ?? null,
+      pushedBy: pusher,
+      commitCount: Array.isArray(commits) ? commits.length : 0,
+      commits: (commits || []).map(c => ({
+        id: c.id,
+        message: c.message,
+        author: c.author?.username || c.author?.name,
+        added: c.added,
+        removed: c.removed,
+        modified: c.modified,
+      })),
     };
 
     try {
+      const url = process.env.ANALYSIS_INTERNAL_URL + "/v1/internal/analysis/run";
+      const { data } = await axios.post(url, runPayload, {
+        timeout: 10_000,
+        signal: controller.signal,
+      });
 
-        const url = process.env.ANALYSIS_INTERNAL_URL + 'v1/internal/analysis/run';
-        await axios.post(url, runPayload, {
-            timeout: 10_000, 
-        });
-
-        return {
-            ok: true,
-            repo,
-            branch,
-            headCommitSha: headCommit?.id ?? headCommit?.sha ?? null,
-            summary: result?.summary ?? null
-        };
-
+      return {
+        ok: true,
+        repo,
+        branch,
+        headCommitSha: headCommit?.id ?? headCommit?.sha ?? null,
+        score: data?.score ?? null,
+        summary: data?.message ?? null,
+      };
     } finally {
-        clearTimeout(timer);
+      clearTimeout(timer);
     }
-},
-    {
-        connection,
-        concurrency: CONCURRENCY,
-        // Optionally extend lock if steps can exceed default lock duration
-        // lockDuration: 600000,
-    }
-
+  },
+  { connection, concurrency: CONCURRENCY }
 );
 
-const events = new QueueEvents('pushAnalysis', { connection });
-events.on('completed', ({ jobId }) => {
-  console.log(`[analysis] completed ${jobId}`);
-});
-events.on('failed', ({ jobId, failedReason }) => {
-  console.error(`[pushAnalysis] failed ${jobId}: ${failedReason}`);
-});
-events.on('waiting', ({ jobId }) => console.log(`[pushAnalysis] waiting ${jobId}`));
-events.on('progress', ({ jobId, data }) => console.log(`[pushAnalysis] progress ${jobId}`, data));
+PushAnalysisWorker.on("ready", () => console.log("[push] worker ready"));
+PushAnalysisWorker.on("error", err => console.error("[push] worker error", err));
+PushAnalysisWorker.on("failed", (job, err) => console.error(`[push] job failed ${job?.id}`, err));
+PushAnalysisWorker.on("completed", job => console.log(`[push] job completed ${job.id}`));
 
-// Basic worker-level logs
-PushAnalysisWorker.on('failed', (job, err) => {
-  console.error(`[analysis] job failed ${job?.id}`, err);
-});
-PushAnalysisWorker.on('completed', job => {
-  console.log(`[analysis] job completed ${job.id}`);
-});
+const events = new QueueEvents("pushAnalysis", { connection });
+events.on("waiting", ({ jobId }) => console.log("[push] waiting", jobId));
+events.on("active", ({ jobId }) => console.log("[push] active", jobId));
+events.on("completed", ({ jobId }) => console.log("[push] completed", jobId));
+events.on("failed", ({ jobId, failedReason }) => console.error("[push] failed", jobId, failedReason));
+
+
 
 export const pullAnalysisWorker = new Worker("pullAnalysis",async job=>{
 
@@ -131,10 +108,8 @@ export const pullAnalysisWorker = new Worker("pullAnalysis",async job=>{
     const headRef = head.ref || null;
     const baseRef = base.ref || null;
 
-    // Optional: emit initial progress
     await job.updateProgress({ stage: "init", repo, prNumber, headSha, baseRef, headRef });
 
-    // Set up deadline/abort control for the downstream call(s)
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), DEADLINE_MS);
 
@@ -204,31 +179,20 @@ export const pullAnalysisWorker = new Worker("pullAnalysis",async job=>{
   }
 )
 
-export const pullAnalysisEvents = new QueueEvents(QUEUE_NAME, { connection });
-pullAnalysisEvents.on("completed", ({ jobId, returnvalue }) => {
-  console.log(`[pullAnalysis] completed ${jobId}`, returnvalue);
-});
-pullAnalysisEvents.on("failed", ({ jobId, failedReason }) => {
-  console.error(`[pullAnalysis] failed ${jobId}: ${failedReason}`);
-});
-pullAnalysisEvents.on("progress", ({ jobId, data }) => {
-  console.log(`[pullAnalysis] progress ${jobId}`, data);
-});
+pullAnalysisWorker.on("ready", () => console.log("[pull] worker ready"));
+pullAnalysisWorker.on("error", err => console.error("[pull] worker error", err));
+pullAnalysisWorker.on("failed", (job, err) => console.error(`[pull] job failed ${job?.id}`, err));
+pullAnalysisWorker.on("completed", job => console.log(`[pull] job completed ${job.id}`));
 
-// Worker-level events
-pullAnalysisWorker.on("failed", (job, err) => {
-  console.error(`[pullAnalysis] job failed ${job ? job.id : "unknown"}`, err);
-});
-pullAnalysisWorker.on("completed", job => {
-  console.log(`[pullAnalysis] job completed ${job.id}`);
-});
-pullAnalysisWorker.on("error", err => {
-  // Important to avoid unhandled error events that can stop processing
-  console.error(`[pullAnalysis] worker error`, err);
-});
+const pullEvents = new QueueEvents("pullAnalysis", { connection });
+pullEvents.on("waiting", ({ jobId }) => console.log("[pull] waiting", jobId));
+pullEvents.on("active", ({ jobId }) => console.log("[pull] active", jobId));
+pullEvents.on("completed", ({ jobId }) => console.log("[pull] completed", jobId));
+pullEvents.on("failed", ({ jobId, failedReason }) => console.error("[pull] failed", jobId, failedReason));
 
 
-export const issuesAnalysisWorker = new Worker("issuesAnalysisQueue",async job=>{
+
+export const issuesAnalysisWorker = new Worker("issuesAnalysis",async job=>{
   
   if (job.name !== "analysis.issue") {
       return { skipped: true, reason: "unknown-job", name: job.name };
@@ -310,13 +274,13 @@ export const issuesAnalysisWorker = new Worker("issuesAnalysisQueue",async job=>
   }
 )
 
-export const issuesAnalysisEvents = new QueueEvents(QUEUE_NAME, { connection });
-issuesAnalysisEvents.on("completed", ({ jobId, returnvalue }) => {
-  console.log(`[issuesAnalysis] completed ${jobId}`, returnvalue);
-});
-issuesAnalysisEvents.on("failed", ({ jobId, failedReason }) => {
-  console.error(`[issuesAnalysis] failed ${jobId}: ${failedReason}`);
-});
-issuesAnalysisEvents.on("progress", ({ jobId, data }) => {
-  console.log(`[issuesAnalysis] progress ${jobId}`, data);
-});
+issuesAnalysisWorker.on("ready", () => console.log("[issue] worker ready"));
+issuesAnalysisWorker.on("error", err => console.error("[issue] worker error", err));
+issuesAnalysisWorker.on("failed", (job, err) => console.error(`[issue] job failed ${job?.id}`, err));
+issuesAnalysisWorker.on("completed", job => console.log(`[issue] job completed ${job.id}`));
+
+const issueEvents = new QueueEvents("issueAnalysis", { connection });
+issueEvents.on("waiting", ({ jobId }) => console.log("[issue] waiting", jobId));
+issueEvents.on("active", ({ jobId }) => console.log("[issue] active", jobId));
+issueEvents.on("completed", ({ jobId }) => console.log("[issue] completed", jobId));
+issueEvents.on("failed", ({ jobId, failedReason }) => console.error("[issue] failed", jobId, failedReason));
