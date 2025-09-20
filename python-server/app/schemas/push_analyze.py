@@ -12,7 +12,7 @@ class CommitItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
-class AnalyzeRequest(BaseModel):
+class PushAnalyzeRequest(BaseModel):
     repo: str = Field(..., min_length=1)
     branch: str = "main"
     threshold: float = Field(0.5, ge=0.0, le=1.0)
@@ -29,7 +29,7 @@ class AnalyzeRequest(BaseModel):
         extra="ignore",        
     )
 
-class AnalyzeResponse(BaseModel):
+class PushAnalyzeResponse(BaseModel):
     ok: bool
     score: float
     message: str
