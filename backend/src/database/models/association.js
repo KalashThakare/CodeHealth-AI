@@ -17,7 +17,7 @@ User.belongsToMany(Team, { through: TeamMember, foreignKey: "userId", as: "teams
 Team.belongsToMany(User, { through: TeamMember, foreignKey: "teamId", as: "members" });
 
 User.hasMany(TeamInvite, { foreignKey: "invitedBy" });
-TeamInvite.belongsTo(User, { foreignKey: "invitedBy"});
+TeamInvite.belongsTo(User, { foreignKey: "invitedBy", as: "InvitedByUser"});
 
 User.hasMany(Project, { foreignKey: "userId" });
 Project.belongsTo(User, { foreignKey: "userId" });

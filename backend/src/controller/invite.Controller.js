@@ -2,14 +2,8 @@ import Team from "../database/models/team.js";
 import TeamInvite from "../database/models/teamInvite.js";
 import TeamMember from "../database/models/teamMember.js";
 import User from "../database/models/User.js";
-import { sendInviteMail } from "../lib/mail/noodemailer.js";
 import crypto from "crypto";
 import { Op } from "sequelize";
-
-
-// FIX: Add associations if they don't exist
-TeamInvite.belongsTo(Team, { foreignKey: "teamId" });
-TeamInvite.belongsTo(User, { foreignKey: "invitedBy", as: "InvitedByUser" });
 
 export function generateInviteToken() {
   const raw = crypto.randomBytes(32).toString("base64url");
@@ -75,7 +69,7 @@ export const listTeamInvites = async (req, res) => {
       where: { teamId, userId: req.user.id },
       attributes: ["role"],
     });
-    if (!membership)
+    if (!membership)  
       return res.status(403).json({ error: "Not a team member" });
     const allowedRoles = ["Owner", "Manager"]; 
     if (!allowedRoles.includes(membership.role)) {
