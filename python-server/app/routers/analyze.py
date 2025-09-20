@@ -4,6 +4,6 @@ from app.services.analyze_service import analyze_repo
 
 router = APIRouter(prefix="/v1", tags=["analyze"])
 
-@router.post("/analyze", response_model=AnalyzeResponse)
-def analyze(payload: AnalyzeRequest):
+@router.post("/internal/analysis/run", response_model=AnalyzeResponse)
+def analyze(payload: AnalyzeRequest) -> AnalyzeResponse:
     return analyze_repo(payload)

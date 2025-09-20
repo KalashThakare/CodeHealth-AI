@@ -57,7 +57,7 @@ export const PushAnalysisWorker = new Worker("pushAnalysis", async job => {
 
     try {
 
-        const url = process.env.ANALYSIS_INTERNAL_URL + '/internal/analysis/run';
+        const url = process.env.ANALYSIS_INTERNAL_URL + 'v1/internal/analysis/run';
         await axios.post(url, runPayload, {
             timeout: 10_000, 
         });
