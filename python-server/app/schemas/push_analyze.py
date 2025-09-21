@@ -5,15 +5,14 @@ class CommitItem(BaseModel):
     id: str = Field(..., min_length=1)
     message: Optional[str] = None
     author: Optional[str] = None
-    added: Optional[str] = None
-    removed: Optional[str] = None
-    modified: Optional[str] = None
+    added: Optional[List[str]] = None
+    removed: Optional[List[str]] = None
+    modified: Optional[List[str]] = None
 
     model_config = ConfigDict(extra="ignore")
 
-
 class PushAnalyzeRequest(BaseModel):
-    repo: str = Field(..., min_length=1)
+    repo: str = Field(..., min_length=1, alias='repoFullName')
     branch: str = "main"
     threshold: float = Field(0.5, ge=0.0, le=1.0)
 
@@ -25,8 +24,9 @@ class PushAnalyzeRequest(BaseModel):
     commits: Optional[List[CommitItem]] = None
 
     model_config = ConfigDict(
-        populate_by_name=True, 
-        extra="ignore",        
+        validate_by_name=True,      
+        validate_by_alias=True,      
+        extra="ignore",
     )
 
 class PushAnalyzeResponse(BaseModel):
