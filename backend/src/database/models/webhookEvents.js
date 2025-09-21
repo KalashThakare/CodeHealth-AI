@@ -1,6 +1,5 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../db.js";
-import { Project } from "./project.js";
 
 export const WebhookEvent = sequelize.define('WebhookEvent', {
   deliveryId: { type: DataTypes.STRING, primaryKey: true }, 
@@ -21,5 +20,3 @@ export const WebhookEvent = sequelize.define('WebhookEvent', {
   ],
 });
 
-Project.hasMany(WebhookEvent, { foreignKey: 'projectId' });
-WebhookEvent.belongsTo(Project, { foreignKey: 'projectId' });
