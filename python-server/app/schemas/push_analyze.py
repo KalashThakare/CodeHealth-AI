@@ -17,7 +17,7 @@ class PushAnalyzeRequest(BaseModel):
     threshold: float = Field(0.5, ge=0.0, le=1.0)
 
     repoId: Optional[int] = None
-    installationId: Optional[int] = None
+    installationId: int
     headCommitSha: Optional[str] = None
     pushedBy: Optional[str] = None
     commitCount: Optional[int] = None

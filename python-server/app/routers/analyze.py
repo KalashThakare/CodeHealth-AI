@@ -7,8 +7,10 @@ from app.services.analyze_service import pull_analyze_repo
 router = APIRouter(prefix="/v1", tags=["analyze"])
 
 @router.post("/internal/analysis/run", response_model=PushAnalyzeResponse)
-def analyze(payload: PushAnalyzeRequest) -> PushAnalyzeResponse:
-    return push_analyze_repo(payload)
+async def analyze(payload: PushAnalyzeRequest) -> PushAnalyzeResponse:
+    result = await push_analyze_repo(payload)  
+    print(result)
+    return result
 
 @router.post("/internal/analysis/pr",response_model=PullAnalyzeResponse)
 def analyze(payload: PullAnalyzeRequest) -> PullAnalyzeResponse:
