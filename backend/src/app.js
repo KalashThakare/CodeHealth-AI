@@ -53,6 +53,6 @@ app.post("/feedback",protectRoute,receiveFeedbackController);
 
 app.use("/account",accountRoutes)
 
-app.use("/analysis",analysisRoutes)
+app.use("/analyze",analysisRoutes)
 
 export default app;
