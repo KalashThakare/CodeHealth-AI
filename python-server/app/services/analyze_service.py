@@ -2,7 +2,7 @@ from app.schemas.push_analyze import PushAnalyzeRequest, PushAnalyzeResponse
 from app.schemas.pull_analyze import PullAnalyzeRequest, PullAnalyzeResponse
 from app.services.impact_analyzer import seed_impact
 from app.services.prioritization import seed_prioritization
-
+from app.schemas.fullrepo_analyze import FullRepoAnalysisRequest, FullRepoAnalysisResponse
 
 
 async def push_analyze_repo(req: PushAnalyzeRequest) -> PushAnalyzeResponse:
@@ -22,3 +22,6 @@ def pull_analyze_repo(payload: PullAnalyzeRequest) -> PullAnalyzeResponse:
         ok=True,
         message=f"Analyzed {payload.repo} on {payload.branch}",
     )
+
+# async def full_repo_analysis(paylod:FullRepoAnalysisRequest)-> FullRepoAnalysisResponse:
+    
