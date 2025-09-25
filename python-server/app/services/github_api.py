@@ -1,6 +1,7 @@
 from typing import Optional, List, Dict, Any
 import httpx
 from app.services.github_auth import _gh_headers
+import base64
 
 async def fetch_commit_diff(owner: str, repo: str, base: str, head: str, token: str) -> Dict[str, Any]:
 
@@ -28,3 +29,28 @@ async def fetch_recent_commits_touching_file(owner: str, repo: str, path: str, s
                 break
             page += 1
     return count
+
+async def fetch_repo_code(owner:str, repo:str, branch:str, token:str, exts=(".py", ".js", ".ts")):
+    headers = _gh_headers(token)
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{branch}?recursive=1"
+        r = await client.get(url, headers = headers)
+        r.raise_for_status()
+        tree = r.json()["tree"]
+
+        files = []
+        for item in tree:
+            if item["type"] == "blob" and item["path"].endswith(exts):
+                blob_url = f"https://api.github.com/repos/{owner}/{repo}/git/blobs/{item['sha']}"
+                rb = await client.get(blob_url, headers=headers)
+                rb.raise_for_status()
+                blob = rb.json()
+
+                content = base64.b64decode(blob["content"]).decode("utf-8", errors="ignore")
+                files.append({
+                    "path": item["path"],
+                    "content": content
+                })
+
+        return files
