@@ -10,7 +10,14 @@ import {
   updateRole,
 } from "../controller/teamController.js";
 import { canInvite } from "../middleware/invitePermission.js";
-import { acceptInvite, declineInvite, deleteTeamInvite, listMyInvites, listTeamInvites, sendInvite } from "../controller/invite.Controller.js";
+import {
+  acceptInvite,
+  declineInvite,
+  deleteTeamInvite,
+  listMyInvites,
+  listTeamInvites,
+  sendInvite,
+} from "../controller/invite.Controller.js";
 
 const router = express.Router();
 

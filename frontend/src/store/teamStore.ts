@@ -16,7 +16,7 @@ type Team = {
 
 type Member = {
   id: string;
-  userId: string; // Add this for backend compatibility
+  userId: string;
   name: string;
   email: string;
   role: "Owner" | "Manager" | "Member";
@@ -100,11 +100,11 @@ function getAuthHeaders() {
 }
 
 export const useTeamStore = create<TeamStore>((set, get) => ({
-  teams: [],
-  currentTeam: null,
-  members: [],
-  invites: [],
-  myInvites: [],
+  teams: [], // to store teams the user belongs to
+  currentTeam: null, // to store the currently selected team
+  members: [],  // members of the current team
+  invites: [],  // invites sent for the current team
+  myInvites: [],  // 
   teamInvites: {},
   loading: false,
   error: null,
@@ -123,9 +123,10 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
       const res = await axiosInstance.get("/teams/my/teams", {
         headers: getAuthHeaders(),
       });
-
+      console.log("fetchTeams response:", res);
       const teams = res.data?.teams || res.data || [];
       console.log("Fetched teams:", teams.length);
+      console.log("Teams data:", teams);
 
       set({
         teams,
