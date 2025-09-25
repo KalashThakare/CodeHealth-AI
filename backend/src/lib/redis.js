@@ -16,5 +16,6 @@ export const webhookQueue = new Queue("webhooks", { connection });
 export const pushAnalysisQueue = new Queue("pushAnalysis", {connection});
 export const pullAnalysisQueue = new Queue("pullAnalysis", {connection});
 export const issuesAnalysisQueue = new Queue("issuesAnalysis", {connection});
+export const fullRepoAnalysisQueue = new Queue("fullRepoAnalysis",{connection});
 
 

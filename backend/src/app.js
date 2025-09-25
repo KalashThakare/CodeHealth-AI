@@ -11,6 +11,7 @@ import teamRoutes from "./routes/teamRoutes.js";
 import { protectRoute } from "./middleware/auth.middleware.js";
 import { receiveFeedbackController } from "./controller/feedback&review.Controller.js";
 import accountRoutes from "../src/routes/account.Routes.js"
+import analysisRoutes from "../src/routes/analysis.Routes.js";
 import "./database/models/index.js"
 import "./workers/analysis.worker.js"
 
@@ -51,5 +52,7 @@ app.use("/teams",teamRoutes)
 app.post("/feedback",protectRoute,receiveFeedbackController);
 
 app.use("/account",accountRoutes)
+
+app.use("/analysis",analysisRoutes)
 
 export default app;

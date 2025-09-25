@@ -84,7 +84,6 @@ export const pullAnalysisWorker = new Worker("pullAnalysis",async job=>{
       return { skipped: true, reason: "unknown-job", name: job.name };
     }
 
-    // Validate job data
     const {
       repo,
       repoId,
@@ -270,7 +269,6 @@ export const issuesAnalysisWorker = new Worker("issuesAnalysis",async job=>{
   {
     connection,
     concurrency: CONCURRENCY,
-    // lockDuration: 300000, // optionally tune if needed
   }
 )
 
@@ -284,3 +282,85 @@ issueEvents.on("waiting", ({ jobId }) => console.log("[issue] waiting", jobId));
 issueEvents.on("active", ({ jobId }) => console.log("[issue] active", jobId));
 issueEvents.on("completed", ({ jobId }) => console.log("[issue] completed", jobId));
 issueEvents.on("failed", ({ jobId, failedReason }) => console.error("[issue] failed", jobId, failedReason));
+
+
+export const Analyse_repo_Worker = new Worker(
+  "fullRepoAnalysis",
+  async job => {
+    console.log("[analyse] worker received job", { id: job.id, name: job.name });
+
+    if (job.name !== "fullRepoAnalysis") {
+      return { skipped: true, reason: "unknown-job", name: job.name };
+    }
+
+    const {
+      repoId,
+      owner,
+      repoName,
+      fullName,
+      defaultBranch,
+      installationId,
+      requestedBy,
+      requestedAt,
+    } = job.data || {};
+
+    if (!repoId || !owner || !repoName || !fullName || !defaultBranch || !installationId) {
+      throw new Error(
+        `Invalid job data: repoId=${repoId} owner=${owner} repoName=${repoName} fullName=${fullName} defaultBranch=${defaultBranch} installationId=${installationId}`
+      );
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort("deadline"), DEADLINE_MS);
+
+    try {
+      const url = `${process.env.ANALYSIS_INTERNAL_URL}/v1/internal/analysis/full-repo`;
+      const runPayload = {
+        repoId,
+        owner,
+        repoName,
+        fullName,
+        branch: defaultBranch,
+        installationId,
+        requestedBy: requestedBy || "manual",
+        requestedAt: requestedAt || new Date().toISOString(),
+      };
+
+      await job.updateProgress({ stage: "dispatch", ts: Date.now() });
+
+      const { data } = await axios.post(url, runPayload, {
+        timeout: Math.min(DEADLINE_MS - 1000, 290000),
+        signal: controller.signal,
+      });
+
+      await job.updateProgress({ stage: "received", ts: Date.now() });
+
+      return {
+        ok: true,
+        repoId,
+        fullName,
+        branch: defaultBranch,
+        requestedBy: requestedBy || "manual",
+        score: data?.score ?? null,
+        summary: data?.message ?? null,
+        findings: data?.findings ?? null,
+        runId: data?.runId ?? null,
+      };
+    } finally {
+      clearTimeout(timer);
+    }
+  },
+  { connection, concurrency: CONCURRENCY }
+);
+
+Analyse_repo_Worker.on("ready", () => console.log("[analyse] worker ready"));
+Analyse_repo_Worker.on("error", err => console.error("[analyse] worker error", err));
+Analyse_repo_Worker.on("failed", (job, err) => console.error(`[analyse] job failed ${job?.id}`, err));
+Analyse_repo_Worker.on("completed", job => console.log(`[analyse] job completed ${job.id}`));
+
+
+const analyseEvents = new QueueEvents("fullRepoAnalysis", { connection });
+analyseEvents.on("waiting", ({ jobId }) => console.log("[analyse] waiting", jobId));
+analyseEvents.on("active", ({ jobId }) => console.log("[analyse] active", jobId));
+analyseEvents.on("completed", ({ jobId }) => console.log("[analyse] completed", jobId));
+analyseEvents.on("failed", ({ jobId, failedReason }) => console.error("[analyse] failed", jobId, failedReason));
