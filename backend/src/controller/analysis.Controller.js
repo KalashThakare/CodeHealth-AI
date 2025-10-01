@@ -1,9 +1,10 @@
 import { Project } from "../database/models/project.js"
 import { handleAnalyse } from "../services/handlers/analyse.handler.js";
+Project.sync();
 
 export const Analyse_repo = async(req,res)=>{
     try {
-        const repoId = req.body;
+        const repoId = req.body.repoId;
         if(!repoId){
             return res.status(404).json({message:"repo for analysis not selected"});
         }

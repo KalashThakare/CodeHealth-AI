@@ -3,6 +3,8 @@ from app.schemas.push_analyze import PushAnalyzeRequest, PushAnalyzeResponse
 from app.services.analyze_service import push_analyze_repo
 from app.schemas.pull_analyze import PullAnalyzeRequest, PullAnalyzeResponse
 from app.services.analyze_service import pull_analyze_repo
+from app.services.analyze_service import full_repo_analysis
+from app.schemas.fullrepo_analyze import FullRepoAnalysisRequest, FullRepoAnalysisResponse
 
 router = APIRouter(prefix="/v1", tags=["analyze"])
 
@@ -16,6 +18,6 @@ async def analyze(payload: PushAnalyzeRequest) -> PushAnalyzeResponse:
 def analyze(payload: PullAnalyzeRequest) -> PullAnalyzeResponse:
     return pull_analyze_repo(payload)
 
-# @router.post("/internal/analysis/full-repo")
-# async def analyze()
-#     result = await
+@router.post("/internal/analysis/full-repo")
+async def analyze(payload: FullRepoAnalysisRequest):
+    await full_repo_analysis(payload)

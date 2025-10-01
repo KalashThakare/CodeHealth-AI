@@ -32,7 +32,7 @@ async def fetch_recent_commits_touching_file(owner: str, repo: str, path: str, s
             page += 1
     return count
 
-async def fetch_repo_code(owner:str, repo:str, branch:str, token:str, exts=(".py", ".js", ".ts")):
+async def fetch_repo_code(owner:str, repo:str, branch:str, token:str, exts=(".py", ".js", ".ts", ".tsx", ".jsx")):
     headers = _gh_headers(token)
 
     async with httpx.AsyncClient(timeout=30.0) as client:
