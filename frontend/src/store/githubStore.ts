@@ -6,6 +6,7 @@ import { toast } from "sonner";
 interface GitHubRepo {
   id: number;
   repoName: string;
+  repoId: number;
   repoUrl: string;
   installationId?: string | null;
   createdAt: string;

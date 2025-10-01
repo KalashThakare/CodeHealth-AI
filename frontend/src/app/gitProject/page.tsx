@@ -58,7 +58,7 @@ export default function GitHubImportPage() {
   };
 
   const handleAnalyzeRepository = async (repo: any) => {
-    const repoId = repo.id?.toString() || repo.repoId?.toString();
+    const repoId = repo.repoId?.toString();
     if (!repoId) {
       console.error("Repository ID not found");
       return;
@@ -338,7 +338,7 @@ export default function GitHubImportPage() {
                       repo.private ??
                       repo.visibility === "private"
                   );
-                  const repoId = repo.id?.toString() || repo.repoId?.toString();
+                  const repoId = repo.repoId?.toString();
                   const isCurrentlyAnalyzing = isRepoAnalyzing(repoId);
 
                   return (

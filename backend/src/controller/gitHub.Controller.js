@@ -56,10 +56,20 @@ export const ListRepos = async (req, res) => {
 
     const user = await User.findOne({
       where: { id: userId },
-      include: [{
-        model: Project,
-        attributes: ['id', 'repoName', 'repoUrl', 'installationId', 'createdAt', 'updatedAt']
-      }]
+      include: [
+        {
+          model: Project,
+          attributes: [
+            "id",
+            "repoName",
+            "repoId",
+            "repoUrl",
+            "installationId",
+            "createdAt",
+            "updatedAt",
+          ],
+        },
+      ],
     });
 
     if (!user) {
