@@ -147,12 +147,43 @@ function calculateLOC(code) {
 
 // -------------------- Analyzer --------------------
 export function analyzeFile(code) {
-  const ast = generateAST(code);
+  try {
+    // First calculate LOC (doesn't require AST)
+    const locMetrics = calculateLOC(code);
+    
+    // Then parse AST
+    const ast = generateAST(code);
+    
+    // Calculate metrics
+    const cc = calculateCyclomatic(ast);
+    const halstead = calculateHalstead(ast);
+    const mi = calculateMaintainabilityIndex(halstead, cc, locMetrics.sloc || 1);
 
-  const cc = calculateCyclomatic(ast);
-  const halstead = calculateHalstead(ast);
-  const locMetrics = calculateLOC(code);
-  const mi = calculateMaintainabilityIndex(halstead, cc, loc);
-
-  return { cc, halstead, loc, mi, locMetrics };
+    return { 
+      cc, 
+      halstead, 
+      loc: locMetrics, 
+      mi 
+    };
+  } catch (error) {
+    console.error("[ast] Error in analyzeFile:", error.message);
+    
+    // Return default metrics even if parsing fails
+    const locMetrics = calculateLOC(code);
+    return {
+      cc: 1,
+      halstead: {
+        n1: 0,
+        n2: 0,
+        N1: 0,
+        N2: 0,
+        vocabulary: 0,
+        length: 0,
+        volume: 0
+      },
+      loc: locMetrics,
+      mi: 0,
+      error: error.message
+    };
+  }
 }

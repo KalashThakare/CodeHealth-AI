@@ -3,8 +3,12 @@ import { QueueEvents, Worker } from "bullmq";
 import { connection } from "../lib/redis.js";
 import dotenv from "dotenv";
 import { analyzeFile } from "../utils/AST.js";
+import RepoFileMetrics  from "../database/models/repoFileMetrics.js";
+import { Project } from "../database/models/project.js";
 dotenv.config();
 
+await RepoFileMetrics.sync();
+await Project.sync()
 
 const CONCURRENCY = Number(process.env.ANALYSIS_CONCURRENCY || 4);
 const DEADLINE_MS = Number(process.env.ANALYSIS_DEADLINE_MS || 15 * 60 * 1000);
@@ -368,12 +372,34 @@ analyseEvents.on("failed", ({ jobId, failedReason }) => console.error("[analyse]
 
 export const ASTworker = new Worker(
   "repoFiles",
-  async job=>{
-    const { path, content } = job.data;
+  async job => {
+    const { path, content, repoId } = job.data;
     console.log(`Analyzing file: ${path}`);
 
+    if (!repoId) {
+      console.error(`[ast] Missing repoId for file: ${path}`);
+      return {
+        path,
+        error: true,
+        errorMessage: 'Missing repoId in job data'
+      };
+    }
+
     try {
-      // Skip non-JavaScript/TypeScript files
+
+      const project = await Project.findOne({
+        where: { repoId: repoId }
+      });
+
+      if (!project) {
+        console.error(`[ast] Project with repoId ${repoId} not found`);
+        return {
+          path,
+          error: true,
+          errorMessage: `Project with repoId ${repoId} not found`
+        };
+      }
+
       const validExtensions = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
       const fileExtension = path.substring(path.lastIndexOf('.'));
       
@@ -386,19 +412,54 @@ export const ASTworker = new Worker(
         };
       }
 
-      // Analyze the file
       const metrics = analyzeFile(content);
+
+      let metric = await RepoFileMetrics.findOne({
+        where: {
+          path: path,
+          repoId: repoId
+        }
+      });
+
+      const metricData = {
+        path: path,
+        repoId: repoId,
+        cyclomaticComplexity: metrics.cc,
+        maintainabilityIndex: Math.round(metrics.mi * 100) / 100,
+        locTotal: metrics.loc.loc,
+        locSource: metrics.loc.sloc,
+        locLogical: metrics.loc.lloc,
+        locComments: metrics.loc.cloc,
+        locBlank: metrics.loc.blank,
+        halsteadUniqueOperators: metrics.halstead.n1,
+        halsteadUniqueOperands: metrics.halstead.n2, 
+        halsteadTotalOperators: metrics.halstead.N1, 
+        halsteadTotalOperands: metrics.halstead.N2, 
+        halsteadVocabulary: metrics.halstead.vocabulary, 
+        halsteadLength: metrics.halstead.length,
+        halsteadVolume: Math.round(metrics.halstead.volume * 100) / 100,
+        analyzedAt: new Date() 
+      };
+
+      if (metric) {
+        await metric.update(metricData);
+        console.log(`[ast] Updated existing metric for ${path}`);
+      } else {
+        metric = await RepoFileMetrics.create(metricData);
+        console.log(`[ast] Created new metric for ${path}`);
+      }
 
       const result = {
         path,
+        repoId,
         metrics: {
           cyclomaticComplexity: metrics.cc,
           loc: {
-            total: metrics.locMetrics.loc,
-            source: metrics.locMetrics.sloc,
-            logical: metrics.locMetrics.lloc,
-            comments: metrics.locMetrics.cloc,
-            blank: metrics.locMetrics.blank
+            total: metrics.loc.loc,
+            source: metrics.loc.sloc,
+            logical: metrics.loc.lloc,
+            comments: metrics.loc.cloc,
+            blank: metrics.loc.blank
           },
           maintainabilityIndex: Math.round(metrics.mi * 100) / 100,
           halstead: {
@@ -416,8 +477,6 @@ export const ASTworker = new Worker(
 
       console.log(`[ast] Completed ${path}: CC=${metrics.cc}, MI=${result.metrics.maintainabilityIndex}`);
 
-      // TODO: Store results in database
-      // await storeAnalysisResults(result);
       return result;
 
     } catch (error) {
@@ -430,7 +489,6 @@ export const ASTworker = new Worker(
         analyzedAt: new Date().toISOString()
       };
     }
-
   },
   { 
     connection,

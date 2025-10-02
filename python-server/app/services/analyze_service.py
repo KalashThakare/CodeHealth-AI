@@ -91,20 +91,21 @@ async def full_repo_analysis(paylod:FullRepoAnalysisRequest)-> FullRepoAnalysisR
         for i in range(0, len(repofiles), batchSize):
             chunk = repofiles[i:i+batchSize]
 
-            path = repofiles["path"]
-            content = repofiles["content"]
-            if path.endswith(".py"):
-                analysis.append(analyze_code(path, content))
-                # async with session.post(
-                #     "http://localhost:8080/analyze/enqueue-batch"
-                # )
-                print("analysis is ",analysis)
-            else:
+            for repofile in chunk:
+                path = repofile["path"]
+                content = repofile["content"]
+                
+                if path.endswith(".py"):
+                    analysis.append(analyze_code(path, content))
+                    print("analysis is ", analysis)
+            
+            non_py_files = [f for f in chunk if not f["path"].endswith(".py")]
+            if non_py_files:
                 async with session.post(
                     "http://localhost:8080/analyze/enqueue-batch",
-                    json={"files":chunk}
-                )as resp:
+                    json={"files": non_py_files,"repoId":paylod.repoId}
+                ) as resp:
                     result = await resp.json()
-                    print(f"Batch {i//batchSize + 1}:{result}")
+                    print(f"Batch {i//batchSize + 1}: {result}")
 
     print("Successfully printed files", repofiles)

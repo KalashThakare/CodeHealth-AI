@@ -1,4 +1,5 @@
 import { Project } from "./project.js";
+import  RepoFileMetrics  from "./repoFileMetrics.js";
 import Team from "./team.js";
 import TeamInvite from "./teamInvite.js";
 import TeamMember from "./teamMember.js";
@@ -25,4 +26,17 @@ Project.belongsTo(User, { foreignKey: "userId" });
 
 Project.hasMany(WebhookEvent, { foreignKey: 'projectId' });
 WebhookEvent.belongsTo(Project, { foreignKey: 'projectId' });
+
+Project.hasMany(RepoFileMetrics, {
+  foreignKey: 'repoId',
+  sourceKey:'repoId',
+  as: 'fileMetrics',
+  onDelete: 'CASCADE'
+});
+
+RepoFileMetrics.belongsTo(Project, {
+  foreignKey: 'repoId',
+  targetKey: 'repoId',
+  as: 'project'
+});
 

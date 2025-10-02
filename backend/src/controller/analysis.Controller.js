@@ -53,15 +53,18 @@ export const Analyse_repo = async(req,res)=>{
 }
 
 export const enqueueBatch = async(req,res)=>{
-    const {files} = req.body;
-    console.log(files);
+    const {files, repoId} = req.body;
     if(!Array.isArray(files)){
         return res.status(400).json({message:"Invalid response"});
     }
 
     const jobs = files.map(file=>({
         name:file.path,
-        data:file
+        data: {
+            ...file,        
+            repoId: repoId  
+        }
+
     }));
 
     await filesQueue.addBulk(jobs);
