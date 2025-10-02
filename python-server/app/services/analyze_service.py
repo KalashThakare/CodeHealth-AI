@@ -5,6 +5,8 @@ from app.services.prioritization import seed_prioritization
 from app.schemas.fullrepo_analyze import FullRepoAnalysisRequest, FullRepoAnalysisResponse
 from app.services.github_api import fetch_repo_code
 from app.services.github_auth import get_installation_token
+import asyncio
+import aiohttp
 
 
 async def push_analyze_repo(req: PushAnalyzeRequest) -> PushAnalyzeResponse:
@@ -28,5 +30,18 @@ def pull_analyze_repo(payload: PullAnalyzeRequest) -> PullAnalyzeResponse:
 async def full_repo_analysis(paylod:FullRepoAnalysisRequest)-> FullRepoAnalysisResponse:
     token = await get_installation_token(paylod.installationId)
     repofiles = await fetch_repo_code(paylod.owner, paylod.repoName, paylod.branch, token )
+
+    batchSize = 100
+
+    async with aiohttp.ClientSession() as session:
+        for i in range(0, len(repofiles), batchSize):
+            chunk = repofiles[i:i+batchSize]
+
+            async with session.post(
+                "http://localhost:8080/analyze/enqueue-batch",
+                json={"files":chunk}
+            )as resp:
+                result = await resp.json()
+                print(f"Batch {i//batchSize + 1}:{result}")
 
     print("Successfully printed files", repofiles)

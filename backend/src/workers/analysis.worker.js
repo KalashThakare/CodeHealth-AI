@@ -2,6 +2,7 @@ import axios from "axios";
 import { QueueEvents, Worker } from "bullmq";
 import { connection } from "../lib/redis.js";
 import dotenv from "dotenv";
+import { analyzeFile } from "../utils/AST.js";
 dotenv.config();
 
 
@@ -364,3 +365,80 @@ analyseEvents.on("waiting", ({ jobId }) => console.log("[analyse] waiting", jobI
 analyseEvents.on("active", ({ jobId }) => console.log("[analyse] active", jobId));
 analyseEvents.on("completed", ({ jobId }) => console.log("[analyse] completed", jobId));
 analyseEvents.on("failed", ({ jobId, failedReason }) => console.error("[analyse] failed", jobId, failedReason));
+
+export const ASTworker = new Worker(
+  "repoFiles",
+  async job=>{
+    const { path, content } = job.data;
+    console.log(`Analyzing file: ${path}`);
+
+    try {
+      // Skip non-JavaScript/TypeScript files
+      const validExtensions = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
+      const fileExtension = path.substring(path.lastIndexOf('.'));
+      
+      if (!validExtensions.includes(fileExtension)) {
+        console.log(`[ast] Skipping ${path} - not a JS/TS file`);
+        return {
+          path,
+          skipped: true,
+          reason: 'Not a JavaScript/TypeScript file'
+        };
+      }
+
+      // Analyze the file
+      const metrics = analyzeFile(content);
+
+      const result = {
+        path,
+        metrics: {
+          cyclomaticComplexity: metrics.cc,
+          linesOfCode: metrics.loc,
+          maintainabilityIndex: Math.round(metrics.mi * 100) / 100,
+          halstead: {
+            uniqueOperators: metrics.halstead.n1,
+            uniqueOperands: metrics.halstead.n2,
+            totalOperators: metrics.halstead.N1,
+            totalOperands: metrics.halstead.N2,
+            vocabulary: metrics.halstead.vocabulary,
+            length: metrics.halstead.length,
+            volume: Math.round(metrics.halstead.volume * 100) / 100
+          }
+        },
+        analyzedAt: new Date().toISOString()
+      };
+
+      console.log(`[ast] Completed ${path}: CC=${metrics.cc}, MI=${result.metrics.maintainabilityIndex}`);
+
+      // TODO: Store results in database
+      // await storeAnalysisResults(result);
+      return result;
+
+    } catch (error) {
+      console.error(`[ast] Error analyzing ${path}:`, error.message);
+      
+      return {
+        path,
+        error: true,
+        errorMessage: error.message,
+        analyzedAt: new Date().toISOString()
+      };
+    }
+
+  },
+  { 
+    connection,
+    concurrency: 5
+  }
+);
+
+ASTworker.on("ready", () => console.log("[ast] worker ready"));
+ASTworker.on("error", err => console.error("[ast] worker error", err));
+ASTworker.on("failed", (job, err) => console.error(`[ast] job failed ${job?.id}`, err));
+ASTworker.on("completed", job => console.log(`[ast] job completed ${job.id}`));
+
+const astEvents = new QueueEvents("repoFiles", { connection });
+astEvents.on("waiting", ({ jobId }) => console.log("[ast] waiting", jobId));
+astEvents.on("active", ({ jobId }) => console.log("[ast] active", jobId));
+astEvents.on("completed", ({ jobId }) => console.log("[ast] completed", jobId));
+astEvents.on("failed", ({ jobId, failedReason }) => console.error("[ast] failed", jobId, failedReason));

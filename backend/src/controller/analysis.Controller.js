@@ -1,5 +1,6 @@
 import { Project } from "../database/models/project.js"
 import { handleAnalyse } from "../services/handlers/analyse.handler.js";
+import { filesQueue } from "../lib/redis.js";
 Project.sync();
 
 export const Analyse_repo = async(req,res)=>{
@@ -49,4 +50,21 @@ export const Analyse_repo = async(req,res)=>{
         console.log(error);
         return res.status(500).json({message:"Internal server error"});
     }
+}
+
+export const enqueueBatch = async(req,res)=>{
+    const {files} = req.body;
+    console.log(files);
+    if(!Array.isArray(files)){
+        return res.status(400).json({message:"Invalid response"});
+    }
+
+    const jobs = files.map(file=>({
+        name:file.path,
+        data:file
+    }));
+
+    await filesQueue.addBulk(jobs);
+
+    res.send({added:jobs.length});
 }
