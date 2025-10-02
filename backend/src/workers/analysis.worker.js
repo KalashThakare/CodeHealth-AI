@@ -393,7 +393,13 @@ export const ASTworker = new Worker(
         path,
         metrics: {
           cyclomaticComplexity: metrics.cc,
-          linesOfCode: metrics.loc,
+          loc: {
+            total: metrics.locMetrics.loc,
+            source: metrics.locMetrics.sloc,
+            logical: metrics.locMetrics.lloc,
+            comments: metrics.locMetrics.cloc,
+            blank: metrics.locMetrics.blank
+          },
           maintainabilityIndex: Math.round(metrics.mi * 100) / 100,
           halstead: {
             uniqueOperators: metrics.halstead.n1,
