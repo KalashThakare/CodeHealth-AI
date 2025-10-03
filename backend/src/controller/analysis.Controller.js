@@ -2,77 +2,78 @@ import { Project } from "../database/models/project.js"
 import { handleAnalyse } from "../services/handlers/analyse.handler.js";
 import { filesQueue } from "../lib/redis.js";
 import PushAnalysisMetrics from "../database/models/pushAnalysisMetrics.js";
+import RepoFileMetrics from "../database/models/repoFileMetrics.js";
 
 await Project.sync();
 await PushAnalysisMetrics.sync();
 
-export const Analyse_repo = async(req,res)=>{
-    try {
-        const repoId = req.body.repoId;
-        if(!repoId){
-            return res.status(404).json({message:"repo for analysis not selected"});
-        }
-        const repo = await Project.findOne({where:{repoId:repoId}})
-
-        if(!repo){
-            return res.status(404).json({message:"Repo selected for analysis not found"});
-        }
-
-        const fullName = repo.fullName
-        const [owner, repoName] = fullName.split("/");
-
-        if (!owner || !repoName) {
-            return res.status(400).json({ 
-                message: "Invalid repository full name format",
-                error: "INVALID_REPO_FORMAT" 
-            });
-        }
-
-        const payload = {
-            repoId: repo.repoId,
-            installationId: repo.installationId,
-            owner: owner,
-            repoName: repoName,
-            defaultBranch: repo.defaultBranch || "main",
-            requestedBy: req.user?.id || null 
-        };
-
-        const result = await handleAnalyse(payload);
-        console.log(result);
-        return res.status(202).json({
-            message: "Repository analysis has been queued successfully",
-            data: {
-                jobId: result.jobId,
-                status: 'queued',
-                repoId: repo.repoId,
-                estimatedWaitTime: result.estimatedWaitTime || '2-5 minutes'
-            }
-        });
-
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({message:"Internal server error"});
+export const Analyse_repo = async (req, res) => {
+  try {
+    const repoId = req.body.repoId;
+    if (!repoId) {
+      return res.status(404).json({ message: "repo for analysis not selected" });
     }
+    const repo = await Project.findOne({ where: { repoId: repoId } })
+
+    if (!repo) {
+      return res.status(404).json({ message: "Repo selected for analysis not found" });
+    }
+
+    const fullName = repo.fullName
+    const [owner, repoName] = fullName.split("/");
+
+    if (!owner || !repoName) {
+      return res.status(400).json({
+        message: "Invalid repository full name format",
+        error: "INVALID_REPO_FORMAT"
+      });
+    }
+
+    const payload = {
+      repoId: repo.repoId,
+      installationId: repo.installationId,
+      owner: owner,
+      repoName: repoName,
+      defaultBranch: repo.defaultBranch || "main",
+      requestedBy: req.user?.id || null
+    };
+
+    const result = await handleAnalyse(payload);
+    console.log(result);
+    return res.status(202).json({
+      message: "Repository analysis has been queued successfully",
+      data: {
+        jobId: result.jobId,
+        status: 'queued',
+        repoId: repo.repoId,
+        estimatedWaitTime: result.estimatedWaitTime || '2-5 minutes'
+      }
+    });
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 }
 
-export const enqueueBatch = async(req,res)=>{
-    const {files, repoId} = req.body;
-    if(!Array.isArray(files)){
-        return res.status(400).json({message:"Invalid response"});
+export const enqueueBatch = async (req, res) => {
+  const { files, repoId } = req.body;
+  if (!Array.isArray(files)) {
+    return res.status(400).json({ message: "Invalid response" });
+  }
+
+  const jobs = files.map(file => ({
+    name: file.path,
+    data: {
+      ...file,
+      repoId: repoId
     }
 
-    const jobs = files.map(file=>({
-        name:file.path,
-        data: {
-            ...file,        
-            repoId: repoId  
-        }
+  }));
 
-    }));
+  await filesQueue.addBulk(jobs);
 
-    await filesQueue.addBulk(jobs);
-
-    res.send({added:jobs.length});
+  res.send({ added: jobs.length });
 }
 
 export const collectPushMetrics = async (req, res) => {
@@ -80,14 +81,14 @@ export const collectPushMetrics = async (req, res) => {
     const { message, impact, prio, repoId } = req.body;
 
     if (!message || !impact || !prio) {
-      return res.status(400).json({ 
-        message: "Required fields are missing (message, impact, prio)" 
+      return res.status(400).json({
+        message: "Required fields are missing (message, impact, prio)"
       });
     }
 
     if (!repoId) {
-      return res.status(400).json({ 
-        message: "repoId is missing" 
+      return res.status(400).json({
+        message: "repoId is missing"
       });
     }
 
@@ -98,13 +99,13 @@ export const collectPushMetrics = async (req, res) => {
     });
 
     if (!repo) {
-      return res.status(404).json({ 
-        message: "No project found associated with this repoId" 
+      return res.status(404).json({
+        message: "No project found associated with this repoId"
       });
     }
 
     const messageMatch = message.match(/Analyzed (.+?) on (.+?)\. Impact=([\d.]+), threshold=([\d.]+)/);
-    
+
     let repository = repo.name;
     let branch = 'main';
     let impactValue = impact.score;
@@ -117,17 +118,19 @@ export const collectPushMetrics = async (req, res) => {
       thresholdValue = parseFloat(messageMatch[4]);
     }
 
+    const files = impact.files || [];
+
     const metric = await PushAnalysisMetrics.create({
       repository: repository,
       repoId: repoId,
       branch: branch,
-      commitSha: null, 
+      commitSha: null,
       impact: impactValue,
       threshold: thresholdValue,
       score: impact.score,
       ok: impactValue < thresholdValue,
       message: message,
-      files: [], 
+      files: files,
       riskAnalysis: {
         impactedFiles: impact.impactedFiles || [],
         candidates: prio.candidates || []
@@ -144,6 +147,7 @@ export const collectPushMetrics = async (req, res) => {
         impact: metric.impact,
         score: metric.score,
         ok: metric.ok,
+        filesCount: files.length,
         analyzedAt: metric.analyzedAt
       }
     });
@@ -156,3 +160,39 @@ export const collectPushMetrics = async (req, res) => {
     });
   }
 };
+
+export const getFileMetrics = async (req, res) => {
+
+  try {
+
+    const { repoId } = req.body;
+
+    if (!repoId) return res.status(400).json({ message: "repoId is missing" });
+
+    const repo = await Project.findOne({
+      where: {
+        repoId: repoId
+      }
+    });
+
+    if (!repo) return res.status(400).json({ message: "No repo found" });
+
+    const metric = await RepoFileMetrics.findAll({
+      where:{
+        repoId:repoId
+      }
+    })
+
+    if (!metric) return res.status(400).json({ message: "No metrics found for perticular repository" });
+
+    return res.status(200).json({message:"Success",metric});
+
+  } catch (error) {
+
+    console.error(error);
+    return res.status(500).json({message:"Internal server error"});
+
+  }
+
+
+}
