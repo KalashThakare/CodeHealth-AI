@@ -107,6 +107,11 @@ const RepoFileMetrics = sequelize.define(
       { fields: ["branch"] },
       { fields: ["path"] },
       { fields: ["repoId", "path", "analyzedAt"] },
+      { 
+        unique: true, 
+        fields: ["path", "repoId"],
+        name: "unique_path_repoId"
+      },
     ],
   }
 );

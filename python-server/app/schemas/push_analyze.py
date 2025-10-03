@@ -25,7 +25,7 @@ class PushAnalyzeRequest(BaseModel):
 
     model_config = ConfigDict(
         validate_by_name=True,      
-        validate_by_alias=True,      
+        validate_by_alias=True,     
         extra="ignore",
     )
 

@@ -57,7 +57,7 @@ export const Analyse_repo = async (req, res) => {
 }
 
 export const enqueueBatch = async (req, res) => {
-  const { files, repoId } = req.body;
+  const { files, repoId, branch } = req.body;
   if (!Array.isArray(files)) {
     return res.status(400).json({ message: "Invalid response" });
   }
@@ -66,7 +66,8 @@ export const enqueueBatch = async (req, res) => {
     name: file.path,
     data: {
       ...file,
-      repoId: repoId
+      repoId: repoId,
+      branch:branch
     }
 
   }));
@@ -161,6 +162,100 @@ export const collectPushMetrics = async (req, res) => {
   }
 };
 
+export const collectePythonMetrics = async (req, res) => {
+  try {
+    const { Metrics, repoId, commitSha, branch } = req.body;
+
+    if (!repoId) return res.status(400).json({ message: "repoId is missing" });
+    if (!Metrics || !Array.isArray(Metrics)) {
+      return res.status(400).json({ message: "Metrics array is missing or invalid" });
+    }
+
+    const repo = await Project.findOne({
+      where: {
+        repoId: repoId,
+      },
+    });
+
+    if (!repo) return res.status(404).json({ message: "No repository found" });
+
+    console.log(`Processing ${Metrics.length} file metrics for repo ${repoId}`);
+
+    const records = Metrics.map((metric) => {
+      const avgComplexity =
+        metric.cyclomatic && metric.cyclomatic.length > 0
+          ? Math.round(
+              metric.cyclomatic.reduce((sum, item) => sum + (item.complexity || 0), 0) /
+                metric.cyclomatic.length
+            )
+          : null;
+
+      return {
+        path: metric.path,
+        repoId: repoId,
+        commitSha: commitSha || null,
+        branch: branch || null,
+
+        cyclomaticComplexity: avgComplexity,
+
+        maintainabilityIndex: metric.maintainability?.mi || null,
+
+        locTotal: metric.loc || null,
+        locSource: metric.sloc || null,
+        locLogical: metric.lloc || null,
+        locComments: metric.comments || null,
+        locBlank: metric.blank || null,
+
+        halsteadUniqueOperators: metric.halstead?.h1 || null,
+        halsteadUniqueOperands: metric.halstead?.h2 || null,
+        halsteadTotalOperators: metric.halstead?.N1 || null,
+        halsteadTotalOperands: metric.halstead?.N2 || null,
+        halsteadVocabulary: metric.halstead?.vocabulary || null,
+        halsteadLength: metric.halstead?.length || null,
+        halsteadVolume: metric.halstead?.volume || null,
+
+        analyzedAt: new Date(),
+      };
+    });
+
+    
+    const savedRecords = await RepoFileMetrics.bulkCreate(records, {
+      updateOnDuplicate: [
+        "cyclomaticComplexity",
+        "maintainabilityIndex",
+        "locTotal",
+        "locSource",
+        "locLogical",
+        "locComments",
+        "locBlank",
+        "halsteadUniqueOperators",
+        "halsteadUniqueOperands",
+        "halsteadTotalOperators",
+        "halsteadTotalOperands",
+        "halsteadVocabulary",
+        "halsteadLength",
+        "halsteadVolume",
+        "analyzedAt",
+      ],
+    });
+
+    console.log(`Successfully saved ${savedRecords.length} file metrics to database`);
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully saved ${savedRecords.length} file metrics`,
+      count: savedRecords.length,
+    });
+  } catch (error) {
+    console.error("Error collecting Python metrics:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
 export const getFileMetrics = async (req, res) => {
 
   try {
@@ -194,5 +289,39 @@ export const getFileMetrics = async (req, res) => {
 
   }
 
+}
+
+export const getPushMetrics = async (req, res) => {
+
+  try {
+
+    const { repoId } = req.body;
+
+    if (!repoId) return res.status(400).json({ message: "repoId is missing" });
+
+    const repo = await Project.findOne({
+      where: {
+        repoId: repoId
+      }
+    });
+
+    if (!repo) return res.status(400).json({ message: "No repo found" });
+
+    const metric = await PushAnalysisMetrics.findAll({
+      where:{
+        repoId:repoId
+      }
+    })
+
+    if (!metric) return res.status(400).json({ message: "No metrics found for perticular repository" });
+
+    return res.status(200).json({message:"Success",metric});
+
+  } catch (error) {
+
+    console.error(error);
+    return res.status(500).json({message:"Internal server error"});
+
+  }
 
 }

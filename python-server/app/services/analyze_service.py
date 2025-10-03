@@ -45,7 +45,7 @@ def pull_analyze_repo(payload: PullAnalyzeRequest) -> PullAnalyzeResponse:
         message=f"Analyzed {payload.repo} on {payload.branch}",
     )
 
-def analyze_code(path: str, content: str)-> StaticAnalysisResponse:
+def analyze_code(path: str, content: str) -> StaticAnalysisResponse:
     raw = analyze(content)
 
     # --- Cyclomatic complexity
@@ -61,20 +61,30 @@ def analyze_code(path: str, content: str)-> StaticAnalysisResponse:
 
     # --- Halstead metrics
     hal = h_visit(content)
-
-    halstead = Halstead(
-        h1=hal.h1,
-        h2=hal.h2,
-        N1=hal.N1,
-        N2=hal.N2,
-        vocabulary=hal.vocabulary,
-        length=hal.length,
-        volume=hal.volume,
-        difficulty=hal.difficulty,
-        effort=hal.effort,
-        time=hal.time,
-        bugs=hal.bugs
-    )
+    
+    # Check if hal is not empty and has the total attribute
+    if hal and hasattr(hal, 'total'):
+        hal_metrics = hal.total
+        halstead = Halstead(
+            h1=hal_metrics.h1,
+            h2=hal_metrics.h2,
+            N1=hal_metrics.N1,
+            N2=hal_metrics.N2,
+            vocabulary=hal_metrics.vocabulary,
+            length=hal_metrics.length,
+            volume=hal_metrics.volume,
+            difficulty=hal_metrics.difficulty,
+            effort=hal_metrics.effort,
+            time=hal_metrics.time,
+            bugs=hal_metrics.bugs
+        )
+    else:
+        # Provide default values if Halstead analysis fails
+        halstead = Halstead(
+            h1=0, h2=0, N1=0, N2=0,
+            vocabulary=0, length=0, volume=0,
+            difficulty=0, effort=0, time=0, bugs=0
+        )
 
     # --- Maintainability index
     mi_score = mi_visit(content, True)  # returns numeric score
@@ -95,9 +105,10 @@ def analyze_code(path: str, content: str)-> StaticAnalysisResponse:
         maintainability=maintainability,
     )
 
-async def full_repo_analysis(paylod:FullRepoAnalysisRequest)-> FullRepoAnalysisResponse:
-    token = await get_installation_token(paylod.installationId)
-    repofiles = await fetch_repo_code(paylod.owner, paylod.repoName, paylod.branch, token )
+
+async def full_repo_analysis(payload: FullRepoAnalysisRequest) -> FullRepoAnalysisResponse:
+    token = await get_installation_token(payload.installationId)
+    repofiles = await fetch_repo_code(payload.owner, payload.repoName, payload.branch, token)
     analysis = []
     batchSize = 100
 
@@ -110,14 +121,33 @@ async def full_repo_analysis(paylod:FullRepoAnalysisRequest)-> FullRepoAnalysisR
                 content = repofile["content"]
                 
                 if path.endswith(".py"):
-                    analysis.append(analyze_code(path, content))
-                    print("analysis is ", analysis)
+                    try:
+                        analysis_result = analyze_code(path, content)
+                        analysis.append(analysis_result)
+                        
+                        # Convert Pydantic models to dicts for JSON serialization
+                        serialized_analysis = [
+                            a.model_dump() if hasattr(a, 'model_dump') else a.dict()
+                            for a in analysis
+                        ]
+                        
+                        async with session.post(
+                            "http://localhost:8080/analyze/python-batch",
+                            json={"Metrics": serialized_analysis, "repoId": payload.repoId, "branch":payload.branch}
+                        ) as resp:
+                            result = await resp.json()
+                            print(result)
+
+                        print("analysis is", len(analysis), "files")
+                    except Exception as e:
+                        print(f"Error analyzing {path}: {str(e)}")
+                        continue
             
             non_py_files = [f for f in chunk if not f["path"].endswith(".py")]
             if non_py_files:
                 async with session.post(
                     "http://localhost:8080/analyze/enqueue-batch",
-                    json={"files": non_py_files,"repoId":paylod.repoId}
+                    json={"files": non_py_files, "repoId": payload.repoId, "branch":payload.branch}
                 ) as resp:
                     result = await resp.json()
                     print(f"Batch {i//batchSize + 1}: {result}")

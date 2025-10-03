@@ -373,7 +373,7 @@ analyseEvents.on("failed", ({ jobId, failedReason }) => console.error("[analyse]
 export const ASTworker = new Worker(
   "repoFiles",
   async job => {
-    const { path, content, repoId } = job.data;
+    const { path, content, repoId, branch } = job.data;
     console.log(`Analyzing file: ${path}`);
 
     if (!repoId) {
@@ -423,6 +423,7 @@ export const ASTworker = new Worker(
 
       const metricData = {
         path: path,
+        branch:branch,
         repoId: repoId,
         cyclomaticComplexity: metrics.cc,
         maintainabilityIndex: Math.round(metrics.mi * 100) / 100,
@@ -452,6 +453,7 @@ export const ASTworker = new Worker(
       const result = {
         path,
         repoId,
+        branch,
         metrics: {
           cyclomaticComplexity: metrics.cc,
           loc: {
