@@ -21,6 +21,20 @@ async def push_analyze_repo(req: PushAnalyzeRequest) -> PushAnalyzeResponse:
     ok = score < req.threshold  
     message = f"Analyzed {req.repo} on {req.branch}. Impact={score:.2f}, threshold={req.threshold:.2f}."
 
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            "http://localhost:8080/analyze/pushMetric",
+            json={
+                "message":message, 
+                "impact":impact,
+                "prio":prio,
+                "repoId":req.repoId
+            }
+        )as resp:
+            result = await resp.json()
+            print(result)
+    
+
     print(message, impact, prio)
     return PushAnalyzeResponse(ok=ok, score=score, message=message)
 

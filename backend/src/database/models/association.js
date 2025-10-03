@@ -1,4 +1,5 @@
 import { Project } from "./project.js";
+import PushAnalysisMetrics from "./pushAnalysisMetrics.js";
 import  RepoFileMetrics  from "./repoFileMetrics.js";
 import Team from "./team.js";
 import TeamInvite from "./teamInvite.js";
@@ -35,6 +36,19 @@ Project.hasMany(RepoFileMetrics, {
 });
 
 RepoFileMetrics.belongsTo(Project, {
+  foreignKey: 'repoId',
+  targetKey: 'repoId',
+  as: 'project'
+});
+
+Project.hasMany(PushAnalysisMetrics, {
+  foreignKey: 'repoId',
+  sourceKey:'repoId',
+  as: 'pushMetrics',
+  onDelete: 'CASCADE'
+});
+
+PushAnalysisMetrics.belongsTo(Project, {
   foreignKey: 'repoId',
   targetKey: 'repoId',
   as: 'project'
