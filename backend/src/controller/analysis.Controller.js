@@ -79,7 +79,6 @@ export const collectPushMetrics = async (req, res) => {
   try {
     const { message, impact, prio, repoId } = req.body;
 
-    // Validate required fields
     if (!message || !impact || !prio) {
       return res.status(400).json({ 
         message: "Required fields are missing (message, impact, prio)" 
@@ -92,7 +91,6 @@ export const collectPushMetrics = async (req, res) => {
       });
     }
 
-    // Verify project exists
     const repo = await Project.findOne({
       where: {
         repoId: repoId
@@ -105,8 +103,6 @@ export const collectPushMetrics = async (req, res) => {
       });
     }
 
-    // Parse the message to extract repository and branch
-    // Format: "Analyzed {repo} on {branch}. Impact={score}, threshold={threshold}."
     const messageMatch = message.match(/Analyzed (.+?) on (.+?)\. Impact=([\d.]+), threshold=([\d.]+)/);
     
     let repository = repo.name;
@@ -121,18 +117,17 @@ export const collectPushMetrics = async (req, res) => {
       thresholdValue = parseFloat(messageMatch[4]);
     }
 
-    // Create the push analysis metrics record
     const metric = await PushAnalysisMetrics.create({
       repository: repository,
       repoId: repoId,
       branch: branch,
-      commitSha: null, // Add if available in future
+      commitSha: null, 
       impact: impactValue,
       threshold: thresholdValue,
       score: impact.score,
       ok: impactValue < thresholdValue,
       message: message,
-      files: [], // Add if files data is sent from Python
+      files: [], 
       riskAnalysis: {
         impactedFiles: impact.impactedFiles || [],
         candidates: prio.candidates || []
