@@ -1,6 +1,9 @@
+import CommitsAnalysis from "./commit_analysis.js";
+import Commit from "./commitsMetadata.js";
 import { Project } from "./project.js";
 import PushAnalysisMetrics from "./pushAnalysisMetrics.js";
 import  RepoFileMetrics  from "./repoFileMetrics.js";
+import RepoMetadata from "./repoMedata.js";
 import Team from "./team.js";
 import TeamInvite from "./teamInvite.js";
 import TeamMember from "./teamMember.js";
@@ -49,6 +52,45 @@ Project.hasMany(PushAnalysisMetrics, {
 });
 
 PushAnalysisMetrics.belongsTo(Project, {
+  foreignKey: 'repoId',
+  targetKey: 'repoId',
+  as: 'project'
+});
+
+Project.hasMany(CommitsAnalysis, {
+  foreignKey: 'repoId',
+  sourceKey:'repoId',
+  as: 'commit_analysis',
+  onDelete: 'CASCADE'
+});
+
+CommitsAnalysis.belongsTo(Project, {
+  foreignKey: 'repoId',
+  targetKey: 'repoId',
+  as: 'project'
+});
+
+Project.hasMany(Commit, {
+  foreignKey: 'repoId',
+  sourceKey:'repoId',
+  as: 'commits',
+  onDelete: 'CASCADE'
+});
+
+Commit.belongsTo(Project, {
+  foreignKey: 'repoId',
+  targetKey: 'repoId',
+  as: 'project'
+});
+
+Project.hasMany(RepoMetadata, {
+  foreignKey: 'repoId',
+  sourceKey:'repoId',
+  as: 'repo_metadata',
+  onDelete: 'CASCADE'
+});
+
+RepoMetadata.belongsTo(Project, {
   foreignKey: 'repoId',
   targetKey: 'repoId',
   as: 'project'

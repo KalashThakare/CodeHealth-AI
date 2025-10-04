@@ -3,9 +3,15 @@ import { handleAnalyse } from "../services/handlers/analyse.handler.js";
 import { filesQueue } from "../lib/redis.js";
 import PushAnalysisMetrics from "../database/models/pushAnalysisMetrics.js";
 import RepoFileMetrics from "../database/models/repoFileMetrics.js";
+import CommitsAnalysis from "../database/models/commit_analysis.js";
+import Commit from "../database/models/commitsMetadata.js";
+import RepoMetadata from "../database/models/repoMedata.js";
 
 await Project.sync();
 await PushAnalysisMetrics.sync();
+await CommitsAnalysis.sync();
+await Commit.sync();
+await RepoMetadata.sync();
 
 export const Analyse_repo = async (req, res) => {
   try {
@@ -67,7 +73,7 @@ export const enqueueBatch = async (req, res) => {
     data: {
       ...file,
       repoId: repoId,
-      branch:branch
+      branch: branch
     }
 
   }));
@@ -185,9 +191,9 @@ export const collectePythonMetrics = async (req, res) => {
       const avgComplexity =
         metric.cyclomatic && metric.cyclomatic.length > 0
           ? Math.round(
-              metric.cyclomatic.reduce((sum, item) => sum + (item.complexity || 0), 0) /
-                metric.cyclomatic.length
-            )
+            metric.cyclomatic.reduce((sum, item) => sum + (item.complexity || 0), 0) /
+            metric.cyclomatic.length
+          )
           : null;
 
       return {
@@ -218,7 +224,7 @@ export const collectePythonMetrics = async (req, res) => {
       };
     });
 
-    
+
     const savedRecords = await RepoFileMetrics.bulkCreate(records, {
       updateOnDuplicate: [
         "cyclomaticComplexity",
@@ -273,19 +279,19 @@ export const getFileMetrics = async (req, res) => {
     if (!repo) return res.status(400).json({ message: "No repo found" });
 
     const metric = await RepoFileMetrics.findAll({
-      where:{
-        repoId:repoId
+      where: {
+        repoId: repoId
       }
     })
 
     if (!metric) return res.status(400).json({ message: "No metrics found for perticular repository" });
 
-    return res.status(200).json({message:"Success",metric});
+    return res.status(200).json({ message: "Success", metric });
 
   } catch (error) {
 
     console.error(error);
-    return res.status(500).json({message:"Internal server error"});
+    return res.status(500).json({ message: "Internal server error" });
 
   }
 
@@ -308,20 +314,142 @@ export const getPushMetrics = async (req, res) => {
     if (!repo) return res.status(400).json({ message: "No repo found" });
 
     const metric = await PushAnalysisMetrics.findAll({
-      where:{
-        repoId:repoId
+      where: {
+        repoId: repoId
       }
     })
 
     if (!metric) return res.status(400).json({ message: "No metrics found for perticular repository" });
 
-    return res.status(200).json({message:"Success",metric});
+    return res.status(200).json({ message: "Success", metric });
 
   } catch (error) {
 
     console.error(error);
-    return res.status(500).json({message:"Internal server error"});
+    return res.status(500).json({ message: "Internal server error" });
 
   }
 
+}
+
+export const getCommitAnalysis = async (req, res) => {
+  try {
+
+    const { commits_analysis, repoId, branch } = req.body;
+
+    if (!commits_analysis || !repoId || !branch) {
+      return res.status(400).json({ message: "fields are empty" });
+    }
+
+    const repo = await Project.findOne({
+      where: {
+        repoId: repoId
+      }
+    })
+
+    if (!repo) return res.status(400).json({ message: "No repository found" });
+
+    await CommitsAnalysis.create({
+      repoId: repoId,
+      branch: branch,
+      totalCommits: commits_analysis.totalCommits,
+      topContributors: commits_analysis.topContributors,
+      commitsPerDay: commits_analysis.commitsPerDay,
+    });
+
+    return res.status(201).json({ message: "Success" });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export const getCommitMetadata = async (req, res) => {
+  try {
+    const { commits, repoId, branch } = req.body;
+
+    if (!commits || !repoId || !branch) {
+      return res.status(400).json({ message: "fields are empty" });
+    }
+
+    const repo = await Project.findOne({
+      where: {
+        repoId: repoId
+      }
+    })
+
+    if (!repo) return res.status(400).json({ message: "No repository found" });
+
+    const incomingShas = commits.map(commit => commit.sha);
+
+    const existingCommits = await Commit.findAll({
+      where: {
+        sha: incomingShas
+      },
+      attributes: ['sha']
+    });
+
+    const existingShas = new Set(existingCommits.map(commit => commit.sha));
+
+    const newCommits = commits.filter(commit => !existingShas.has(commit.sha));
+
+    if (newCommits.length === 0) {
+      return res.status(200).json({
+        message: 'All commits already exist in database',
+        skipped: commits.length,
+        added: 0
+      });
+    }
+
+
+    const commitsData = newCommits.map(commit => ({
+      repoId: repoId,
+      branch: branch,
+      sha: commit.sha,
+      message: commit.message,
+      authorName: commit.author.name,
+      authorEmail: commit.author.email,
+      authorDate: new Date(commit.author.date),
+      committerName: commit.committer.name,
+      committerDate: new Date(commit.committer.date),
+    }));
+
+    // Bulk insert only new commits
+    const result = await Commit.bulkCreate(commitsData, {
+      validate: true,
+    });
+
+    return res.status(201).json({ message: "Success" , added:result.length});
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export const getRepoMetadata = async (req, res) => {
+  try {
+    const { metadata, repoId, branch } = req.body;
+
+    if (!metadata || !repoId || !branch) {
+      return res.status(400).json({ message: "fields are empty" });
+    }
+
+    const repo = await Project.findOne({
+      where: {
+        repoId: repoId
+      }
+    })
+
+    if (!repo) return res.status(400).json({ message: "No repository found" });
+
+    console.log(metadata);
+
+    return res.status(200).json({ message: "Success" });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 }
