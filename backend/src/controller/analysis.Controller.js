@@ -444,7 +444,31 @@ export const getRepoMetadata = async (req, res) => {
 
     if (!repo) return res.status(400).json({ message: "No repository found" });
 
-    console.log(metadata);
+    const existingMeta = await RepoMetadata.findOne({
+      where: { repoId }
+    });
+
+    if (existingMeta) {
+      await existingMeta.update({
+        stars: metadata.stars,
+        forks: metadata.forks,
+        watchers: metadata.watchers,
+        license: metadata.license,
+        defaultBranch: metadata.default_branch,
+        visibility: metadata.visibility
+      });
+    } else {
+      await RepoMetadata.create({
+        repoId,
+        branch,
+        stars: metadata.stars,
+        forks: metadata.forks,
+        watchers: metadata.watchers,
+        license: metadata.license,
+        defaultBranch: metadata.default_branch,
+        visibility: metadata.visibility
+      });
+    }
 
     return res.status(200).json({ message: "Success" });
 
