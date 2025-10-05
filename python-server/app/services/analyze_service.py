@@ -77,7 +77,7 @@ async def full_repo_analysis(payload: FullRepoAnalysisRequest) -> FullRepoAnalys
         # Create tasks for parallel execution
         metadata_tasks = [
             send_metadata(
-                "http://localhost:8080/analyze/getCommits",
+                "http://localhost:8080/analyze/Commits",
                 {"commits": commits, "repoId": payload.repoId, "branch": payload.branch},
                 "Commits"
             ),

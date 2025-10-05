@@ -266,7 +266,7 @@ export const getFileMetrics = async (req, res) => {
 
   try {
 
-    const { repoId } = req.body;
+    const { repoId } = req.params;
 
     if (!repoId) return res.status(400).json({ message: "repoId is missing" });
 
@@ -301,7 +301,7 @@ export const getPushMetrics = async (req, res) => {
 
   try {
 
-    const { repoId } = req.body;
+    const { repoId } = req.params;
 
     if (!repoId) return res.status(400).json({ message: "repoId is missing" });
 
@@ -420,7 +420,7 @@ export const getCommitMetadata = async (req, res) => {
       validate: true,
     });
 
-    return res.status(201).json({ message: "Success" , added:result.length});
+    return res.status(201).json({ message: "Success", added: result.length });
 
   } catch (error) {
     console.error(error);
@@ -475,5 +475,62 @@ export const getRepoMetadata = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export const fetchCommits = async (req, res) => {
+  try {
+    const { repoId } = req.params;
+
+    if (!repoId) return res.status(404).json({ message: "repoId is missing" });
+
+    const repo = await Project.findOne({
+      where: {
+        repoId: repoId
+      }
+    });
+
+    if (!repo) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const commits = await Commit.findAll({
+      where: {
+        repoId: repoId,
+      },
+      order: [['createdAt', 'DESC']]
+    })
+
+    return res.status(200).json({ message: "success", commits })
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export const fetchCommitAnalysis = async(req,res)=>{
+  try {
+    const {repoId} = req.params;
+    if(!repoId) return res.status(404).json({message:"repoId is missing"});
+
+    const repo = await Project.findOne({
+      where:{
+        repoId:repoId
+      }
+    })
+
+    if(!repo) return res.status(404).json({message:"repo not found"});
+
+    const analysis = await CommitsAnalysis.findAll({
+      where:{
+        repoId:repoId
+      },
+      order:[['createdAt','DESC']]
+    })
+
+    return res.status(200).json({message:"Success", analysis});
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({message:"Internal server error"});
   }
 }
