@@ -1,6 +1,6 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
-import { Analyse_repo, collectePythonMetrics, collectPushMetrics, enqueueBatch, fetchCommitAnalysis, fetchCommits, getCommitAnalysis, getCommitMetadata, getFileMetrics, getPushMetrics, getRepoMetadata } from "../controller/analysis.Controller.js";
+import { Analyse_repo, collectePythonMetrics, collectPushMetrics, enqueueBatch, fetchCommitAnalysis, fetchCommits, getCommitAnalysis, getCommitMetadata, getContributers, getFileMetrics, getPushMetrics, getRepoMetadata } from "../controller/analysis.Controller.js";
 
 const router = express.Router();
 
@@ -11,6 +11,7 @@ router.post("/python-batch",collectePythonMetrics);
 router.post("/commits-analysis",getCommitAnalysis);
 router.post("/repo-metadata",getRepoMetadata);
 router.post("/Commits",getCommitMetadata);
+router.post("/contributors", getContributers);
 
 //below are for frontend use
 router.get("/:repoId/getfilemetrics",protectRoute, getFileMetrics);

@@ -91,11 +91,11 @@ async def full_repo_analysis(payload: FullRepoAnalysisRequest) -> FullRepoAnalys
                 {"metadata": metadata, "repoId": payload.repoId, "branch": payload.branch},
                 "Metadata"
             ),
-            # send_metadata(
-            #     "http://localhost:8080/analyze/contributors",
-            #     {"contributors": contributors, "repoId": payload.repoId, "branch": payload.branch},
-            #     "Contributors"
-            # ),
+            send_metadata(
+                "http://localhost:8080/analyze/contributors",
+                {"contributors": contributors, "repoId": payload.repoId, "branch": payload.branch},
+                "Contributors"
+            ),
             # send_metadata(
             #     "http://localhost:8080/analyze/issues",
             #     {"issues": issues, "repoId": payload.repoId, "branch": payload.branch},

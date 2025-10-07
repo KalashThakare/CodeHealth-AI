@@ -534,3 +534,26 @@ export const fetchCommitAnalysis = async(req,res)=>{
     return res.status(500).json({message:"Internal server error"});
   }
 }
+
+export const getContributers = async(req,res)=>{
+  try {
+    const {repoId, contributors} = req.body;
+    if(!repoId) return res.status(404).json({message:"repoId is missing"});
+    if(!contributors) return res.status(404).json({message:"contributers are missing"});
+
+    const repo = await Project.findOne({
+      where:{
+        repoId:repoId
+      }
+    })
+
+    if(!repo) return res.status(404).json({message:"No repository found"});
+
+    console.log(contributors);
+
+    console.log()
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({message:"Internal server error"});
+  }
+}
