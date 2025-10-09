@@ -8,6 +8,7 @@ import { WebhookEvent } from "../database/models/webhookEvents.js";
 import { pushAnalysisQueue, webhookQueue } from "../lib/redis.js";
 import { handlePush } from "../services/handlers/push.handler.js";
 import { handleIssues } from "../services/handlers/issues.handler.js";
+import { Analyse_repo } from "./analysis.Controller.js";
 
 await User.sync();
 await Project.sync();
@@ -236,6 +237,10 @@ export const githubWebhookController = async (req, res) => {
               installationId,
             },
           });
+
+          const result = await Analyse_repo(repo.id);
+          return res.status(200).json(result);
+          
         }
       }
 

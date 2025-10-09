@@ -13,26 +13,23 @@ await CommitsAnalysis.sync();
 await Commit.sync();
 await RepoMetadata.sync();
 
-export const Analyse_repo = async (req, res) => {
+export const Analyse_repo = async (repoId) => {
   try {
-    const repoId = req.body.repoId;
+
     if (!repoId) {
-      return res.status(404).json({ message: "repo for analysis not selected" });
+      throw new Error("repo for analysis not selected");
     }
     const repo = await Project.findOne({ where: { repoId: repoId } })
 
     if (!repo) {
-      return res.status(404).json({ message: "Repo selected for analysis not found" });
+      throw new Error("Repo selected for analysis not found");
     }
 
     const fullName = repo.fullName
     const [owner, repoName] = fullName.split("/");
 
     if (!owner || !repoName) {
-      return res.status(400).json({
-        message: "Invalid repository full name format",
-        error: "INVALID_REPO_FORMAT"
-      });
+      throw new Error("Invalid repository full name format");
     }
 
     const payload = {
@@ -41,12 +38,12 @@ export const Analyse_repo = async (req, res) => {
       owner: owner,
       repoName: repoName,
       defaultBranch: repo.defaultBranch || "main",
-      requestedBy: req.user?.id || null
+      requestedBy: null
     };
 
     const result = await handleAnalyse(payload);
     console.log(result);
-    return res.status(202).json({
+    return {
       message: "Repository analysis has been queued successfully",
       data: {
         jobId: result.jobId,
@@ -54,11 +51,11 @@ export const Analyse_repo = async (req, res) => {
         repoId: repo.repoId,
         estimatedWaitTime: result.estimatedWaitTime || '2-5 minutes'
       }
-    });
+    };
 
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "Internal server error" });
+    throw error;
   }
 }
 
@@ -551,7 +548,7 @@ export const getContributers = async(req,res)=>{
 
     console.log(contributors);
 
-    console.log()
+    return res.status(200).json({message:"Success"});
   } catch (error) {
     console.error(error);
     return res.status(500).json({message:"Internal server error"});
