@@ -47,7 +47,7 @@ async def full_repo_analysis(payload: FullRepoAnalysisRequest) -> FullRepoAnalys
     token = await get_installation_token(payload.installationId)
     repofiles = await fetch_repo_code(payload.owner, payload.repoName, payload.branch, token)
     analysis = []
-    batchSize = 100
+    batchSize = 50
 
     # Fetch all repository data
     contributors = await get_all_contributors(payload.owner, payload.repoName, token)
