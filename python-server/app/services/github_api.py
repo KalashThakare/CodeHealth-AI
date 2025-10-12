@@ -217,7 +217,7 @@ async def get_all_pr(owner:str, repo:str, token:str):
 async def get_all_contributors(owner: str, repo: str, token: str):
     url = f"{GITHUB_API}repos/{owner}/{repo}/contributors"
     headers = _gh_headers(token)
-    contributors = []
+    contributors_raw = []
     page = 1
 
     logger.info(f"Fetching contributors for {owner}/{repo}")
@@ -228,29 +228,23 @@ async def get_all_contributors(owner: str, repo: str, token: str):
             params = {"per_page": 100, "page": page}
             async with session.get(url, headers=headers, params=params) as resp:
                 logger.debug(f"Contributors API response status: {resp.status}")
-                
+
                 if resp.status == 404:
-                    # Repository not found, empty, or no access
                     logger.warning(f"Contributors endpoint returned 404 for {owner}/{repo}")
                     text = await resp.text()
                     logger.debug(f"Response body: {text}")
                     return {
                         "contributors": [],
                         "total_contributors": 0,
-                        "top_contributor": None,
-                        "top_share_percent": 0
                     }
-                    
+
                 if resp.status == 409:
-                    # Empty repository
                     logger.warning(f"Repository {owner}/{repo} is empty (409 Conflict)")
                     return {
                         "contributors": [],
                         "total_contributors": 0,
-                        "top_contributor": None,
-                        "top_share_percent": 0
                     }
-                    
+
                 if resp.status != 200:
                     text = await resp.text()
                     logger.error(f"GitHub API error {resp.status}: {text}")
@@ -260,24 +254,29 @@ async def get_all_contributors(owner: str, repo: str, token: str):
                 if not data:
                     break
 
-                contributors.extend(data)
+                contributors_raw.extend(data)
                 logger.info(f"Fetched {len(data)} contributors on page {page}")
                 page += 1
 
+    # Normalize each contributor’s essential details and contributions count
+    contributors = []
+    for c in contributors_raw:
+        contributors.append({
+            "login": c.get("login") or c.get("name"),  # anon entries may not have login
+            "id": c.get("id"),
+            "type": c.get("type"),
+            "avatar_url": c.get("avatar_url"),
+            "html_url": c.get("html_url"),
+            "contributions": c.get("contributions", 0),
+        })
+
     total_contributors = len(contributors)
-    top_contributor = contributors[0] if contributors else None
-    total_commits = sum(c["contributions"] for c in contributors)
-    top_share_percent = (
-        (top_contributor["contributions"] / total_commits) * 100 if top_contributor and total_commits > 0 else 0
-    )
 
     logger.info(f"Total contributors: {total_contributors}")
 
     return {
         "contributors": contributors,
         "total_contributors": total_contributors,
-        "top_contributor": top_contributor,
-        "top_share_percent": top_share_percent
     }
 
 async def get_all_releases(owner: str, repo: str, token: str):

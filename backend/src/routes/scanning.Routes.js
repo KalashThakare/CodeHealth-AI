@@ -1,6 +1,6 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
-import { Analyse_repo, collectePythonMetrics, collectPushMetrics, enqueueBatch, fetchCommitAnalysis, fetchCommits, getCommitAnalysis, getCommitMetadata, getContributers, getFileMetrics, getPushMetrics, getRepoMetadata } from "../controller/analysis.Controller.js";
+import { Analyse_repo, collectePythonMetrics, collectPushMetrics, enqueueBatch, fetchCommitAnalysis, fetchCommits, getCommitAnalysis, getCommitMetadata, getContributers, getFileMetrics, getPushMetrics, getRepoMetadata } from "../controller/scanController.js";
 
 const router = express.Router();
 

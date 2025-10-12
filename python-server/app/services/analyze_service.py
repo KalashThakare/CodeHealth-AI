@@ -7,7 +7,7 @@ from app.services.github_api import fetch_repo_code, get_all_commits, get_all_co
 from app.services.github_auth import get_installation_token
 import asyncio
 import aiohttp
-from app.services.analysis import analysisClass
+from app.services.scanning import analysisClass
 
 
 async def push_analyze_repo(req: PushAnalyzeRequest) -> PushAnalyzeResponse:
@@ -77,37 +77,37 @@ async def full_repo_analysis(payload: FullRepoAnalysisRequest) -> FullRepoAnalys
         # Create tasks for parallel execution
         metadata_tasks = [
             send_metadata(
-                "http://localhost:8080/analyze/Commits",
+                "http://localhost:8080/scanning/Commits",
                 {"commits": commits, "repoId": payload.repoId, "branch": payload.branch},
                 "Commits"
             ),
             send_metadata(
-                "http://localhost:8080/analyze/commits-analysis",
+                "http://localhost:8080/scanning/commits-analysis",
                 {"commits_analysis": commits_analysis, "repoId": payload.repoId, "branch": payload.branch},
                 "Commits Analysis"
             ),
             send_metadata(
-                "http://localhost:8080/analyze/repo-metadata",
+                "http://localhost:8080/scanning/repo-metadata",
                 {"metadata": metadata, "repoId": payload.repoId, "branch": payload.branch},
                 "Metadata"
             ),
             send_metadata(
-                "http://localhost:8080/analyze/contributors",
+                "http://localhost:8080/scanning/contributors",
                 {"contributors": contributors, "repoId": payload.repoId, "branch": payload.branch},
                 "Contributors"
             ),
             # send_metadata(
-            #     "http://localhost:8080/analyze/issues",
+            #     "http://localhost:8080/scanning/issues",
             #     {"issues": issues, "repoId": payload.repoId, "branch": payload.branch},
             #     "Issues"
             # ),
             # send_metadata(
-            #     "http://localhost:8080/analyze/pull-requests",
+            #     "http://localhost:8080/scanning/pull-requests",
             #     {"pullRequests": pr, "repoId": payload.repoId, "branch": payload.branch},
             #     "Pull Requests"
             # ),
             # send_metadata(
-            #     "http://localhost:8080/analyze/releases",
+            #     "http://localhost:8080/scanning/releases",
             #     {"releases": releases, "repoId": payload.repoId, "branch": payload.branch},
             #     "Releases"
             # ),
@@ -138,7 +138,7 @@ async def full_repo_analysis(payload: FullRepoAnalysisRequest) -> FullRepoAnalys
                     ]
                     
                     async with session.post(
-                        "http://localhost:8080/analyze/python-batch",
+                        "http://localhost:8080/scanning/python-batch",
                         json={"Metrics": serialized_analysis, "repoId": payload.repoId, "branch": payload.branch}
                     ) as resp:
                         result = await resp.json()
@@ -154,7 +154,7 @@ async def full_repo_analysis(payload: FullRepoAnalysisRequest) -> FullRepoAnalys
             if non_py_files:
                 try:
                     async with session.post(
-                        "http://localhost:8080/analyze/enqueue-batch",
+                        "http://localhost:8080/scanning/enqueue-batch",
                         json={"files": non_py_files, "repoId": payload.repoId, "branch": payload.branch}
                     ) as resp:
                         result = await resp.json()
