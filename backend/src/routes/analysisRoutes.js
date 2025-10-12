@@ -4,6 +4,6 @@ import { analyze_repo } from "../controller/analysisController.js";
 
 const router = express.Router();
 
-router.post("/:repoId/full-repo", analyze_repo)
+router.get("/:repoId/full-repo", analyze_repo)
 
 export default router;

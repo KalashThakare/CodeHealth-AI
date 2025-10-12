@@ -1,4 +1,3 @@
-import Commit from "../database/models/commitsMetadata.js";
 import { Project } from "../database/models/project.js";
 import dotenv from "dotenv";
 import { analyzeCommitPatterns, calculateDistributions, calculateRepoHealthScore, calculateRepoMetrics } from "../services/analysis.Service.js";
@@ -26,6 +25,7 @@ export const analyze_repo = async(req,res)=>{
         return res.status(200).json({message:"Success", result, commitAnalysis, repoHealthScore, distributions })
 
     } catch (error) {
-        
+        console.error(error);
+        return res.status(500).json({message:"Internal server error"});
     }
 }
