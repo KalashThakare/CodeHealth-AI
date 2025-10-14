@@ -7,3 +7,4 @@ class GitHubSettings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "ignore"

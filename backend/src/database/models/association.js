@@ -1,3 +1,4 @@
+import RepositoryAnalysis from "./analysis.js";
 import CommitsAnalysis from "./commit_analysis.js";
 import Commit from "./commitsMetadata.js";
 import { Project } from "./project.js";
@@ -91,6 +92,19 @@ Project.hasMany(RepoMetadata, {
 });
 
 RepoMetadata.belongsTo(Project, {
+  foreignKey: 'repoId',
+  targetKey: 'repoId',
+  as: 'project'
+});
+
+Project.hasMany(RepositoryAnalysis, {
+  foreignKey: 'repoId',
+  sourceKey:'repoId',
+  as: 'repository_analyses',
+  onDelete: 'CASCADE'
+});
+
+RepositoryAnalysis.belongsTo(Project, {
   foreignKey: 'repoId',
   targetKey: 'repoId',
   as: 'project'
