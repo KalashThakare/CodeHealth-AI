@@ -63,7 +63,7 @@ export const getAiInsights = async (req, res) => {
 
         if (!analysis) return res.status(404).json({ message: "No analysis found for this repo, please do analysis first" });
 
-        // Build AI request data from the analysis record
+        //AI request data from the analysis record
         const aiRequestData = {
             result: {
                 avgCyclomaticComplexity: analysis.avgCyclomaticComplexity,
@@ -113,7 +113,6 @@ export const getAiInsights = async (req, res) => {
             }
         };
 
-        // Call AI API
         const url = process.env.ANALYSIS_INTERNAL_URL + "/v2/api/analyze";
         const response = await axios.post(url, aiRequestData);
 
@@ -126,7 +125,6 @@ export const getAiInsights = async (req, res) => {
     } catch (error) {
         console.error(error);
         
-        // Handle axios errors specifically
         if (error.response) {
             return res.status(error.response.status).json({
                 message: "AI service error",
@@ -135,5 +133,38 @@ export const getAiInsights = async (req, res) => {
         }
         
         return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const fetchAiInsights = async(req,res)=>{
+    try {
+        const {repoId} = req.params;
+
+        if(!repoId) return res.status(400).json({message:"repoId is missing"});
+
+        const repo = await Project.findOne({
+            where:{
+                repoId:repoId
+            }
+        });
+
+        if(!repo) return res.status(404).json({message:"Project not found"});
+
+        const analysis = await RepositoryAnalysis.findOne({
+            where: {
+                repoId: repoId
+            }
+        });
+
+        if (!analysis) {
+            return res.status(404).json({ 
+                success: false,
+                message: "Analysis not found for this repository" 
+            });
+        }
+
+    } catch (error) {
+        console.error('Error fetching AI insights:', error);
+        return res.status(500).json({message:"Internal server error"});
     }
 }

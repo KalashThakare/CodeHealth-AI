@@ -2,65 +2,97 @@ from typing import List
 from ..schemas.analysis_model import RefactorPriorityFile, RepoMetrics
 
 def build_refactoring_prompt(files_data: List[RefactorPriorityFile], metrics: RepoMetrics) -> str:
-    """Build prompt for LLM to analyze refactoring opportunities"""
+    """Build prompt for comprehensive refactoring analysis with business prioritization"""
     
     files_info = "\n\n".join([
         f"File: {f.path}\n"
-        f"- Risk Score: {f.riskScore}/100\n"
-        f"- Cyclomatic Complexity: {f.cyclomaticComplexity}\n"
-        f"- Maintainability Index: {f.maintainabilityIndex}\n"
-        f"- Halstead Volume: {f.halsteadVolume}\n"
+        f"- Risk Score: {f.riskScore}/100 (production incident probability)\n"
+        f"- Cyclomatic Complexity: {f.cyclomaticComplexity} (developer cognitive load)\n"
+        f"- Maintainability Index: {f.maintainabilityIndex} (change effort multiplier)\n"
+        f"- Halstead Volume: {f.halsteadVolume} (comprehension difficulty)\n"
         f"- Lines of Code: {f.locTotal}\n"
         f"- Issues: {f.reason}"
-        for f in files_data[:10]  # Limit to top 10 files
+        for f in files_data[:10]
     ])
     
-    prompt = f"""You are a senior software engineer reviewing a codebase for refactoring opportunities.
+    prompt = f"""
+You are an expert senior software engineer and technical debt strategist.
 
-Repository Health Summary:
-- Overall Technical Debt Score: {metrics.technicalDebtScore}/100
-- Average Cyclomatic Complexity: {metrics.avgCyclomaticComplexity}
-- Average Maintainability Index: {metrics.avgMaintainabilityIndex}
-- Average Halstead Volume: {metrics.avgHalsteadVolume}
-- Total Files: {metrics.totalFiles}
-- Total Lines of Code: {metrics.totalLOC}
+Analyze the following repository metrics and high-risk files, then respond ONLY in valid JSON. 
+Do NOT include explanations, markdown, or commentary outside of the JSON.
 
-Weighted Metrics (by LOC):
+Repository Metrics:
+- Technical Debt Score: {metrics.technicalDebtScore}/100
+- Avg Cyclomatic Complexity: {metrics.avgCyclomaticComplexity}
+- Avg Maintainability Index: {metrics.avgMaintainabilityIndex}
+- Avg Halstead Volume: {metrics.avgHalsteadVolume}
+- Total Files: {metrics.totalFiles}, Total LOC: {metrics.totalLOC}
+
+Weighted Metrics (impact-adjusted by LOC):
 - Weighted Complexity: {metrics.weightedCyclomaticComplexity}
 - Weighted Maintainability: {metrics.weightedMaintainabilityIndex}
 - Weighted Halstead Volume: {metrics.weightedHalsteadVolume}
 
-High-Risk Files Requiring Attention:
+High-Risk Files:
 {files_info}
 
-Please analyze these files and provide:
-1. Specific refactoring recommendations for each file
-2. Priority level (critical/high/medium/low) for each recommendation
-3. Estimated effort (hours) for each refactoring task
-4. Potential risks if not refactored
-5. Quick wins (easy but impactful changes)
-6. Suggested refactoring patterns or techniques
+Your tasks:
+1. Provide refactoring recommendations with business justification.
+2. Prioritize files based on business + technical risk.
+3. Evaluate team impact (burnout, knowledge risks).
+4. Predict post-refactor velocity gain & ROI.
+5. Give coaching insights to prevent future debt.
 
-Format your response as a structured JSON with the following schema:
+STRICT JSON OUTPUT FORMAT (MANDATORY):
 {{
     "refactoringSuggestions": [
         {{
             "file": "path/to/file",
-            "priority": "critical",
-            "currentIssues": ["issue1", "issue2"],
+            "priority": "critical|high|medium|low",
+            "currentIssues": ["clear business-impacting issues"],
             "recommendations": [
                 {{
-                    "action": "specific action",
-                    "benefit": "what improves",
-                    "effort": "4-6 hours"
+                    "action": "specific refactoring step",
+                    "benefit": "measurable improvement with exact numbers",
+                    "effort": "X-Y hours"
                 }}
             ],
-            "estimatedEffort": "8-12 hours",
-            "risks": "what happens if not fixed",
-            "quickWins": ["quick win 1", "quick win 2"],
-            "refactoringPattern": "Strategy Pattern / Extract Method / etc"
+            "estimatedEffort": "total hours",
+            "risks": "incident risk X%, breaking change probability Y%",
+            "quickWins": ["<2 hour actions"],
+            "refactoringPattern": "e.g., strategy pattern / modularization / repo split",
+            "businessImpact": {{
+                "currentCost": "Z hours wasted monthly",
+                "incidentRisk": "W% probability",
+                "velocitySlowdown": "V% reduction",
+                "postRefactoringGain": "U% increase"
+            }},
+            "teamHealthImpact": {{
+                "ownershipRisk": "bus factor concern or safe",
+                "burnoutIndicator": "high|medium|low",
+                "knowledgeGap": "onboarding bottleneck or none"
+            }}
         }}
-    ]
+    ],
+    "prioritizationMatrix": {{
+        "highImpactLowEffort": ["file paths"],
+        "highImpactHighEffort": ["file paths"],
+        "lowImpactLowEffort": ["file paths"],
+        "lowImpactHighEffort": ["file paths"]
+    }},
+    "coachingInsights": {{
+        "commonPatterns": ["repeated tech debt patterns"],
+        "learningResources": ["hyper-relevant resources only"],
+        "teamGuidelines": ["forward-preventive coding rules"]
+    }}
+}}
+
+IF NO MEANINGFUL RECOMMENDATIONS EXIST:
+Return EXACTLY:
+{{
+  "refactoringSuggestions": [],
+  "message": "No suggestions available"
 }}
 """
+
     return prompt
