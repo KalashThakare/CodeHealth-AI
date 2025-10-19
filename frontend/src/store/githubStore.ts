@@ -6,6 +6,8 @@ import { toast } from "sonner";
 interface GitHubRepo {
   id: number;
   repoName: string;
+  fullName: string;
+  visibility: "public" | "private";
   repoId: number;
   repoUrl: string;
   installationId?: string | null;
@@ -53,6 +55,23 @@ interface GitHubStore {
   resetStore: () => void;
   getRepositoryById: (id: number) => GitHubRepo | undefined;
   checkGitHubTokenStatus: () => Promise<boolean>;
+}
+
+interface GitHubState {
+  // GitHub User
+  githubUser: GitHubUser | null;
+
+  // GitHub Repositories
+  repositories: GitHubRepo[];
+
+  // Loading & Error States
+  isLoading: boolean;
+  error: string | null;
+
+  // Actions
+  fetchGitHubUser: () => Promise<void>;
+  fetchGitHubRepos: () => Promise<void>;
+  clearError: () => void;
 }
 
 export const useGitHubStore = create<GitHubStore>()(
