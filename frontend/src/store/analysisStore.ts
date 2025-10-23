@@ -1,706 +1,8 @@
-// import { create } from "zustand";
-// import { axiosInstance } from "@/lib/axios";
-// import { toast } from "sonner";
-
-// export interface FileMetric {
-//   id: number;
-//   path: string;
-//   repoId: number;
-//   commitSha: string | null;
-//   branch: string | null;
-//   cyclomaticComplexity: number | null;
-//   maintainabilityIndex: number | null;
-//   locTotal: number | null;
-//   locSource: number | null;
-//   locLogical: number | null;
-//   locComments: number | null;
-//   locBlank: number | null;
-//   halsteadUniqueOperators: number | null;
-//   halsteadUniqueOperands: number | null;
-//   halsteadTotalOperators: number | null;
-//   halsteadTotalOperands: number | null;
-//   halsteadVocabulary: number | null;
-//   halsteadLength: number | null;
-//   halsteadVolume: number | null;
-//   analyzedAt: string;
-//   createdAt: string;
-//   updatedAt: string;
-// }
-
-// export interface PushMetric {
-//   id: number;
-//   repository: string;
-//   repoId: number;
-//   branch: string;
-//   commitSha: string | null;
-//   impact: number;
-//   threshold: number;
-//   score: number;
-//   ok: boolean;
-//   message: string | null;
-//   files: Array<{
-//     sha: string;
-//     filename: string;
-//     status: string;
-//     additions: number;
-//     deletions: number;
-//     changes: number;
-//     patch?: string;
-//   }>;
-//   riskAnalysis: {
-//     impactedFiles: string[];
-//     candidates: Array<{
-//       path: string;
-//       priority: number;
-//       reason: string;
-//     }>;
-//   };
-//   analyzedAt: string;
-//   createdAt: string;
-//   updatedAt: string;
-// }
-
-// export interface Commit {
-//   id: string;
-//   repoId: number;
-//   branch: string;
-//   sha: string;
-//   message: string;
-//   authorName: string;
-//   authorEmail: string;
-//   authorDate: string;
-//   committerName: string;
-//   committerDate: string;
-//   createdAt: string;
-//   updatedAt: string;
-// }
-
-// export interface CommitAnalysis {
-//   id: string;
-//   repoId: number;
-//   branch: string;
-//   totalCommits: number;
-//   topContributors: Array<{
-//     name: string;
-//     commits: number;
-//     email?: string;
-//   }>;
-//   commitsPerDay: Record<string, number>;
-//   createdAt: string;
-//   updatedAt: string;
-// }
-
-// export interface AnalysisJob {
-//   jobId: string;
-//   status: "queued" | "processing" | "completed" | "failed";
-//   repoId: string;
-//   estimatedWaitTime?: string;
-//   progress?: number;
-//   startedAt?: string;
-//   completedAt?: string;
-//   error?: string;
-// }
-
-// // STORE STATE INTERFACE
-// interface AnalysisState {
-//   // Job Management
-//   currentJob: AnalysisJob | null;
-//   jobHistory: AnalysisJob[];
-
-//   // Metrics Data
-//   fileMetrics: FileMetric[];
-//   pushMetrics: PushMetric[];
-//   commits: Commit[];
-//   commitAnalysis: CommitAnalysis[];
-
-//   // UI State
-//   loading: boolean;
-//   error: string | null;
-
-//   // Computed
-//   isAnalyzing: boolean;
-//   hasActiveJob: boolean;
-
-//   // Actions - Job Management
-//   startAnalysis: (repoId: string) => Promise<AnalysisJob | null>;
-//   checkJobStatus: (jobId: string) => Promise<void>;
-//   cancelAnalysis: (jobId: string) => Promise<boolean>;
-//   clearCurrentJob: () => void;
-
-//   // Actions - Fetch Metrics
-//   fetchFileMetrics: (repoId: string) => Promise<void>;
-//   fetchPushMetrics: (repoId: string) => Promise<void>;
-//   fetchCommits: (repoId: string) => Promise<void>;
-//   fetchCommitAnalysis: (repoId: string) => Promise<void>;
-//   fetchAllMetrics: (repoId: string) => Promise<void>;
-
-//   // Actions - Utility
-//   clearError: () => void;
-//   clearHistory: () => void;
-//   clearAllData: () => void;
-
-//   // Polling
-//   startPolling: (jobId: string) => void;
-//   stopPolling: () => void;
-// }
-
-// // POLLING MANAGER
-// let pollingInterval: NodeJS.Timeout | null = null;
-
-// export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
-//   // INITIAL STATE
-//   currentJob: null,
-//   jobHistory: [],
-//   fileMetrics: [],
-//   pushMetrics: [],
-//   commits: [],
-//   commitAnalysis: [],
-//   loading: false,
-//   error: null,
-
-//   // COMPUTED GETTERS
-//   get isAnalyzing() {
-//     const { currentJob } = get();
-//     return (
-//       currentJob?.status === "queued" || currentJob?.status === "processing"
-//     );
-//   },
-
-//   get hasActiveJob() {
-//     const { currentJob } = get();
-//     return (
-//       !!currentJob &&
-//       (currentJob.status === "queued" || currentJob.status === "processing")
-//     );
-//   },
-
-//   // JOB MANAGEMENT ACTIONS
-//   /**
-//    * Start full repository analysis
-//    * POST /analyze/full-repo
-//    */
-//   startAnalysis: async (repoId: string) => {
-//     set({ loading: true, error: null });
-
-//     const loadingToast = toast.loading("Starting repository analysis...");
-
-//     try {
-//       console.log("[Analysis] Starting analysis for repo:", repoId);
-
-//       const response = await axiosInstance.post("/analyze/full-repo", {
-//         repoId: Number(repoId),
-//       });
-
-//       if (response.status === 202 && response.data.data) {
-//         const jobData: AnalysisJob = {
-//           jobId: response.data.data.jobId,
-//           status: response.data.data.status || "queued",
-//           repoId: String(response.data.data.repoId),
-//           estimatedWaitTime:
-//             response.data.data.estimatedWaitTime || "2-5 minutes",
-//           startedAt: new Date().toISOString(),
-//         };
-
-//         set((state) => ({
-//           currentJob: jobData,
-//           jobHistory: [
-//             jobData,
-//             ...state.jobHistory.filter((job) => job.jobId !== jobData.jobId),
-//           ],
-//           loading: false,
-//           error: null,
-//         }));
-
-//         // Start polling for updates
-//         get().startPolling(jobData.jobId);
-
-//         toast.success("Analysis started successfully!", {
-//           id: loadingToast,
-//           description: `Job ID: ${jobData.jobId}`,
-//         });
-
-//         console.log("[Analysis] Job created successfully:", jobData);
-//         return jobData;
-//       }
-
-//       throw new Error("Invalid response from server");
-//     } catch (error: any) {
-//       console.error("[Analysis] Failed to start analysis:", error);
-
-//       const errorMessage =
-//         error.response?.data?.message ||
-//         error.message ||
-//         "Failed to start repository analysis";
-
-//       toast.error("Analysis failed to start", {
-//         id: loadingToast,
-//         description: errorMessage,
-//       });
-
-//       set({
-//         loading: false,
-//         error: errorMessage,
-//         currentJob: null,
-//       });
-
-//       return null;
-//     }
-//   },
-
-//   /**
-//    * Check job status (placeholder - backend doesn't expose status endpoint yet)
-//    * When backend adds GET /analyze/job/:jobId, update this
-//    */
-//   checkJobStatus: async (jobId: string) => {
-//     try {
-//       console.log("[Analysis] Checking status for job:", jobId);
-
-//       const currentJob = get().currentJob;
-//       if (currentJob && currentJob.jobId === jobId) {
-//         // Try fetching file metrics as a proxy for completion
-//         try {
-//           await get().fetchFileMetrics(currentJob.repoId);
-
-//           // If successful, mark job as completed
-//           set((state) => ({
-//             currentJob: {
-//               ...state.currentJob!,
-//               status: "completed",
-//               completedAt: new Date().toISOString(),
-//             },
-//           }));
-
-//           toast.success("Analysis completed!", {
-//             description: `Repository ${currentJob.repoId} analyzed successfully`,
-//           });
-
-//           get().stopPolling();
-//         } catch {
-//           // Metrics not ready yet, keep polling
-//           console.log("[Analysis] Metrics not ready, continuing to poll...");
-//         }
-//       }
-//     } catch (error: any) {
-//       console.error("[Analysis] Failed to check job status:", error);
-
-//       toast.error("Status check failed", {
-//         description: "Unable to verify analysis progress",
-//       });
-//     }
-//   },
-
-//   /**
-//    * Cancel analysis job (backend doesn't expose cancel endpoint yet)
-//    */
-//   cancelAnalysis: async (jobId: string) => {
-//     const loadingToast = toast.loading("Cancelling analysis...");
-
-//     try {
-//       console.log("[Analysis] Attempting to cancel job:", jobId);
-
-//       // TODO: Implement when backend adds POST /analyze/cancel/:jobId
-//       // const response = await axiosInstance.post(`/analyze/cancel/${jobId}`);
-
-//       get().stopPolling();
-
-//       set((state) => {
-//         const updatedJob =
-//           state.currentJob?.jobId === jobId
-//             ? {
-//                 ...state.currentJob,
-//                 status: "failed" as const,
-//                 error: "Cancelled by user",
-//                 completedAt: new Date().toISOString(),
-//               }
-//             : state.currentJob;
-
-//         return {
-//           currentJob: updatedJob,
-//         };
-//       });
-
-//       toast.success("Analysis cancelled", {
-//         id: loadingToast,
-//         description: "The analysis job has been stopped",
-//       });
-
-//       console.log("[Analysis] Job cancelled");
-//       return true;
-//     } catch (error: any) {
-//       console.error("[Analysis] Failed to cancel:", error);
-
-//       const errorMessage =
-//         error.response?.data?.message || "Failed to cancel analysis";
-
-//       toast.error("Cancel failed", {
-//         id: loadingToast,
-//         description: errorMessage,
-//       });
-
-//       set({ error: errorMessage });
-//       return false;
-//     }
-//   },
-
-//   clearCurrentJob: () => {
-//     get().stopPolling();
-//     set({ currentJob: null });
-//     toast.info("Current job cleared");
-//   },
-
-//   // FETCH METRICS ACTIONS
-//   /**
-//    * Fetch file metrics for a repository
-//    * GET /analyze/:repoId/getfilemetrics
-//    */
-//   fetchFileMetrics: async (repoId: string) => {
-//     set({ loading: true, error: null });
-
-//     try {
-//       console.log("[Analysis] Fetching file metrics for repo:", repoId);
-
-//       const response = await axiosInstance.get(
-//         `/analyze/${repoId}/getfilemetrics`
-//       );
-
-//       if (response.data && response.data.metric) {
-//         set({
-//           fileMetrics: response.data.metric,
-//           loading: false,
-//           error: null,
-//         });
-
-//         toast.success("File metrics loaded", {
-//           description: `${response.data.metric.length} files analyzed`,
-//         });
-
-//         console.log(
-//           "[Analysis] File metrics loaded:",
-//           response.data.metric.length
-//         );
-//       } else {
-//         throw new Error("Invalid response structure");
-//       }
-//     } catch (error: any) {
-//       console.error("[Analysis] Failed to fetch file metrics:", error);
-
-//       const errorMessage =
-//         error.response?.data?.message ||
-//         error.message ||
-//         "Failed to fetch file metrics";
-
-//       toast.error("Failed to load file metrics", {
-//         description: errorMessage,
-//       });
-
-//       set({
-//         loading: false,
-//         error: errorMessage,
-//         fileMetrics: [],
-//       });
-//     }
-//   },
-
-//   /**
-//    * Fetch push analysis metrics
-//    * GET /analyze/:repoId/getpushmetrics
-//    */
-//   fetchPushMetrics: async (repoId: string) => {
-//     set({ loading: true, error: null });
-
-//     try {
-//       console.log("[Analysis] Fetching push metrics for repo:", repoId);
-
-//       const response = await axiosInstance.get(
-//         `/analyze/${repoId}/getpushmetrics`
-//       );
-
-//       if (response.data && response.data.metric) {
-//         set({
-//           pushMetrics: response.data.metric,
-//           loading: false,
-//           error: null,
-//         });
-
-//         toast.success("Push metrics loaded", {
-//           description: `${response.data.metric.length} pushes analyzed`,
-//         });
-
-//         console.log(
-//           "[Analysis] Push metrics loaded:",
-//           response.data.metric.length
-//         );
-//       } else {
-//         throw new Error("Invalid response structure");
-//       }
-//     } catch (error: any) {
-//       console.error("[Analysis] Failed to fetch push metrics:", error);
-
-//       const errorMessage =
-//         error.response?.data?.message ||
-//         error.message ||
-//         "Failed to fetch push metrics";
-
-//       toast.error("Failed to load push metrics", {
-//         description: errorMessage,
-//       });
-
-//       set({
-//         loading: false,
-//         error: errorMessage,
-//         pushMetrics: [],
-//       });
-//     }
-//   },
-
-//   /**
-//    * Fetch commit metadata
-//    * GET /analyze/:repoId/getCommits
-//    */
-//   fetchCommits: async (repoId: string) => {
-//     set({ loading: true, error: null });
-
-//     try {
-//       console.log("[Analysis] Fetching commits for repo:", repoId);
-
-//       const response = await axiosInstance.get(`/analyze/${repoId}/getCommits`);
-
-//       if (response.data && response.data.commits) {
-//         set({
-//           commits: response.data.commits,
-//           loading: false,
-//           error: null,
-//         });
-
-//         toast.success("Commits loaded", {
-//           description: `${response.data.commits.length} commits retrieved`,
-//         });
-
-//         console.log("[Analysis] Commits loaded:", response.data.commits.length);
-//       } else {
-//         throw new Error("Invalid response structure");
-//       }
-//     } catch (error: any) {
-//       console.error("[Analysis] Failed to fetch commits:", error);
-
-//       const errorMessage =
-//         error.response?.data?.message ||
-//         error.message ||
-//         "Failed to fetch commits";
-
-//       toast.error("Failed to load commits", {
-//         description: errorMessage,
-//       });
-
-//       set({
-//         loading: false,
-//         error: errorMessage,
-//         commits: [],
-//       });
-//     }
-//   },
-
-//   /**
-//    * Fetch commit analysis
-//    * GET /analyze/:repoId/getCommits-analysis
-//    */
-//   fetchCommitAnalysis: async (repoId: string) => {
-//     set({ loading: true, error: null });
-
-//     try {
-//       console.log("[Analysis] Fetching commit analysis for repo:", repoId);
-
-//       const response = await axiosInstance.get(
-//         `/analyze/${repoId}/getCommits-analysis`
-//       );
-
-//       if (response.data && response.data.analysis) {
-//         set({
-//           commitAnalysis: response.data.analysis,
-//           loading: false,
-//           error: null,
-//         });
-
-//         toast.success("Commit analysis loaded", {
-//           description: `${response.data.analysis.length} analyses retrieved`,
-//         });
-
-//         console.log(
-//           "[Analysis] Commit analysis loaded:",
-//           response.data.analysis.length
-//         );
-//       } else {
-//         throw new Error("Invalid response structure");
-//       }
-//     } catch (error: any) {
-//       console.error("[Analysis] Failed to fetch commit analysis:", error);
-
-//       const errorMessage =
-//         error.response?.data?.message ||
-//         error.message ||
-//         "Failed to fetch commit analysis";
-
-//       toast.error("Failed to load commit analysis", {
-//         description: errorMessage,
-//       });
-
-//       set({
-//         loading: false,
-//         error: errorMessage,
-//         commitAnalysis: [],
-//       });
-//     }
-//   },
-
-//   /**
-//    * Fetch all metrics for a repository (convenience method)
-//    */
-//   fetchAllMetrics: async (repoId: string) => {
-//     set({ loading: true, error: null });
-
-//     const loadingToast = toast.loading("Loading all metrics...");
-
-//     try {
-//       console.log("[Analysis] Fetching all metrics for repo:", repoId);
-
-//       const results = await Promise.allSettled([
-//         get().fetchFileMetrics(repoId),
-//         get().fetchPushMetrics(repoId),
-//         get().fetchCommits(repoId),
-//         get().fetchCommitAnalysis(repoId),
-//       ]);
-
-//       const failedCount = results.filter((r) => r.status === "rejected").length;
-
-//       set({ loading: false });
-
-//       if (failedCount === 0) {
-//         toast.success("All metrics loaded successfully", {
-//           id: loadingToast,
-//           description: "Repository data is ready",
-//         });
-//       } else if (failedCount < results.length) {
-//         toast.warning("Some metrics failed to load", {
-//           id: loadingToast,
-//           description: `${results.length - failedCount} out of ${
-//             results.length
-//           } loaded`,
-//         });
-//       } else {
-//         toast.error("Failed to load metrics", {
-//           id: loadingToast,
-//           description: "All metric requests failed",
-//         });
-//       }
-
-//       console.log("[Analysis] All metrics fetched");
-//     } catch (error: any) {
-//       console.error("[Analysis] Failed to fetch all metrics:", error);
-
-//       toast.error("Failed to load metrics", {
-//         id: loadingToast,
-//         description: "An unexpected error occurred",
-//       });
-
-//       set({
-//         loading: false,
-//         error: "Failed to fetch some metrics",
-//       });
-//     }
-//   },
-
-//   // UTILITY ACTIONS
-//   clearError: () => {
-//     set({ error: null });
-//   },
-
-//   clearHistory: () => {
-//     set({ jobHistory: [] });
-//     toast.info("Job history cleared");
-//   },
-
-//   clearAllData: () => {
-//     get().stopPolling();
-//     set({
-//       currentJob: null,
-//       jobHistory: [],
-//       fileMetrics: [],
-//       pushMetrics: [],
-//       commits: [],
-//       commitAnalysis: [],
-//       loading: false,
-//       error: null,
-//     });
-//     toast.info("All analysis data cleared");
-//   },
-
-//   // POLLING MANAGEMENT
-//   startPolling: (jobId: string) => {
-//     // Clear any existing polling
-//     get().stopPolling();
-
-//     console.log("[Analysis] Starting polling for job:", jobId);
-
-//     pollingInterval = setInterval(async () => {
-//       const { currentJob } = get();
-
-//       // Stop if no job or job completed
-//       if (!currentJob || ["completed", "failed"].includes(currentJob.status)) {
-//         get().stopPolling();
-//         return;
-//       }
-
-//       await get().checkJobStatus(jobId);
-//     }, 5000); // Poll every 5 seconds
-//   },
-
-//   stopPolling: () => {
-//     if (pollingInterval) {
-//       console.log("[Analysis] Stopping polling");
-//       clearInterval(pollingInterval);
-//       pollingInterval = null;
-//     }
-//   },
-// }));
-
-// // CLEANUP ON PAGE UNLOAD
-// if (typeof window !== "undefined") {
-//   window.addEventListener("beforeunload", () => {
-//     useAnalysisStore.getState().stopPolling();
-//   });
-// }
-
-
 import { create } from "zustand";
 import { axiosInstance } from "@/lib/axios";
 import { toast } from "sonner";
 
 // ==================== INTERFACES ====================
-
-export interface FileMetric {
-  id: number;
-  path: string;
-  repoId: number;
-  commitSha: string | null;
-  branch: string | null;
-  cyclomaticComplexity: number | null;
-  maintainabilityIndex: number | null;
-  locTotal: number | null;
-  locSource: number | null;
-  locLogical: number | null;
-  locComments: number | null;
-  locBlank: number | null;
-  halsteadUniqueOperators: number | null;
-  halsteadUniqueOperands: number | null;
-  halsteadTotalOperators: number | null;
-  halsteadTotalOperands: number | null;
-  halsteadVocabulary: number | null;
-  halsteadLength: number | null;
-  halsteadVolume: number | null;
-  analyzedAt: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export interface RefactorPriorityFile {
   path: string;
@@ -779,89 +81,35 @@ interface AnalysisState {
   loading: boolean;
   error: string | null;
 
-  // Actions - Fetch Analysis
+  // Actions - Fetch Analysis (3 backend routes)
   fetchFullAnalysis: (repoId: string) => Promise<void>;
-  triggerAnalysis: (repoId: string) => Promise<void>;
+  fetchAiInsights: (repoId: string) => Promise<any>;
+  validateAiInsights: (repoId: string) => Promise<any>;
 
   // Actions - Utility
   clearError: () => void;
   clearAllData: () => void;
+
+  // Actions - Export
+  exportToCSV: () => string | null;
+  exportToPDF: () => void;
 }
 
 // ==================== ZUSTAND STORE ====================
 
 export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
-  // INITIAL STATE
+  // ==================== INITIAL STATE ====================
   fullAnalysis: null,
   loading: false,
   error: null,
 
-  // ==================== TRIGGER ANALYSIS ====================
-
+  // ==================== FETCH FULL ANALYSIS ====================
   /**
-   * Trigger a new analysis by calling individual scanning endpoints
-   * This will run the analysis in the background
-   */
-  triggerAnalysis: async (repoId: string) => {
-    set({ loading: true, error: null });
-
-    const loadingToast = toast.loading("Starting repository analysis...");
-
-    try {
-      console.log("[Analysis] Triggering analysis for repo:", repoId);
-
-      // Call all scanning endpoints to trigger analysis
-      const scanPromises = [
-        axiosInstance.post("/scanning/file-metrics", {
-          repoId: Number(repoId),
-        }),
-        axiosInstance.post("/scanning/commits", { repoId: Number(repoId) }),
-        axiosInstance.post("/scanning/repo-metadata", {
-          repoId: Number(repoId),
-        }),
-      ];
-
-      await Promise.allSettled(scanPromises);
-
-      toast.success("Analysis started!", {
-        id: loadingToast,
-        description: "Repository analysis is in progress. Fetching results...",
-      });
-
-      // Wait a bit for data to be processed
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Now fetch the full analysis
-      await get().fetchFullAnalysis(repoId);
-
-      set({ loading: false });
-
-      console.log("[Analysis] Analysis triggered and completed");
-    } catch (error: any) {
-      console.error("[Analysis] Failed to trigger analysis:", error);
-
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to start repository analysis";
-
-      toast.error("Analysis failed", {
-        id: loadingToast,
-        description: errorMessage,
-      });
-
-      set({
-        loading: false,
-        error: errorMessage,
-      });
-    }
-  },
-
-  // ==================== FETCH ANALYSIS ====================
-
-  /**
-   * Fetch full repository analysis (comprehensive report)
+   * Fetch full repository analysis
    * GET /analyze/:repoId/full-repo
+   *
+   * Backend: analyze_repo controller
+   * Returns: { message: "Success", analysis: {...all fields...} }
    */
   fetchFullAnalysis: async (repoId: string) => {
     set({ loading: true, error: null });
@@ -871,12 +119,73 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
 
       const response = await axiosInstance.get(`/analyze/${repoId}/full-repo`);
 
-      if (response.data && response.data.message === "Success") {
+      if (response.data?.message === "Success" && response.data?.analysis) {
+        const analysis = response.data.analysis;
+
+        // Map database fields to TypeScript interface
         const analysisData: FullRepoAnalysis = {
-          result: response.data.result,
-          commitAnalysis: response.data.commitAnalysis,
-          repoHealthScore: response.data.repoHealthScore,
-          distributions: response.data.distributions,
+          result: {
+            avgCyclomaticComplexity: analysis.avgCyclomaticComplexity || 0,
+            avgMaintainabilityIndex: analysis.avgMaintainabilityIndex || 0,
+            avgHalsteadVolume: analysis.avgHalsteadVolume || 0,
+            weightedCyclomaticComplexity:
+              analysis.weightedCyclomaticComplexity || 0,
+            weightedMaintainabilityIndex:
+              analysis.weightedMaintainabilityIndex || 0,
+            weightedHalsteadVolume: analysis.weightedHalsteadVolume || 0,
+            technicalDebtScore: analysis.technicalDebtScore || 0,
+            totalLOC: analysis.totalLOC || 0,
+            totalFiles: analysis.totalFiles || 0,
+            refactorPriorityFiles: Array.isArray(analysis.refactorPriorityFiles)
+              ? analysis.refactorPriorityFiles
+              : [],
+          },
+          commitAnalysis: {
+            totalCommits: analysis.totalCommits || 0,
+            daysActive: analysis.daysActive || 0,
+            activeDays: analysis.activeDays || 0,
+            activityRatio: analysis.activityRatio || 0,
+            avgCommitsPerDay: analysis.avgCommitsPerDay || 0,
+            recentCommits30Days: analysis.recentCommits30Days || 0,
+            contributorCount: analysis.contributorCount || 0,
+            topContributorRatio: analysis.topContributorRatio || 0,
+            busFactor: analysis.busFactor || "unknown",
+            avgMessageLength: analysis.avgMessageLength || 0,
+            firstCommit: analysis.firstCommit || new Date().toISOString(),
+            lastCommit: analysis.lastCommit || new Date().toISOString(),
+            velocity: {
+              trend: analysis.velocityTrend || "insufficient_data",
+              consistency: analysis.velocityConsistency || 0,
+            },
+          },
+          repoHealthScore: {
+            overallHealthScore: analysis.overallHealthScore || 0,
+            healthRating: analysis.healthRating || "needs_improvement",
+            componentScores: {
+              codeQuality: analysis.codeQualityScore || 0,
+              developmentActivity: analysis.developmentActivityScore || 0,
+              busFactor: analysis.busFactorScore || 0,
+              community: analysis.communityScore || 0,
+            },
+            strengths: Array.isArray(analysis.strengths)
+              ? analysis.strengths
+              : [],
+            weaknesses: Array.isArray(analysis.weaknesses)
+              ? analysis.weaknesses
+              : [],
+          },
+          distributions: {
+            maintainabilityDistribution: Array.isArray(
+              analysis.maintainabilityDistribution
+            )
+              ? analysis.maintainabilityDistribution
+              : [0, 0, 0, 0, 0],
+            complexityDistribution: Array.isArray(
+              analysis.complexityDistribution
+            )
+              ? analysis.complexityDistribution
+              : [0, 0, 0, 0, 0],
+          },
         };
 
         set({
@@ -889,9 +198,9 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
           description: `${analysisData.result.totalFiles} files analyzed`,
         });
 
-        console.log("[Analysis] Full analysis loaded:", analysisData);
+        console.log("[Analysis] Full analysis loaded successfully");
       } else {
-        throw new Error("Invalid response structure");
+        throw new Error("Invalid response structure from backend");
       }
     } catch (error: any) {
       console.error("[Analysis] Failed to fetch full analysis:", error);
@@ -899,7 +208,7 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
-        "Failed to fetch full analysis";
+        "Failed to fetch repository analysis";
 
       toast.error("Failed to load analysis", {
         description: errorMessage,
@@ -909,6 +218,91 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
         loading: false,
         error: errorMessage,
         fullAnalysis: null,
+      });
+
+      throw error;
+    }
+  },
+
+  // ==================== FETCH AI INSIGHTS ====================
+  /**
+   * Fetch AI-generated insights for repository
+   * GET /analyze/:repoId/insights
+   *
+   * Backend: getAiInsights controller
+   * Returns: { message: "Success", repoId, aiInsights: {...} }
+   */
+  fetchAiInsights: async (repoId: string) => {
+    set({ loading: true, error: null });
+
+    try {
+      console.log("[Analysis] Fetching AI insights for repo:", repoId);
+
+      const response = await axiosInstance.get(`/analyze/${repoId}/insights`);
+
+      if (response.data?.message === "Success" && response.data?.aiInsights) {
+        set({ loading: false, error: null });
+
+        toast.success("AI insights loaded successfully");
+
+        console.log("[Analysis] AI insights loaded:", response.data.aiInsights);
+        return response.data.aiInsights;
+      } else {
+        throw new Error("Invalid AI insights response");
+      }
+    } catch (error: any) {
+      console.error("[Analysis] Failed to fetch AI insights:", error);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to fetch AI insights";
+
+      toast.error("Failed to load AI insights", {
+        description: errorMessage,
+      });
+
+      set({
+        loading: false,
+        error: errorMessage,
+      });
+
+      throw error;
+    }
+  },
+
+  // ==================== VALIDATE AI INSIGHTS ====================
+  /**
+   * Validate if AI insights exist for repository
+   * GET /analyze/:repoId/fetchInsights
+   *
+   * Backend: fetchAiInsights controller
+   * Returns: { success: boolean, message: string }
+   */
+  validateAiInsights: async (repoId: string) => {
+    try {
+      console.log("[Analysis] Validating AI insights for repo:", repoId);
+
+      const response = await axiosInstance.get(
+        `/analyze/${repoId}/fetchInsights`
+      );
+
+      if (response.data) {
+        console.log("[Analysis] AI insights validation result:", response.data);
+        return response.data;
+      } else {
+        throw new Error("Invalid validation response");
+      }
+    } catch (error: any) {
+      console.error("[Analysis] Failed to validate AI insights:", error);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to validate AI insights";
+
+      toast.error("Validation failed", {
+        description: errorMessage,
       });
 
       throw error;
@@ -928,5 +322,73 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
       error: null,
     });
     toast.info("All analysis data cleared");
+  },
+
+  // ==================== EXPORT ACTIONS ====================
+
+  /**
+   * Export analysis data to CSV format
+   */
+  exportToCSV: () => {
+    const { fullAnalysis } = get();
+
+    if (!fullAnalysis) {
+      toast.error("No data to export");
+      return null;
+    }
+
+    try {
+      const { result, commitAnalysis, repoHealthScore } = fullAnalysis;
+
+      // Create CSV content
+      let csv = "Code Health Analytics Report\n\n";
+
+      // Overall Metrics
+      csv += "Overall Metrics\n";
+      csv += "Metric,Value\n";
+      csv += `Overall Health Score,${repoHealthScore.overallHealthScore}\n`;
+      csv += `Health Rating,${repoHealthScore.healthRating}\n`;
+      csv += `Technical Debt Score,${result.technicalDebtScore}\n`;
+      csv += `Total Files,${result.totalFiles}\n`;
+      csv += `Total Lines of Code,${result.totalLOC}\n`;
+      csv += `Avg Maintainability Index,${result.avgMaintainabilityIndex.toFixed(
+        2
+      )}\n`;
+      csv += `Avg Cyclomatic Complexity,${result.avgCyclomaticComplexity.toFixed(
+        2
+      )}\n\n`;
+
+      // Commit Analysis
+      csv += "Development Activity\n";
+      csv += "Metric,Value\n";
+      csv += `Total Commits,${commitAnalysis.totalCommits}\n`;
+      csv += `Active Days,${commitAnalysis.activeDays}\n`;
+      csv += `Avg Commits/Day,${commitAnalysis.avgCommitsPerDay.toFixed(2)}\n`;
+      csv += `Recent Commits (30d),${commitAnalysis.recentCommits30Days}\n`;
+      csv += `Contributors,${commitAnalysis.contributorCount}\n`;
+      csv += `Bus Factor,${commitAnalysis.busFactor}\n`;
+      csv += `Velocity Trend,${commitAnalysis.velocity.trend}\n\n`;
+
+      // High Risk Files
+      csv += "High Risk Files\n";
+      csv += "Path,Risk Score,Complexity,Maintainability,Reason\n";
+      result.refactorPriorityFiles.forEach((file) => {
+        csv += `"${file.path}",${file.riskScore},${file.cyclomaticComplexity},${file.maintainabilityIndex},"${file.reason}"\n`;
+      });
+
+      toast.success("CSV generated successfully");
+      return csv;
+    } catch (error) {
+      console.error("[Export] Failed to generate CSV:", error);
+      toast.error("Failed to generate CSV");
+      return null;
+    }
+  },
+
+  /**
+   * Export analysis data to PDF (placeholder for future implementation)
+   */
+  exportToPDF: () => {
+    toast.info("PDF export feature coming soon!");
   },
 }));
