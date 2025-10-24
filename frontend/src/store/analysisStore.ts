@@ -42,7 +42,7 @@ export interface CommitAnalysis {
   lastCommit: string;
   velocity: {
     trend: "increasing" | "decreasing" | "stable" | "insufficient_data";
-    consistency: number;
+    consistency: "low" | "medium" | "high" | "stable";
   };
 }
 
@@ -155,7 +155,14 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
             lastCommit: analysis.lastCommit || new Date().toISOString(),
             velocity: {
               trend: analysis.velocityTrend || "insufficient_data",
-              consistency: analysis.velocityConsistency || 0,
+              consistency:
+                typeof analysis.velocityConsistency === "number"
+                  ? analysis.velocityConsistency > 0.7
+                    ? "high"
+                    : analysis.velocityConsistency > 0.4
+                    ? "medium"
+                    : "low"
+                  : analysis.velocityConsistency || "medium",
             },
           },
           repoHealthScore: {
