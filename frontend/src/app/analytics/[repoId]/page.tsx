@@ -14,14 +14,12 @@ import {
   FiCode,
   FiGitBranch,
   FiUsers,
-  FiClock,
-  FiDollarSign,
   FiZap,
   FiBarChart2,
   FiDownload,
   FiRefreshCw,
 } from "react-icons/fi";
-import "../analytics.css";
+import "./analytics.css";
 
 // Import analytics components
 import HealthGaugeChart from "@/components/analytics/HealthGaugeChart";
@@ -31,14 +29,26 @@ import RiskFilesTable from "@/components/analytics/RiskFilesTable";
 import BusinessMetrics from "@/components/analytics/BusinessMetrics";
 import VelocityTrendChart from "@/components/analytics/VelocityTrendChart";
 import TechnicalDebtChart from "@/components/analytics/TechnicalDebtChart";
+import RefactoringSuggestionsTable from "@/components/analytics/RefactoringSuggestionsTable";
+import CodeSmellsChart from "@/components/analytics/CodeSmellsChart";
+import TeamHealthDashboard from "@/components/analytics/TeamHealthDashboard";
+import RiskMatrixD3 from "@/components/analytics/RiskMatrixD3";
 
 export default function AnalyticsPage() {
   const params = useParams();
   const router = useRouter();
   const repoId = params.repoId as string;
 
-  const { fullAnalysis, loading, error, fetchFullAnalysis, exportToCSV } =
-    useAnalysisStore();
+  const {
+    fullAnalysis,
+    loading,
+    loadingAiInsights,
+    error,
+    aiInsightsError,
+    fetchFullAnalysis,
+    fetchAiInsights,
+    exportToCSV,
+  } = useAnalysisStore();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -53,6 +63,34 @@ export default function AnalyticsPage() {
     await fetchFullAnalysis(repoId);
     setIsRefreshing(false);
     toast.success("Analytics refreshed");
+  };
+
+  const handleRefreshAiInsights = async () => {
+    // Show informative toast for longer operations
+    const loadingToast = toast.loading("Loading AI insights...", {
+      description: "This may take up to 2 minutes for complex analysis",
+    });
+
+    try {
+      const aiInsights = await fetchAiInsights(repoId);
+      if (aiInsights) {
+        toast.dismiss(loadingToast);
+        toast.success("AI insights loaded successfully", {
+          description: "Advanced insights are now available",
+        });
+      }
+    } catch (error: any) {
+      toast.dismiss(loadingToast);
+
+      let errorMsg = "Failed to load AI insights";
+      if (error.code === "ECONNABORTED") {
+        errorMsg = "Request timed out - Analysis may still be processing";
+      } else {
+        errorMsg = error.message || errorMsg;
+      }
+
+      // Error state is already managed in the store
+    }
   };
 
   const handleExport = () => {
@@ -162,8 +200,30 @@ export default function AnalyticsPage() {
     );
   }
 
-  const { result, commitAnalysis, repoHealthScore, distributions } =
+  const { result, commitAnalysis, repoHealthScore, distributions, aiInsights } =
     fullAnalysis;
+
+  // Check if we have AI insights data - updated to match backend structure
+  const hasAIInsights =
+    aiInsights &&
+    aiInsights.insights &&
+    ((aiInsights.insights.refactoringSuggestions &&
+      aiInsights.insights.refactoringSuggestions.length > 0) ||
+      (aiInsights.insights.codeSmells &&
+        aiInsights.insights.codeSmells.codeSmells &&
+        aiInsights.insights.codeSmells.codeSmells.length > 0) ||
+      (aiInsights.insights.quickWins &&
+        aiInsights.insights.quickWins.quickWins &&
+        aiInsights.insights.quickWins.quickWins.length > 0));
+
+  console.log("AI Insights Check:", {
+    hasAIInsights,
+    aiInsights,
+    refactoringSuggestions:
+      aiInsights?.insights?.refactoringSuggestions?.length || 0,
+    codeSmells: aiInsights?.insights?.codeSmells?.codeSmells?.length || 0,
+    quickWins: aiInsights?.insights?.quickWins?.quickWins?.length || 0,
+  });
 
   return (
     <div className="analytics-page">
@@ -181,7 +241,8 @@ export default function AnalyticsPage() {
                 Repository Analytics
               </h1>
               <p style={{ color: "var(--analytics-text-secondary)" }}>
-                Comprehensive insights and business metrics
+                Comprehensive insights and business metrics{" "}
+                {hasAIInsights && "with AI-powered recommendations"}
               </p>
             </div>
             <div className="flex gap-2">
@@ -207,7 +268,7 @@ export default function AnalyticsPage() {
         {/* Critical Metrics Overview - Hero Section */}
         <div className="analytics-grid-4 analytics-section">
           <MetricCard
-            icon={<FiCheckCircle />}
+            icon={<FiCheckCircle size={20} />}
             label="Health Score"
             value={`${repoHealthScore.overallHealthScore.toFixed(1)}%`}
             trend={repoHealthScore.healthRating}
@@ -215,21 +276,21 @@ export default function AnalyticsPage() {
             color="var(--analytics-accent)"
           />
           <MetricCard
-            icon={<FiCode />}
+            icon={<FiCode size={20} />}
             label="Code Quality"
             value={`${result.avgMaintainabilityIndex.toFixed(1)}/100`}
             subtitle={`${result.totalFiles} files analyzed`}
             color="var(--analytics-info)"
           />
           <MetricCard
-            icon={<FiActivity />}
+            icon={<FiActivity size={20} />}
             label="Complexity Score"
             value={result.avgCyclomaticComplexity.toFixed(1)}
             subtitle={`${result.totalLOC.toLocaleString()} LOC`}
             color="var(--analytics-warning)"
           />
           <MetricCard
-            icon={<FiAlertTriangle />}
+            icon={<FiAlertTriangle size={20} />}
             label="Technical Debt"
             value={`${result.technicalDebtScore.toFixed(1)}%`}
             subtitle={`${result.refactorPriorityFiles.length} files at risk`}
@@ -298,7 +359,7 @@ export default function AnalyticsPage() {
           <BusinessMetrics
             analysis={fullAnalysis}
             totalFiles={result.totalFiles || 0}
-            totalLOC={result.totalLinesOfCode || 0}
+            totalLOC={result.totalLOC || 0}
           />
         </div>
 
@@ -362,19 +423,19 @@ export default function AnalyticsPage() {
           </div>
           <div className="analytics-grid-3 mt-3">
             <CollaborationMetric
-              icon={<FiGitBranch />}
+              icon={<FiGitBranch size={18} />}
               label="Total Commits"
               value={commitAnalysis.totalCommits.toLocaleString()}
               subtitle={`${commitAnalysis.recentCommits30Days} in last 30 days`}
             />
             <CollaborationMetric
-              icon={<FiUsers />}
+              icon={<FiUsers size={18} />}
               label="Contributors"
               value={commitAnalysis.contributorCount}
               subtitle={`Bus Factor: ${commitAnalysis.busFactor}`}
             />
             <CollaborationMetric
-              icon={<FiActivity />}
+              icon={<FiActivity size={18} />}
               label="Velocity Trend"
               value={commitAnalysis.velocity?.trend || "N/A"}
               subtitle={`Consistency: ${
@@ -396,6 +457,272 @@ export default function AnalyticsPage() {
             </span>
           </div>
           <RiskFilesTable files={result.refactorPriorityFiles} />
+        </div>
+
+        {/* AI-Powered Insights Section - Updated with loading states */}
+        <div className="analytics-section">
+          <div className="flex items-center justify-between analytics-mb-3">
+            <div>
+              <h2 className="analytics-section-title font-title">
+                AI-Powered Insights
+              </h2>
+              <p style={{ color: "var(--analytics-text-secondary)" }}>
+                Advanced refactoring recommendations and code health analysis
+              </p>
+            </div>
+          </div>
+
+          {/* Loading State */}
+          {loadingAiInsights && (
+            <div className="analytics-card analytics-section">
+              <div className="py-8">
+                <div className="text-center mb-6">
+                  <div
+                    className="w-12 h-12 border-4 rounded-full animate-spin mx-auto mb-3"
+                    style={{
+                      borderColor: "var(--analytics-border)",
+                      borderTopColor: "var(--analytics-accent)",
+                    }}
+                  />
+                  <p
+                    className="analytics-text-sm font-medium"
+                    style={{ color: "var(--analytics-text-primary)" }}
+                  >
+                    Loading AI insights...
+                  </p>
+                  <p
+                    className="analytics-text-xs mt-1"
+                    style={{ color: "var(--analytics-text-secondary)" }}
+                  >
+                    This may take a few moments
+                  </p>
+                </div>
+
+                {/* Skeleton Loaders */}
+                <div className="space-y-4">
+                  {/* Refactoring Suggestions Skeleton */}
+                  <div className="analytics-card-compact">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div
+                        className="w-8 h-8 rounded animate-pulse"
+                        style={{ background: "var(--analytics-border)" }}
+                      />
+                      <div className="flex-1">
+                        <div
+                          className="h-4 w-48 rounded animate-pulse mb-2"
+                          style={{ background: "var(--analytics-border)" }}
+                        />
+                        <div
+                          className="h-3 w-64 rounded animate-pulse"
+                          style={{ background: "var(--analytics-border)" }}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="h-16 rounded animate-pulse"
+                          style={{ background: "var(--analytics-border)" }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Code Smells Skeleton */}
+                  <div className="analytics-card-compact">
+                    <div
+                      className="h-4 w-40 rounded animate-pulse mb-4"
+                      style={{ background: "var(--analytics-border)" }}
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div
+                          key={i}
+                          className="h-24 rounded animate-pulse"
+                          style={{ background: "var(--analytics-border)" }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Quick Wins Skeleton */}
+                  <div className="analytics-card-compact">
+                    <div
+                      className="h-4 w-32 rounded animate-pulse mb-4"
+                      style={{ background: "var(--analytics-border)" }}
+                    />
+                    <div className="space-y-2">
+                      {[1, 2].map((i) => (
+                        <div
+                          key={i}
+                          className="h-20 rounded animate-pulse"
+                          style={{ background: "var(--analytics-border)" }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {!loadingAiInsights && aiInsightsError && (
+            <div className="analytics-card analytics-section">
+              <div className="text-center py-8">
+                <FiAlertTriangle
+                  className="mx-auto analytics-mb-2"
+                  size={40}
+                  style={{ color: "var(--analytics-error)" }}
+                />
+                <h3
+                  className="analytics-text-lg font-semibold analytics-mb-1"
+                  style={{ color: "var(--analytics-text-primary)" }}
+                >
+                  Failed to Load AI Insights
+                </h3>
+                <p
+                  className="analytics-text-sm analytics-mb-3"
+                  style={{ color: "var(--analytics-text-secondary)" }}
+                >
+                  {aiInsightsError}
+                </p>
+                <button
+                  onClick={handleRefreshAiInsights}
+                  className="analytics-btn"
+                >
+                  <FiRefreshCw size={16} />
+                  Try Again
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* AI Insights Content */}
+          {!loadingAiInsights && !aiInsightsError && hasAIInsights && (
+            <>
+              {/* Refactoring Suggestions */}
+              {aiInsights?.insights?.refactoringSuggestions &&
+                aiInsights.insights.refactoringSuggestions.length > 0 && (
+                  <div className="analytics-card analytics-section">
+                    <div className="analytics-card-header">
+                      <h3 className="analytics-card-title">
+                        Refactoring Recommendations
+                      </h3>
+                      <p
+                        className="analytics-text-sm mt-1"
+                        style={{ color: "var(--analytics-text-secondary)" }}
+                      >
+                        Prioritized refactoring suggestions with business impact
+                        analysis
+                      </p>
+                    </div>
+
+                    <RefactoringSuggestionsTable
+                      suggestions={aiInsights.insights.refactoringSuggestions}
+                    />
+
+                    <div className="mt-4">
+                      <RiskMatrixD3
+                        suggestions={aiInsights.insights.refactoringSuggestions}
+                      />
+                    </div>
+                  </div>
+                )}
+
+              {/* Code Smells */}
+              {aiInsights?.insights?.codeSmells?.codeSmells &&
+                aiInsights.insights.codeSmells.codeSmells.length > 0 && (
+                  <div className="analytics-card analytics-section">
+                    <div className="analytics-card-header">
+                      <h3 className="analytics-card-title">
+                        Code Smells Analysis
+                      </h3>
+                      <p
+                        className="analytics-text-sm mt-1"
+                        style={{ color: "var(--analytics-text-secondary)" }}
+                      >
+                        Detected code quality issues and anti-patterns
+                      </p>
+                    </div>
+
+                    <CodeSmellsChart
+                      codeSmells={aiInsights.insights.codeSmells.codeSmells}
+                      overallHealth={
+                        aiInsights.insights.codeSmells.overallCodeHealth
+                      }
+                    />
+                  </div>
+                )}
+
+              {/* Quick Wins & Team Health */}
+              {aiInsights?.insights?.quickWins?.quickWins &&
+                aiInsights.insights.quickWins.quickWins.length > 0 && (
+                  <div className="analytics-card analytics-section">
+                    <div className="analytics-card-header">
+                      <h3 className="analytics-card-title">
+                        Quick Wins & Team Health
+                      </h3>
+                      <p
+                        className="analytics-text-sm mt-1"
+                        style={{ color: "var(--analytics-text-secondary)" }}
+                      >
+                        Low-effort, high-impact improvements and team health
+                        indicators
+                      </p>
+                    </div>
+
+                    <TeamHealthDashboard
+                      teamHealthImpacts={aiInsights.insights.refactoringSuggestions.map(
+                        (s) => s.teamHealthImpact
+                      )}
+                      quickWins={aiInsights.insights.quickWins.quickWins}
+                    />
+                  </div>
+                )}
+            </>
+          )}
+
+          {/* Empty State - No AI Insights Available */}
+          {!loadingAiInsights && !aiInsightsError && !hasAIInsights && (
+            <div className="analytics-card analytics-section">
+              <div className="text-center py-8">
+                <FiZap
+                  className="mx-auto analytics-mb-2"
+                  size={40}
+                  style={{ color: "var(--analytics-text-tertiary)" }}
+                />
+                <h3
+                  className="analytics-text-lg font-semibold analytics-mb-1"
+                  style={{ color: "var(--analytics-text-primary)" }}
+                >
+                  AI Insights Not Loaded
+                </h3>
+
+                {!loadingAiInsights && (
+                  <div className="w-full flex items-center justify-center my-4">
+                    <button
+                      onClick={handleRefreshAiInsights}
+                      className="analytics-btn-secondary flex items-center justify-center gap-4"
+                      disabled={loadingAiInsights}
+                    >
+                      <FiRefreshCw size={20} />
+                      Load AI Insights
+                    </button>
+                  </div>
+                )}
+
+                <p
+                  className="analytics-text-sm analytics-mb-3"
+                  style={{ color: "var(--analytics-text-secondary)" }}
+                >
+                  Click the button above to load AI-powered insights including
+                  refactoring suggestions, code smells, and quick wins.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Executive Summary Footer */}
@@ -495,7 +822,7 @@ function MetricCard({
           className="analytics-icon"
           style={{ background: `${color}20`, color }}
         >
-          {React.cloneElement(icon as React.ReactElement, { size: 20 })}
+          {icon}
         </div>
         {trend && (
           <div className="flex items-center gap-1">
@@ -553,9 +880,7 @@ function CollaborationMetric({
   return (
     <div className="analytics-card-compact">
       <div className="flex items-center gap-2 analytics-mb-1">
-        <span style={{ color: "var(--analytics-accent)" }}>
-          {React.cloneElement(icon as React.ReactElement, { size: 18 })}
-        </span>
+        <span style={{ color: "var(--analytics-accent)" }}>{icon}</span>
         <p
           className="analytics-text-sm"
           style={{ color: "var(--analytics-text-secondary)" }}
