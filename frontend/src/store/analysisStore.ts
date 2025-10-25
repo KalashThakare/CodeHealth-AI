@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { axiosInstance } from "@/lib/axios";
+import { axiosInstance, axiosAIInstance } from "@/lib/axios";
 import { toast } from "sonner";
 
 // ==================== INTERFACES ====================
@@ -120,10 +120,33 @@ export interface Architectural {
 }
 
 export interface AIInsights {
-  refactoringSuggestions: RefactoringSuggestion[];
-  codeSmells: CodeSmells;
-  quickWins: QuickWin[];
-  architectural: Architectural;
+  repoId: string | null;
+  repoName: string;
+  branch: string;
+  timestamp: string;
+  inputSummary: {
+    healthScore: number;
+    technicalDebt: number;
+    totalFiles: number;
+    highRiskFiles: number;
+  };
+  insights: {
+    refactoringSuggestions: RefactoringSuggestion[];
+    codeSmells: {
+      codeSmells: CodeSmell[];
+      overallCodeHealth: string;
+    };
+    architectural: Architectural;
+    quickWins: {
+      quickWins: QuickWin[];
+      totalEstimatedTime: string;
+      expectedImpact: string;
+    };
+  };
+  overallAssessment: {
+    recommendations: string[];
+    strategy: string;
+  };
 }
 
 export interface FullRepoAnalysis {
@@ -141,8 +164,10 @@ interface AnalysisState {
   fullAnalysis: FullRepoAnalysis | null;
 
   // UI State
-  loading: boolean;
+  loading: boolean; // For main analysis loading
+  loadingAiInsights: boolean; // For AI insights loading only
   error: string | null;
+  aiInsightsError: string | null; // Separate error for AI insights
 
   // Actions - Fetch Analysis (3 backend routes)
   fetchFullAnalysis: (repoId: string) => Promise<void>;
@@ -164,7 +189,9 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
   // ==================== INITIAL STATE ====================
   fullAnalysis: null,
   loading: false,
+  loadingAiInsights: false,
   error: null,
+  aiInsightsError: null,
 
   // ==================== FETCH FULL ANALYSIS ====================
   /**
@@ -264,30 +291,8 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
           error: null,
         });
 
-        // Try to fetch AI insights separately
-        try {
-          const aiInsightsResponse = await axiosInstance.get(
-            `/analyze/${repoId}/ai-insights`
-          );
-          if (
-            aiInsightsResponse.data?.message === "Success" &&
-            aiInsightsResponse.data?.aiInsights
-          ) {
-            const currentAnalysis = get().fullAnalysis;
-            if (currentAnalysis) {
-              set({
-                fullAnalysis: {
-                  ...currentAnalysis,
-                  aiInsights: aiInsightsResponse.data.aiInsights,
-                },
-              });
-              console.log("[Analysis] AI insights loaded and merged");
-            }
-          }
-        } catch (aiError) {
-          console.warn("[Analysis] AI insights not available:", aiError);
-          // Non-critical error - don't show to user
-        }
+        // Don't automatically load AI insights - let user trigger it manually
+        // This prevents unnecessary API calls and provides better UX with lazy loading
 
         toast.success("Analysis loaded successfully", {
           description: `${analysisData.result.totalFiles} files analyzed`,
@@ -328,17 +333,36 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
    * Returns: { message: "Success", repoId, aiInsights: {...} }
    */
   fetchAiInsights: async (repoId: string) => {
-    set({ loading: true, error: null });
+    set({ loadingAiInsights: true, aiInsightsError: null });
 
     try {
       console.log("[Analysis] Fetching AI insights for repo:", repoId);
 
-      const response = await axiosInstance.get(`/analyze/${repoId}/insights`);
+      // Use AI instance with longer timeout
+      const response = await axiosAIInstance.get(
+        `/analyze/${repoId}/insights`,
+        { timeout: 120000 } // 2 minutes timeout
+      );
 
       if (response.data?.message === "Success" && response.data?.aiInsights) {
-        set({ loading: false, error: null });
+        // Update the full analysis with AI insights
+        const currentAnalysis = get().fullAnalysis;
+        if (currentAnalysis) {
+          set({
+            fullAnalysis: {
+              ...currentAnalysis,
+              aiInsights: response.data.aiInsights,
+            },
+            loadingAiInsights: false,
+            aiInsightsError: null,
+          });
+        } else {
+          set({ loadingAiInsights: false, aiInsightsError: null });
+        }
 
-        toast.success("AI insights loaded successfully");
+        toast.success("AI insights loaded successfully", {
+          description: "Advanced insights are now available",
+        });
 
         console.log("[Analysis] AI insights loaded:", response.data.aiInsights);
         return response.data.aiInsights;
@@ -348,18 +372,26 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
     } catch (error: any) {
       console.error("[Analysis] Failed to fetch AI insights:", error);
 
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch AI insights";
+      let errorMessage = "Failed to fetch AI insights";
+      let errorDescription = "";
 
-      toast.error("Failed to load AI insights", {
-        description: errorMessage,
+      if (error.code === "ECONNABORTED") {
+        errorMessage = "AI insights request timed out";
+        errorDescription =
+          "The analysis is taking longer than expected. Please try again in a few moments.";
+      } else {
+        errorMessage =
+          error.response?.data?.message || error.message || errorMessage;
+        errorDescription = "Please check your connection and try again.";
+      }
+
+      toast.error(errorMessage, {
+        description: errorDescription,
       });
 
       set({
-        loading: false,
-        error: errorMessage,
+        loadingAiInsights: false,
+        aiInsightsError: errorMessage,
       });
 
       throw error;
