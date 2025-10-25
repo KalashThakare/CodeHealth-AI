@@ -64,11 +64,74 @@ export interface Distributions {
   complexityDistribution: number[];
 }
 
+// AI Insights Interfaces
+export interface RefactoringSuggestion {
+  file: string;
+  priority: string;
+  currentIssues: string[];
+  recommendations: Array<{
+    action: string;
+    benefit: string;
+    effort: string;
+  }>;
+  estimatedEffort: string;
+  risks: string;
+  businessImpact: {
+    currentCost: string;
+    incidentRisk: string;
+    velocitySlowdown: string;
+    postRefactoringGain: string;
+  };
+  teamHealthImpact: {
+    ownershipRisk: string;
+    burnoutIndicator: string;
+    knowledgeGap: string;
+  };
+}
+
+export interface CodeSmell {
+  type: string;
+  severity: string;
+  affectedFiles: string[];
+  rootCause: string;
+  impact: string;
+  estimatedFixTime: string;
+}
+
+export interface CodeSmells {
+  codeSmells: CodeSmell[];
+  overallCodeHealth: string;
+}
+
+export interface QuickWin {
+  action: string;
+  estimatedTime: string;
+  impact: string;
+  effort: string;
+  risk: string;
+  steps: string[];
+  priority: number;
+}
+
+export interface Architectural {
+  recommendations: string[];
+  roadmap: any;
+  strategy: any;
+}
+
+export interface AIInsights {
+  refactoringSuggestions: RefactoringSuggestion[];
+  codeSmells: CodeSmells;
+  quickWins: QuickWin[];
+  architectural: Architectural;
+}
+
 export interface FullRepoAnalysis {
   result: RepoMetrics;
   commitAnalysis: CommitAnalysis;
   repoHealthScore: RepoHealthScore;
   distributions: Distributions;
+  aiInsights?: AIInsights;
 }
 
 // ==================== STORE STATE INTERFACE ====================
@@ -200,6 +263,31 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
           loading: false,
           error: null,
         });
+
+        // Try to fetch AI insights separately
+        try {
+          const aiInsightsResponse = await axiosInstance.get(
+            `/analyze/${repoId}/ai-insights`
+          );
+          if (
+            aiInsightsResponse.data?.message === "Success" &&
+            aiInsightsResponse.data?.aiInsights
+          ) {
+            const currentAnalysis = get().fullAnalysis;
+            if (currentAnalysis) {
+              set({
+                fullAnalysis: {
+                  ...currentAnalysis,
+                  aiInsights: aiInsightsResponse.data.aiInsights,
+                },
+              });
+              console.log("[Analysis] AI insights loaded and merged");
+            }
+          }
+        } catch (aiError) {
+          console.warn("[Analysis] AI insights not available:", aiError);
+          // Non-critical error - don't show to user
+        }
 
         toast.success("Analysis loaded successfully", {
           description: `${analysisData.result.totalFiles} files analyzed`,
