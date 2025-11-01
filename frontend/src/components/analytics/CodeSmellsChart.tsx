@@ -12,6 +12,8 @@ import {
   Legend,
 } from "chart.js";
 import { FiAlertCircle } from "react-icons/fi";
+import { useTheme } from "@/hooks/useTheme";
+import { getSeverityColor, getChartTheme } from "@/lib/chartTheme";
 
 ChartJS.register(
   CategoryScale,
@@ -40,6 +42,9 @@ export default function CodeSmellsChart({
   codeSmells,
   overallHealth,
 }: CodeSmellsChartProps) {
+  const { isDark } = useTheme();
+  const theme = getChartTheme(isDark);
+
   const getSeverityScore = (severity: string): number => {
     switch (severity.toLowerCase()) {
       case "critical":
@@ -55,32 +60,18 @@ export default function CodeSmellsChart({
     }
   };
 
-  const getSeverityColor = (severity: string): string => {
-    switch (severity.toLowerCase()) {
-      case "critical":
-        return "rgba(239, 68, 68, 0.8)"; // red
-      case "high":
-        return "rgba(249, 115, 22, 0.8)"; // orange
-      case "medium":
-        return "rgba(234, 179, 8, 0.8)"; // yellow
-      case "low":
-        return "rgba(34, 197, 94, 0.8)"; // green
-      default:
-        return "rgba(156, 163, 175, 0.8)"; // gray
-    }
-  };
-
   const chartData = {
     labels: codeSmells.map((smell) => smell.type),
     datasets: [
       {
         label: "Affected Files",
         data: codeSmells.map((smell) => smell.affectedFiles.length),
-        backgroundColor: codeSmells.map((smell) =>
-          getSeverityColor(smell.severity)
-        ),
+        backgroundColor: codeSmells.map((smell) => {
+          const color = getSeverityColor(smell.severity, isDark);
+          return color + "CC"; // Add opacity
+        }),
         borderColor: codeSmells.map((smell) =>
-          getSeverityColor(smell.severity).replace("0.8", "1")
+          getSeverityColor(smell.severity, isDark)
         ),
         borderWidth: 1,
       },
@@ -95,10 +86,22 @@ export default function CodeSmellsChart({
         display: false,
       },
       tooltip: {
-        backgroundColor: "rgba(0, 0, 0, 0.9)",
+        backgroundColor: theme.tooltipBg,
+        titleColor: theme.tooltipText,
+        bodyColor: theme.tooltipText,
+        borderColor: theme.tooltipBorder,
+        borderWidth: 1,
         padding: 12,
-        titleColor: "#fff",
-        bodyColor: "#fff",
+        cornerRadius: 6,
+        titleFont: {
+          size: 13,
+          weight: 600 as const,
+          family: "'Inter', system-ui, sans-serif",
+        },
+        bodyFont: {
+          size: 12,
+          family: "'Inter', system-ui, sans-serif",
+        },
         callbacks: {
           label: function (context: any) {
             const smell = codeSmells[context.dataIndex];
@@ -115,11 +118,13 @@ export default function CodeSmellsChart({
       x: {
         grid: {
           display: false,
+          drawBorder: false,
         },
         ticks: {
-          color: "var(--analytics-text-secondary)",
+          color: theme.textSecondary,
           font: {
             size: 10,
+            family: "'Inter', system-ui, sans-serif",
           },
           maxRotation: 45,
           minRotation: 45,
@@ -128,12 +133,14 @@ export default function CodeSmellsChart({
       y: {
         beginAtZero: true,
         grid: {
-          color: "var(--analytics-border)",
+          color: theme.gridColor,
+          drawBorder: false,
         },
         ticks: {
-          color: "var(--analytics-text-secondary)",
+          color: theme.textSecondary,
           font: {
             size: 10,
+            family: "'Inter', system-ui, sans-serif",
           },
           precision: 0,
         },
@@ -259,7 +266,7 @@ export default function CodeSmellsChart({
                   width: "12px",
                   height: "12px",
                   borderRadius: "2px",
-                  background: getSeverityColor(severity),
+                  background: getSeverityColor(severity, isDark),
                 }}
               />
               <span
@@ -281,7 +288,7 @@ export default function CodeSmellsChart({
             className="p-2 rounded border"
             style={{
               background: "var(--analytics-card-hover)",
-              borderColor: getSeverityColor(smell.severity),
+              borderColor: getSeverityColor(smell.severity, isDark),
               borderWidth: "2px",
             }}
           >
@@ -295,8 +302,9 @@ export default function CodeSmellsChart({
               <span
                 className="analytics-badge analytics-text-xs"
                 style={{
-                  background: getSeverityColor(smell.severity),
-                  color: "#fff",
+                  background: getSeverityColor(smell.severity, isDark),
+                  color: isDark ? "#000" : "#fff",
+                  fontWeight: "600",
                 }}
               >
                 {smell.severity}

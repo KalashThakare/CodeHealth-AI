@@ -12,6 +12,8 @@ import {
   Legend,
 } from "chart.js";
 import { FiUsers, FiAlertTriangle, FiTrendingUp } from "react-icons/fi";
+import { useTheme } from "@/hooks/useTheme";
+import { getChartTheme } from "@/lib/chartTheme";
 
 ChartJS.register(
   RadialLinearScale,
@@ -47,6 +49,13 @@ export default function TeamHealthDashboard({
   teamHealthImpacts,
   quickWins,
 }: TeamHealthDashboardProps) {
+  const { isDark } = useTheme();
+  const theme = getChartTheme(isDark);
+
+  // Primary color based on theme
+  const primaryColor = isDark ? "#0070f3" : "#7c3aed";
+  const primaryColorRgb = isDark ? "0, 112, 243" : "124, 58, 237";
+
   // Calculate average risk levels
   const avgOwnershipRisk =
     teamHealthImpacts.reduce((sum, impact) => {
@@ -77,7 +86,7 @@ export default function TeamHealthDashboard({
     (i) => i.knowledgeGap.toLowerCase() === "high"
   ).length;
 
-  // Radar Chart Data
+  // Radar Chart Data with theme support
   const radarData = {
     labels: [
       "Ownership Distribution",
@@ -96,13 +105,13 @@ export default function TeamHealthDashboard({
           2.5, // From quick wins impact
           2.0, // Estimated from velocity data
         ],
-        backgroundColor: "rgba(124, 58, 237, 0.2)",
-        borderColor: "rgba(124, 58, 237, 1)",
+        backgroundColor: `rgba(${primaryColorRgb}, 0.15)`,
+        borderColor: primaryColor,
         borderWidth: 2,
-        pointBackgroundColor: "rgba(124, 58, 237, 1)",
-        pointBorderColor: "#fff",
-        pointHoverBackgroundColor: "#fff",
-        pointHoverBorderColor: "rgba(124, 58, 237, 1)",
+        pointBackgroundColor: primaryColor,
+        pointBorderColor: isDark ? "#000" : "#fff",
+        pointHoverBackgroundColor: isDark ? "#fff" : primaryColor,
+        pointHoverBorderColor: primaryColor,
       },
     ],
   };
@@ -115,8 +124,22 @@ export default function TeamHealthDashboard({
         display: false,
       },
       tooltip: {
-        backgroundColor: "rgba(0, 0, 0, 0.9)",
+        backgroundColor: theme.tooltipBg,
+        titleColor: theme.tooltipText,
+        bodyColor: theme.tooltipText,
+        borderColor: theme.tooltipBorder,
+        borderWidth: 1,
         padding: 12,
+        cornerRadius: 6,
+        titleFont: {
+          size: 13,
+          weight: 600 as const,
+          family: "'Inter', system-ui, sans-serif",
+        },
+        bodyFont: {
+          size: 12,
+          family: "'Inter', system-ui, sans-serif",
+        },
       },
     },
     scales: {
@@ -125,19 +148,24 @@ export default function TeamHealthDashboard({
         max: 3,
         ticks: {
           stepSize: 1,
-          color: "var(--analytics-text-tertiary)",
+          color: theme.textSecondary,
           font: {
             size: 10,
+            family: "'Inter', system-ui, sans-serif",
           },
         },
         grid: {
-          color: "var(--analytics-border)",
+          color: theme.gridColor,
         },
         pointLabels: {
-          color: "var(--analytics-text-secondary)",
+          color: theme.textSecondary,
           font: {
             size: 11,
+            family: "'Inter', system-ui, sans-serif",
           },
+        },
+        angleLines: {
+          color: theme.gridColor,
         },
       },
     },

@@ -59,18 +59,19 @@ export default function RiskFilesTable({ files }: RiskFilesTableProps) {
     setExpandedRows(newExpanded);
   };
 
-  const getRiskColor = (score: number) => {
-    if (score >= 80) return "text-red-600 bg-red-50 dark:bg-red-900/20";
-    if (score >= 60)
-      return "text-orange-600 bg-orange-50 dark:bg-orange-900/20";
-    if (score >= 40)
-      return "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20";
-    return "text-blue-600 bg-blue-50 dark:bg-blue-900/20";
+  const getRiskBadgeClass = (score: number) => {
+    if (score >= 80) return "analytics-badge analytics-badge-error";
+    if (score >= 60) return "analytics-badge analytics-badge-warning";
+    if (score >= 40) return "analytics-badge analytics-badge-info";
+    return "analytics-badge analytics-badge-success";
   };
 
   if (files.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+      <div
+        className="text-center py-12"
+        style={{ color: "var(--analytics-text-secondary)" }}
+      >
         No high-risk files identified. Great job! 🎉
       </div>
     );
@@ -78,93 +79,91 @@ export default function RiskFilesTable({ files }: RiskFilesTableProps) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead className="bg-gray-50 dark:bg-gray-800">
+      <table className="analytics-table">
+        <thead>
           <tr>
-            <th className="px-4 py-3 text-left">
+            <th>
               <button
                 onClick={() => handleSort("path")}
-                className="flex items-center gap-1 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className="flex items-center gap-1"
               >
                 File Path
                 {sortBy === "path" &&
                   (sortOrder === "asc" ? <FiChevronUp /> : <FiChevronDown />)}
               </button>
             </th>
-            <th className="px-4 py-3 text-left">
+            <th>
               <button
                 onClick={() => handleSort("riskScore")}
-                className="flex items-center gap-1 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className="flex items-center gap-1"
               >
                 Risk Score
                 {sortBy === "riskScore" &&
                   (sortOrder === "asc" ? <FiChevronUp /> : <FiChevronDown />)}
               </button>
             </th>
-            <th className="px-4 py-3 text-left">
+            <th>
               <button
                 onClick={() => handleSort("cyclomaticComplexity")}
-                className="flex items-center gap-1 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className="flex items-center gap-1"
               >
                 Complexity
                 {sortBy === "cyclomaticComplexity" &&
                   (sortOrder === "asc" ? <FiChevronUp /> : <FiChevronDown />)}
               </button>
             </th>
-            <th className="px-4 py-3 text-left">
+            <th>
               <button
                 onClick={() => handleSort("maintainabilityIndex")}
-                className="flex items-center gap-1 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className="flex items-center gap-1"
               >
                 Maintainability
                 {sortBy === "maintainabilityIndex" &&
                   (sortOrder === "asc" ? <FiChevronUp /> : <FiChevronDown />)}
               </button>
             </th>
-            <th className="px-4 py-3 text-left">
+            <th>
               <button
                 onClick={() => handleSort("locTotal")}
-                className="flex items-center gap-1 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className="flex items-center gap-1"
               >
                 LOC
                 {sortBy === "locTotal" &&
                   (sortOrder === "asc" ? <FiChevronUp /> : <FiChevronDown />)}
               </button>
             </th>
-            <th className="px-4 py-3"></th>
+            <th></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+        <tbody>
           {sortedFiles.map((file, index) => (
             <React.Fragment key={index}>
-              <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
-                <td className="px-4 py-3">
-                  <div className="text-sm text-gray-900 dark:text-white font-mono truncate max-w-md">
-                    {file.path}
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getRiskColor(
-                      file.riskScore
-                    )}`}
-                  >
+              <tr
+                style={{
+                  background: expandedRows.has(index)
+                    ? "var(--analytics-card-hover)"
+                    : "transparent",
+                }}
+              >
+                <td className="analytics-text-sm font-mono">{file.path}</td>
+                <td>
+                  <span className={getRiskBadgeClass(file.riskScore)}>
                     {file.riskScore.toFixed(1)}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                <td className="analytics-text-sm">
                   {file.cyclomaticComplexity.toFixed(1)}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                <td className="analytics-text-sm">
                   {file.maintainabilityIndex.toFixed(1)}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                <td className="analytics-text-sm">
                   {file.locTotal.toLocaleString()}
                 </td>
-                <td className="px-4 py-3">
+                <td>
                   <button
                     onClick={() => toggleRow(index)}
-                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                    style={{ color: "var(--analytics-accent)" }}
                   >
                     {expandedRows.has(index) ? (
                       <FiChevronUp />
@@ -178,14 +177,36 @@ export default function RiskFilesTable({ files }: RiskFilesTableProps) {
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-4 py-3 bg-gray-50 dark:bg-gray-800/50"
+                    style={{
+                      padding: "1rem",
+                      background: "var(--analytics-card-hover)",
+                    }}
                   >
-                    <div className="text-sm text-gray-700 dark:text-gray-300">
-                      <strong>Reason:</strong> {file.reason}
-                    </div>
-                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      <strong>Halstead Volume:</strong>{" "}
-                      {file.halsteadVolume.toFixed(1)}
+                    <div className="analytics-text-sm space-y-2">
+                      <div>
+                        <strong
+                          style={{ color: "var(--analytics-text-primary)" }}
+                        >
+                          Reason:
+                        </strong>{" "}
+                        <span
+                          style={{ color: "var(--analytics-text-secondary)" }}
+                        >
+                          {file.reason}
+                        </span>
+                      </div>
+                      <div>
+                        <strong
+                          style={{ color: "var(--analytics-text-primary)" }}
+                        >
+                          Halstead Volume:
+                        </strong>{" "}
+                        <span
+                          style={{ color: "var(--analytics-text-secondary)" }}
+                        >
+                          {file.halsteadVolume.toFixed(1)}
+                        </span>
+                      </div>
                     </div>
                   </td>
                 </tr>

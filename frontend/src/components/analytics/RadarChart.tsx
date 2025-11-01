@@ -11,6 +11,8 @@ import {
   Legend,
 } from "chart.js";
 import { Radar } from "react-chartjs-2";
+import { useTheme } from "@/hooks/useTheme";
+import { getChartTheme } from "@/lib/chartTheme";
 
 ChartJS.register(
   RadialLinearScale,
@@ -32,6 +34,12 @@ interface RadarChartProps {
 
 export default function RadarChart({ componentScores }: RadarChartProps) {
   const chartRef = useRef<ChartJS<"radar"> | null>(null);
+  const { isDark } = useTheme();
+  const theme = getChartTheme(isDark);
+
+  // Primary color based on theme
+  const primaryColor = isDark ? "#0070f3" : "#7c3aed";
+  const primaryColorRgb = isDark ? "0, 112, 243" : "124, 58, 237";
 
   // Cleanup on unmount
   useEffect(() => {
@@ -53,13 +61,13 @@ export default function RadarChart({ componentScores }: RadarChartProps) {
           componentScores.busFactor,
           componentScores.community,
         ],
-        backgroundColor: "rgba(59, 130, 246, 0.2)",
-        borderColor: "rgba(59, 130, 246, 1)",
+        backgroundColor: `rgba(${primaryColorRgb}, 0.15)`,
+        borderColor: primaryColor,
         borderWidth: 2,
-        pointBackgroundColor: "rgba(59, 130, 246, 1)",
-        pointBorderColor: "#fff",
-        pointHoverBackgroundColor: "#fff",
-        pointHoverBorderColor: "rgba(59, 130, 246, 1)",
+        pointBackgroundColor: primaryColor,
+        pointBorderColor: isDark ? "#000" : "#fff",
+        pointHoverBackgroundColor: isDark ? "#fff" : primaryColor,
+        pointHoverBorderColor: primaryColor,
       },
     ],
   };
@@ -74,16 +82,25 @@ export default function RadarChart({ componentScores }: RadarChartProps) {
         ticks: {
           stepSize: 20,
           backdropColor: "transparent",
-          color: "#9ca3af",
+          color: theme.textSecondary,
+          font: {
+            size: 11,
+            family: "'Inter', system-ui, sans-serif",
+          },
         },
         grid: {
-          color: "rgba(156, 163, 175, 0.2)",
+          color: theme.gridColor,
         },
         pointLabels: {
-          color: "#6b7280",
+          color: theme.textSecondary,
           font: {
             size: 12,
+            family: "'Inter', system-ui, sans-serif",
+            weight: 500 as const,
           },
+        },
+        angleLines: {
+          color: theme.gridColor,
         },
       },
     },
@@ -92,6 +109,22 @@ export default function RadarChart({ componentScores }: RadarChartProps) {
         display: false,
       },
       tooltip: {
+        backgroundColor: theme.tooltipBg,
+        titleColor: theme.tooltipText,
+        bodyColor: theme.tooltipText,
+        borderColor: theme.tooltipBorder,
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 6,
+        titleFont: {
+          size: 13,
+          weight: 600 as const,
+          family: "'Inter', system-ui, sans-serif",
+        },
+        bodyFont: {
+          size: 12,
+          family: "'Inter', system-ui, sans-serif",
+        },
         callbacks: {
           label: function (context: any) {
             return `${context.label}: ${context.parsed.r}/100`;

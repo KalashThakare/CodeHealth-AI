@@ -73,7 +73,7 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
       </div>
 
       {/* Navigation Links - Only show when main nav is hidden */}
-      <div className="flex min-[520px]:hidden py-1">
+      <div className="flex flex-col min-[520px]:hidden py-1">
         <h4
           className="px-4 py-2 text-xs font-semibold uppercase tracking-wide"
           style={{ color: "var(--color-fg-secondary)" }}

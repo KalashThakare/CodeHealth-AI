@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
+import { useTheme } from "@/hooks/useTheme";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -16,6 +17,7 @@ export default function HealthGaugeChart({
   rating,
 }: HealthGaugeChartProps) {
   const chartRef = useRef<ChartJS<"doughnut"> | null>(null);
+  const { isDark } = useTheme();
 
   // Cleanup on unmount
   useEffect(() => {
@@ -26,12 +28,12 @@ export default function HealthGaugeChart({
     };
   }, []);
 
-  // Determine color based on score
+  // Determine color based on score and theme - HIGH CONTRAST for light theme
   const getColor = (score: number) => {
-    if (score >= 80) return "#10b981"; // Green
-    if (score >= 60) return "#3b82f6"; // Blue
-    if (score >= 40) return "#f59e0b"; // Yellow
-    return "#ef4444"; // Red
+    if (score >= 80) return isDark ? "#10b981" : "#047857"; // Darker green for light
+    if (score >= 60) return isDark ? "#3b82f6" : "#1d4ed8"; // Darker blue for light
+    if (score >= 40) return isDark ? "#f59e0b" : "#b45309"; // Darker yellow for light
+    return isDark ? "#ef4444" : "#b91c1c"; // Darker red for light
   };
 
   const getRatingLabel = (rating: string) => {
@@ -45,12 +47,16 @@ export default function HealthGaugeChart({
   };
 
   const color = getColor(score);
+  const emptyColor = isDark
+    ? "rgba(255, 255, 255, 0.05)"
+    : "rgba(124, 58, 237, 0.12)";
+  const textSecondary = isDark ? "#a3a3a3" : "#4a1d8f";
 
   const data = {
     datasets: [
       {
         data: [score, 100 - score],
-        backgroundColor: [color, "rgba(229, 231, 235, 0.3)"],
+        backgroundColor: [color, emptyColor],
         borderWidth: 0,
         circumference: 180,
         rotation: 270,
@@ -83,15 +89,22 @@ export default function HealthGaugeChart({
           <div className="text-5xl font-bold" style={{ color }}>
             {score}
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <div
+            className="text-sm mt-1"
+            style={{ color: textSecondary, fontWeight: "600" }}
+          >
             out of 100
           </div>
         </div>
       </div>
       <div className="mt-4 text-center">
         <div
-          className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
-          style={{ backgroundColor: `${color}20`, color }}
+          className="inline-block px-4 py-2 rounded-full text-sm font-bold border-2"
+          style={{
+            backgroundColor: isDark ? `${color}20` : `${color}15`,
+            color,
+            borderColor: color,
+          }}
         >
           {getRatingLabel(rating)}
         </div>
