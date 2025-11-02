@@ -36,14 +36,17 @@ export const analyze_repo = async (req, res) => {
     }
 
     const cacheKey = `metrics:repo:${repoId}`
-     const cachedData = await connection.get(cacheKey);
+    const cachedData = await connection.get(cacheKey);
+
 
     if (cachedData) {
       console.log("Returned from Redis Cache");
+      const parsedData = JSON.parse(cachedData);
+
       return res.status(200).json({
-        message: "Success (from cache)",
+        message: "Success",
         repoId,
-        aiInsights: JSON.parse(cachedData),
+        analysis: parsedData,
       });
     }
 
@@ -102,9 +105,9 @@ export const analyze_repo = async (req, res) => {
 
     const analysisData = analysis.toJSON();
     await connection.set(
-      cacheKey, 
-      JSON.stringify(analysisData), 
-      "EX", 
+      cacheKey,
+      JSON.stringify(analysisData),
+      "EX",
       60 * 60 * 24
     );
 
@@ -115,7 +118,8 @@ export const analyze_repo = async (req, res) => {
 
     return res.status(200).json({
       message: "Success",
-      analysis: analysis.toJSON(),
+      repoId,
+      analysis: analysisData,
     });
   } catch (error) {
     console.error("=== ANALYZE REPO ERROR ===");
@@ -135,7 +139,7 @@ async function triggerBackgroundAnalysis(repoId) {
     console.log(`[Background] Starting analysis for repo ${repoId}`);
 
     const parsedRepoId = parseInt(repoId);
-    
+
 
     const fileMetrics = await RepoFileMetrics.findAll({
       where: { repoId: parsedRepoId },
@@ -211,6 +215,9 @@ async function triggerBackgroundAnalysis(repoId) {
         where: { repoId: parsedRepoId },
       }
     );
+
+    const cacheKey = `metrics:repo:${parsedRepoId}`;
+    await connection.del(cacheKey);
 
     console.log(`[Background] Analysis completed for repo ${parsedRepoId}`);
   } catch (error) {
