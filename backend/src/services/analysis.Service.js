@@ -47,7 +47,7 @@ export const calculateRepoMetrics = async (repoId, branch = 'main') => {
   try {
     // Fetch file metrics from database
     const fileMetrics = await RepoFileMetrics.findAll({
-      where: { repoId, branch },
+      where: { repoId },
       attributes: [
         'path',
         'cyclomaticComplexity',

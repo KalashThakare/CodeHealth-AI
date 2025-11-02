@@ -115,43 +115,85 @@ async function triggerBackgroundAnalysis(repoId) {
   try {
     console.log(`[Background] Starting analysis for repo ${repoId}`);
 
-    // Get file metrics from database
+    const parsedRepoId = parseInt(repoId);
+    
+
     const fileMetrics = await RepoFileMetrics.findAll({
-      where: { repoId: parseInt(repoId) },
+      where: { repoId: parsedRepoId },
     });
 
-    // Get commit data
     const commitData = await Commit.findAll({
-      where: { repoId: parseInt(repoId) },
+      where: { repoId: parsedRepoId },
     });
 
     if (fileMetrics.length === 0) {
       console.log(
-        `[Background] No file metrics found for repo ${repoId}, skipping analysis`
+        `[Background] No file metrics found for repo ${parsedRepoId}, skipping analysis`
       );
       return;
     }
 
-    // Calculate metrics
-    const repoMetrics = calculateRepoMetrics(fileMetrics);
-    const commitAnalysis = analyzeCommitPatterns(commitData);
-    const distributions = calculateDistributions(fileMetrics);
-    const healthScore = calculateRepoHealthScore(repoMetrics, commitAnalysis);
+    if (commitData.length === 0) {
+      console.log(
+        `[Background] No commit data found for repo ${parsedRepoId}, skipping commit analysis`
+      );
+    }
 
-    // Update the analysis record
+    const repoMetrics = await calculateRepoMetrics(parsedRepoId);
+    const commitAnalysis = await analyzeCommitPatterns(parsedRepoId);
+    const distributions = await calculateDistributions(parsedRepoId);
+    const healthScore = await calculateRepoHealthScore(parsedRepoId);
+
     await RepositoryAnalysis.update(
       {
-        ...repoMetrics,
-        ...commitAnalysis,
-        ...healthScore,
-        ...distributions,
+        // Repo metrics
+        avgCyclomaticComplexity: repoMetrics.avgCyclomaticComplexity,
+        avgMaintainabilityIndex: repoMetrics.avgMaintainabilityIndex,
+        avgHalsteadVolume: repoMetrics.avgHalsteadVolume,
+        weightedCyclomaticComplexity: repoMetrics.weightedCyclomaticComplexity,
+        weightedMaintainabilityIndex: repoMetrics.weightedMaintainabilityIndex,
+        weightedHalsteadVolume: repoMetrics.weightedHalsteadVolume,
+        technicalDebtScore: repoMetrics.technicalDebtScore,
+        totalLOC: repoMetrics.totalLOC,
+        totalFiles: repoMetrics.totalFiles,
+        refactorPriorityFiles: repoMetrics.refactorPriorityFiles,
+
+        // Commit analysis
+        totalCommits: commitAnalysis.totalCommits,
+        daysActive: commitAnalysis.daysActive,
+        activeDays: commitAnalysis.activeDays,
+        activityRatio: commitAnalysis.activityRatio,
+        avgCommitsPerDay: commitAnalysis.avgCommitsPerDay,
+        recentCommits30Days: commitAnalysis.recentCommits30Days,
+        contributorCount: commitAnalysis.contributorCount,
+        topContributorRatio: commitAnalysis.topContributorRatio,
+        busFactor: commitAnalysis.busFactor,
+        avgMessageLength: commitAnalysis.avgMessageLength,
+        firstCommit: commitAnalysis.firstCommit,
+        lastCommit: commitAnalysis.lastCommit,
+        velocityTrend: commitAnalysis.velocity?.trend,
+        velocityConsistency: commitAnalysis.velocity?.consistency,
+
+        // Health score
+        overallHealthScore: healthScore.overallHealthScore,
+        healthRating: healthScore.healthRating,
+        codeQualityScore: healthScore.componentScores.codeQuality,
+        developmentActivityScore: healthScore.componentScores.developmentActivity,
+        busFactorScore: healthScore.componentScores.busFactor,
+        communityScore: healthScore.componentScores.community,
+        strengths: healthScore.strengths,
+        weaknesses: healthScore.weaknesses,
+
+        // Distributions
+        maintainabilityDistribution: distributions.maintainabilityDistribution,
+        complexityDistribution: distributions.complexityDistribution,
       },
       {
-        where: { repoId: parseInt(repoId) },
+        where: { repoId: parsedRepoId },
       }
     );
 
-    console.log(`[Background] Analysis completed for repo ${repoId}`);
+    console.log(`[Background] Analysis completed for repo ${parsedRepoId}`);
   } catch (error) {
     console.error(`[Background] Analysis failed for repo ${repoId}:`, error);
     throw error;
