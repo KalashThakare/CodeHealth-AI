@@ -20,7 +20,6 @@ export const analyze_repo = async (req, res) => {
   try {
     const { repoId } = req.params;
 
-    console.log("=== ANALYZE REPO DEBUG ===");
     console.log("RepoId:", repoId);
     console.log("User:", req.user?.id);
 
@@ -28,7 +27,6 @@ export const analyze_repo = async (req, res) => {
       where: { repoId: parseInt(repoId) },
     });
 
-    console.log("Repository found:", repo ? "YES" : "NO");
 
     if (!repo) {
       return res.status(404).json({
@@ -37,11 +35,22 @@ export const analyze_repo = async (req, res) => {
       });
     }
 
+    const cacheKey = `metrics:repo:${repoId}`
+     const cachedData = await connection.get(cacheKey);
+
+    if (cachedData) {
+      console.log("Returned from Redis Cache");
+      return res.status(200).json({
+        message: "Success (from cache)",
+        repoId,
+        aiInsights: JSON.parse(cachedData),
+      });
+    }
+
     let analysis = await RepositoryAnalysis.findOne({
       where: { repoId: parseInt(repoId) },
     });
 
-    console.log("Existing analysis found:", analysis ? "YES" : "NO");
 
     if (!analysis) {
       console.log("Creating new analysis record...");
@@ -90,6 +99,16 @@ export const analyze_repo = async (req, res) => {
     triggerBackgroundAnalysis(repoId).catch((err) => {
       console.error("Background analysis error:", err);
     });
+
+    const analysisData = analysis.toJSON();
+    await connection.set(
+      cacheKey, 
+      JSON.stringify(analysisData), 
+      "EX", 
+      60 * 60 * 24
+    );
+
+    console.log("Cached analysis in Redis");
 
     console.log("Returning analysis data...");
     console.log("=== END DEBUG ===");
