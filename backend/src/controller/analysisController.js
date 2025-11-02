@@ -9,6 +9,9 @@ import {
 import RepositoryAnalysis from "../database/models/analysis.js";
 import RepoMetadata from "../database/models/repoMedata.js";
 import axios from "axios";
+import RepoFileMetrics from "../database/models/repoFileMetrics.js";
+import Commit from "../database/models/commitsMetadata.js";
+import { connection } from "../lib/redis.js";
 dotenv.config();
 
 RepositoryAnalysis.sync();
@@ -34,7 +37,6 @@ export const analyze_repo = async (req, res) => {
       });
     }
 
-    // Check if analysis exists
     let analysis = await RepositoryAnalysis.findOne({
       where: { repoId: parseInt(repoId) },
     });
@@ -42,7 +44,6 @@ export const analyze_repo = async (req, res) => {
     console.log("Existing analysis found:", analysis ? "YES" : "NO");
 
     if (!analysis) {
-      // Create new analysis with default values
       console.log("Creating new analysis record...");
 
       analysis = await RepositoryAnalysis.create({
@@ -86,7 +87,6 @@ export const analyze_repo = async (req, res) => {
       console.log("New analysis created:", analysis.id);
     }
 
-    // Trigger background analysis (don't wait for it)
     triggerBackgroundAnalysis(repoId).catch((err) => {
       console.error("Background analysis error:", err);
     });
@@ -94,7 +94,6 @@ export const analyze_repo = async (req, res) => {
     console.log("Returning analysis data...");
     console.log("=== END DEBUG ===");
 
-    // Return the analysis data
     return res.status(200).json({
       message: "Success",
       analysis: analysis.toJSON(),
@@ -112,7 +111,6 @@ export const analyze_repo = async (req, res) => {
   }
 };
 
-// Helper function for background processing
 async function triggerBackgroundAnalysis(repoId) {
   try {
     console.log(`[Background] Starting analysis for repo ${repoId}`);
@@ -123,7 +121,7 @@ async function triggerBackgroundAnalysis(repoId) {
     });
 
     // Get commit data
-    const commitData = await CommitAnalysisModel.findAll({
+    const commitData = await Commit.findAll({
       where: { repoId: parseInt(repoId) },
     });
 
@@ -165,28 +163,27 @@ export const getAiInsights = async (req, res) => {
     const { repoId } = req.params;
     if (!repoId) return res.status(404).json({ message: "repoId not found" });
 
-    const repo = await Project.findOne({
-      where: {
-        repoId: repoId,
-      },
-    });
+    const cacheKey = `ai:repo:${repoId}`;
+    const cachedData = await connection.get(cacheKey);
 
+    if (cachedData) {
+      console.log("Returned from Redis Cache");
+      return res.status(200).json({
+        message: "Success (from cache)",
+        repoId,
+        aiInsights: JSON.parse(cachedData),
+      });
+    }
+
+    const repo = await Project.findOne({ where: { repoId } });
     if (!repo) return res.status(404).json({ message: "No repository found" });
 
-    const analysis = await RepositoryAnalysis.findOne({
-      where: {
-        repoId: repoId,
-      },
-    });
-
+    const analysis = await RepositoryAnalysis.findOne({ where: { repoId } });
     if (!analysis)
-      return res
-        .status(404)
-        .json({
-          message: "No analysis found for this repo, please do analysis first",
-        });
+      return res.status(404).json({
+        message: "No analysis found for this repo, please do analysis first",
+      });
 
-    //AI request data from the analysis record
     const aiRequestData = {
       result: {
         avgCyclomaticComplexity: analysis.avgCyclomaticComplexity,
@@ -239,8 +236,12 @@ export const getAiInsights = async (req, res) => {
     const url = process.env.ANALYSIS_INTERNAL_URL + "/v2/api/analyze";
     const response = await axios.post(url, aiRequestData);
 
+    await connection.set(cacheKey, JSON.stringify(response.data), "EX", 60 * 60 * 24);
+
+    console.log("Cached new AI insights in Redis");
+
     return res.status(200).json({
-      message: "Success",
+      message: "Success (fresh)",
       repoId,
       aiInsights: response.data,
     });

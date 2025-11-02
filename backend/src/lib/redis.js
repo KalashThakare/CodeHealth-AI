@@ -18,5 +18,5 @@ export const pullAnalysisQueue = new Queue("pullAnalysis", {connection});
 export const issuesAnalysisQueue = new Queue("issuesAnalysis", {connection});
 export const fullRepoAnalysisQueue = new Queue("fullRepoAnalysis",{connection});
 export const filesQueue = new Queue("repoFiles",{connection});
-export const scannigQueue = new Queue("scanning", {connection});
+// export const scannigQueue = new Queue("scanning", {connection});
 
