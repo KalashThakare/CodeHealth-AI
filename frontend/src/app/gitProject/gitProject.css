@@ -596,3 +596,81 @@ textarea::placeholder {
     font-size: 0.813rem;
   }
 }
+
+/* Cache Dropdown Styles */
+.gitproject-cache-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 320px;
+  background: var(--gp-card);
+  border: 1px solid var(--gp-border);
+  border-radius: 0.75rem;
+  box-shadow: var(--gp-shadow-xl);
+  z-index: 50;
+  overflow: hidden;
+}
+
+.gitproject-cache-dropdown-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--gp-border);
+  background: var(--gp-bg-secondary);
+}
+
+.gitproject-cache-dropdown-content {
+  padding: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.gitproject-cache-dropdown-footer {
+  padding: 0.75rem;
+  border-top: 1px solid var(--gp-border);
+  background: var(--gp-bg-secondary);
+}
+
+.gitproject-cache-item {
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--gp-border);
+  background: var(--gp-bg-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gitproject-cache-item:hover {
+  background: var(--gp-bg-tertiary);
+  border-color: var(--gp-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--gp-shadow);
+}
+
+.gitproject-cache-item:last-child {
+  margin-bottom: 0;
+}
+
+.gitproject-cache-item.active {
+  background: var(--gp-bg-tertiary);
+  border: 2px solid var(--gp-primary);
+  cursor: default;
+}
+
+.gitproject-cache-item.active:hover {
+  transform: none;
+}
+
+/* Ensure card containers do not clip absolutely positioned dropdowns */
+.gitproject-page .apple-card,
+.gitproject-page .card,
+.gitproject-page .repo-item {
+  overflow: visible;
+  z-index: 1; /* keep base stacking context low so dropdown z-index wins */
+}
+
+/* Make dropdown visually above everything */
+.gitproject-cache-dropdown {
+  box-shadow: var(--gp-shadow-xl);
+  border-radius: 0.75rem;
+  background: var(--gp-card);
+}

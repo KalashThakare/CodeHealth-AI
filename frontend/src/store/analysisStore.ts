@@ -1,6 +1,15 @@
 import { create } from "zustand";
 import { axiosInstance, axiosAIInstance } from "@/lib/axios";
 import { toast } from "sonner";
+import {
+  saveCachedAnalysis,
+  loadCachedAnalysis,
+  loadMostRecentAnalysis,
+  getCachedAnalysesList,
+  clearCachedAnalysis,
+  clearAllCachedAnalyses,
+  type CacheMetadata,
+} from "@/utils/analysisCache";
 
 // ==================== INTERFACES ====================
 
@@ -162,6 +171,11 @@ export interface FullRepoAnalysis {
 interface AnalysisState {
   // Analysis Data
   fullAnalysis: FullRepoAnalysis | null;
+  currentAnalysisTimestamp: number | null; // Track which cached version is displayed
+
+  // Cache Management
+  cachedAnalysesList: CacheMetadata[];
+  isViewingCached: boolean; // Flag to show if viewing historical data
 
   // UI State
   loading: boolean; // For main analysis loading
@@ -170,9 +184,15 @@ interface AnalysisState {
   aiInsightsError: string | null; // Separate error for AI insights
 
   // Actions - Fetch Analysis (3 backend routes)
-  fetchFullAnalysis: (repoId: string) => Promise<void>;
+  fetchFullAnalysis: (repoId: string, useCache?: boolean) => Promise<void>;
   fetchAiInsights: (repoId: string) => Promise<any>;
   validateAiInsights: (repoId: string) => Promise<any>;
+
+  // Actions - Cache Management
+  loadCachedAnalyses: (repoId: string) => void;
+  loadSpecificCachedAnalysis: (repoId: string, timestamp: number) => void;
+  deleteCachedAnalysis: (repoId: string, timestamp: number) => void;
+  clearRepoCache: (repoId: string) => void;
 
   // Actions - Utility
   clearError: () => void;
@@ -188,6 +208,9 @@ interface AnalysisState {
 export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
   // ==================== INITIAL STATE ====================
   fullAnalysis: null,
+  currentAnalysisTimestamp: null,
+  cachedAnalysesList: [],
+  isViewingCached: false,
   loading: false,
   loadingAiInsights: false,
   error: null,
@@ -201,12 +224,42 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
    * Backend: analyze_repo controller
    * Returns: { message: "Success", analysis: {...all fields...} }
    */
-  fetchFullAnalysis: async (repoId: string) => {
+  fetchFullAnalysis: async (repoId: string, useCache: boolean = true) => {
     set({ loading: true, error: null });
 
     try {
       console.log("[Analysis] Fetching full analysis for repo:", repoId);
 
+      // 1) If useCache is true, load and show cached data ONLY (no background fetch)
+      if (useCache) {
+        const cached = loadMostRecentAnalysis<FullRepoAnalysis>(repoId);
+        if (cached) {
+          set({
+            fullAnalysis: cached.data,
+            currentAnalysisTimestamp: cached.metadata.timestamp,
+            isViewingCached: false, // Show as current, not historical
+            loading: false,
+          });
+          console.log("[Analysis] Loaded most recent cached analysis");
+
+          // Update cached list
+          get().loadCachedAnalyses(repoId);
+
+          toast.success("Loaded cached analysis", {
+            description: `From ${cached.metadata.label}`,
+          });
+
+          // STOP HERE - do not fetch from network when using cache
+          return;
+        } else {
+          // No cache found, proceed to network fetch
+          console.log(
+            "[Analysis] No cached analysis found, fetching from network"
+          );
+        }
+      }
+
+      // 2) Network fetch (only when useCache=false OR no cache exists)
       const response = await axiosInstance.get(`/analyze/${repoId}/full-repo`);
 
       if (response.data?.message === "Success" && response.data?.analysis) {
@@ -285,20 +338,31 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
           },
         };
 
+        // Save to cache with metadata
+        const timestamp = saveCachedAnalysis(repoId, analysisData, {
+          healthScore: analysisData.repoHealthScore.overallHealthScore,
+          totalFiles: analysisData.result.totalFiles,
+        });
+
         set({
           fullAnalysis: analysisData,
+          currentAnalysisTimestamp: timestamp,
+          isViewingCached: false,
           loading: false,
           error: null,
         });
 
+        // Update cached list
+        get().loadCachedAnalyses(repoId);
+
         // Don't automatically load AI insights - let user trigger it manually
         // This prevents unnecessary API calls and provides better UX with lazy loading
 
-        toast.success("Analysis loaded successfully", {
+        toast.success("Analysis refreshed successfully", {
           description: `${analysisData.result.totalFiles} files analyzed`,
         });
 
-        console.log("[Analysis] Full analysis loaded successfully");
+        console.log("[Analysis] Full analysis loaded and cached successfully");
       } else {
         throw new Error("Invalid response structure from backend");
       }
@@ -310,15 +374,27 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
         error.message ||
         "Failed to fetch repository analysis";
 
-      toast.error("Failed to load analysis", {
-        description: errorMessage,
-      });
+      // If using cache and network failed, try to show cached data
+      if (useCache) {
+        const cached = loadMostRecentAnalysis<FullRepoAnalysis>(repoId);
+        if (cached) {
+          set({
+            fullAnalysis: cached.data,
+            currentAnalysisTimestamp: cached.metadata.timestamp,
+            isViewingCached: false,
+            loading: false,
+          });
+          get().loadCachedAnalyses(repoId);
+          toast.info("Loaded cached analysis (network unavailable)", {
+            description: `From ${cached.metadata.label}`,
+          });
+          return;
+        }
+      }
 
-      set({
-        loading: false,
-        error: errorMessage,
-        fullAnalysis: null,
-      });
+      // No cache available or not using cache - show error
+      toast.error("Failed to load analysis", { description: errorMessage });
+      set({ loading: false, error: errorMessage, fullAnalysis: null });
 
       throw error;
     }
@@ -347,15 +423,27 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
       if (response.data?.message === "Success" && response.data?.aiInsights) {
         // Update the full analysis with AI insights
         const currentAnalysis = get().fullAnalysis;
+        const currentTimestamp = get().currentAnalysisTimestamp;
+
         if (currentAnalysis) {
+          const updatedAnalysis = {
+            ...currentAnalysis,
+            aiInsights: response.data.aiInsights,
+          };
+
           set({
-            fullAnalysis: {
-              ...currentAnalysis,
-              aiInsights: response.data.aiInsights,
-            },
+            fullAnalysis: updatedAnalysis,
             loadingAiInsights: false,
             aiInsightsError: null,
           });
+
+          // Update cache with AI insights if we have a timestamp
+          if (currentTimestamp && !get().isViewingCached) {
+            saveCachedAnalysis(repoId, updatedAnalysis, {
+              healthScore: currentAnalysis.repoHealthScore.overallHealthScore,
+              totalFiles: currentAnalysis.result.totalFiles,
+            });
+          }
         } else {
           set({ loadingAiInsights: false, aiInsightsError: null });
         }
@@ -438,6 +526,83 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
 
   // ==================== UTILITY ACTIONS ====================
 
+  // ==================== CACHE MANAGEMENT ====================
+
+  /**
+   * Load list of cached analyses for display
+   */
+  loadCachedAnalyses: (repoId: string) => {
+    const list = getCachedAnalysesList(repoId);
+    set({ cachedAnalysesList: list });
+    console.log(`[Cache] Loaded ${list.length} cached analyses for ${repoId}`);
+  },
+
+  /**
+   * Load a specific cached analysis by timestamp
+   */
+  loadSpecificCachedAnalysis: (repoId: string, timestamp: number) => {
+    const cached = loadCachedAnalysis<FullRepoAnalysis>(repoId, timestamp);
+
+    if (cached) {
+      set({
+        fullAnalysis: cached,
+        currentAnalysisTimestamp: timestamp,
+        isViewingCached: true,
+      });
+
+      const metadata = get().cachedAnalysesList.find(
+        (m) => m.timestamp === timestamp
+      );
+
+      toast.success("Loaded cached analysis", {
+        description: metadata ? `From ${metadata.label}` : undefined,
+      });
+
+      console.log(
+        `[Cache] Loaded analysis from ${new Date(timestamp).toLocaleString()}`
+      );
+    } else {
+      toast.error("Failed to load cached analysis", {
+        description: "The cached data may have expired",
+      });
+    }
+  },
+
+  /**
+   * Delete a specific cached analysis
+   */
+  deleteCachedAnalysis: (repoId: string, timestamp: number) => {
+    clearCachedAnalysis(repoId, timestamp);
+    get().loadCachedAnalyses(repoId);
+
+    // If we're viewing the deleted analysis, clear it
+    if (get().currentAnalysisTimestamp === timestamp) {
+      set({
+        fullAnalysis: null,
+        currentAnalysisTimestamp: null,
+        isViewingCached: false,
+      });
+    }
+
+    toast.success("Cached analysis deleted");
+  },
+
+  /**
+   * Clear all cached analyses for a repository
+   */
+  clearRepoCache: (repoId: string) => {
+    clearAllCachedAnalyses(repoId);
+    set({
+      cachedAnalysesList: [],
+      fullAnalysis: null,
+      currentAnalysisTimestamp: null,
+      isViewingCached: false,
+    });
+    toast.success("All cached analyses cleared");
+  },
+
+  // ==================== UTILITY ACTIONS ====================
+
   clearError: () => {
     set({ error: null });
   },
@@ -445,6 +610,8 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
   clearAllData: () => {
     set({
       fullAnalysis: null,
+      currentAnalysisTimestamp: null,
+      isViewingCached: false,
       loading: false,
       error: null,
     });

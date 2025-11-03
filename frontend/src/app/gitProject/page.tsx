@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useGitHubStore } from "@/store/githubStore";
 import { useAnalysisStore } from "@/store/analysisStore";
@@ -24,8 +25,16 @@ import {
   FiMoon,
   FiMonitor,
   FiPlus,
+  FiClock,
+  FiChevronDown,
 } from "react-icons/fi";
 import { toast } from "sonner";
+import {
+  loadGitProjectCache,
+  saveGitProjectCache,
+  clearGitProjectCache,
+  hasGitProjectCache,
+} from "@/utils/gitProjectCache";
 import "./gitProject.css";
 
 export default function GitHubImportPage() {
@@ -57,6 +66,28 @@ export default function GitHubImportPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRepo, setSelectedRepo] = useState<any>(null);
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
+  const [cachedAnalysis, setCachedAnalysis] = useState<any>(null);
+  const [showCachedResults, setShowCachedResults] = useState(false);
+  const [showCacheDropdown, setShowCacheDropdown] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const [dropdownAnchor, setDropdownAnchor] = useState<{
+    left: number;
+    top: number;
+    width: number;
+  } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!showCacheDropdown || !buttonRef.current) {
+      setDropdownAnchor(null);
+      return;
+    }
+    const rect = buttonRef.current.getBoundingClientRect();
+    const dropdownWidth = 360; // matches/minimum expected dropdown width
+    // Align right edge of dropdown with right edge of button, and place below button
+    const left = Math.max(8, rect.right - dropdownWidth);
+    const top = rect.bottom + 8; // 8px gap
+    setDropdownAnchor({ left, top, width: dropdownWidth });
+  }, [showCacheDropdown]);
 
   useEffect(() => {
     fetchGitHubRepos();
@@ -72,7 +103,19 @@ export default function GitHubImportPage() {
     setSelectedRepo(repo);
     selectRepository(repo);
     setShowAnalysisResults(false);
+    setShowCachedResults(false);
     clearAnalysisError();
+
+    // Check if there's a cached analysis for this repo
+    const cached = loadGitProjectCache(String(repo.repoId));
+    if (cached) {
+      setCachedAnalysis(cached);
+      toast.info("Previous analysis available", {
+        description: `From ${cached.label}`,
+      });
+    } else {
+      setCachedAnalysis(null);
+    }
   };
 
   const handleStartAnalysis = async () => {
@@ -82,38 +125,73 @@ export default function GitHubImportPage() {
     }
 
     try {
-      await fetchFullAnalysis(String(selectedRepo.repoId));
+      // If showing current analysis, save it to cache first
+      if (showAnalysisResults && fullAnalysis) {
+        saveGitProjectCache(String(selectedRepo.repoId), fullAnalysis);
+        console.log(
+          "[GitProject] Saved current analysis to cache before new analysis"
+        );
+      }
+
+      // Fetch new analysis
+      await fetchFullAnalysis(String(selectedRepo.repoId), false);
       setShowAnalysisResults(true);
+      setShowCachedResults(false);
+      toast.success("New analysis completed");
     } catch (error) {
       console.error("Failed to start analysis:", error);
       setShowAnalysisResults(false);
     }
   };
 
-  const handleViewResults = async () => {
+  const handleViewPreviousResults = () => {
     if (!selectedRepo) {
       toast.error("Please select a repository first");
       return;
     }
 
-    try {
-      await fetchFullAnalysis(String(selectedRepo.repoId));
-      setShowAnalysisResults(true);
-    } catch (error) {
-      console.error("Failed to fetch results:", error);
+    const cached = loadGitProjectCache(String(selectedRepo.repoId));
+    if (cached) {
+      setCachedAnalysis(cached);
+      setShowCachedResults(true);
       setShowAnalysisResults(false);
+      toast.success("Loaded previous analysis", {
+        description: `From ${cached.label}`,
+      });
+    } else {
+      toast.error("No previous analysis found");
     }
   };
 
-  // const handleViewDetailedReport = () => {
-  //   if (!selectedRepo) {
-  //     toast.error("Please select a repository first");
-  //     return;
-  //   }
-  //   router.push(`/report/${selectedRepo.repoId}`);
-  // };
+  const handleViewCurrentResults = () => {
+    setShowCachedResults(false);
+    setShowAnalysisResults(true);
+  };
+
+  // Save current analysis to cache when leaving the page or switching repos
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (showAnalysisResults && fullAnalysis && selectedRepo) {
+        saveGitProjectCache(String(selectedRepo.repoId), fullAnalysis);
+        console.log("[GitProject] Saved analysis to cache on page unload");
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      // Also save when component unmounts
+      if (showAnalysisResults && fullAnalysis && selectedRepo) {
+        saveGitProjectCache(String(selectedRepo.repoId), fullAnalysis);
+      }
+    };
+  }, [showAnalysisResults, fullAnalysis, selectedRepo]);
 
   const hasAnalysisData = showAnalysisResults && fullAnalysis && selectedRepo;
+  const hasCachedData = cachedAnalysis !== null;
+  const displayAnalysis = showCachedResults
+    ? cachedAnalysis.data
+    : fullAnalysis;
 
   const handleAddNewRepo = () => {
     router.push(`${process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI}`);
@@ -365,21 +443,154 @@ export default function GitHubImportPage() {
                     ) : (
                       <>
                         <FiActivity size={16} />
-                        Start Analysis
+                        {showAnalysisResults
+                          ? "Run New Analysis"
+                          : "Start Analysis"}
                       </>
                     )}
                   </button>
 
-                  <button
-                    onClick={handleViewResults}
-                    disabled={analysisLoading}
-                    className="btn btn-secondary flex-1 min-w-[180px] flex items-center justify-center gap-1.5"
-                  >
-                    <FiFileText size={16} />
-                    View Results
-                  </button>
+                  {/* View Previous Results button - only show if cache exists */}
+                  {hasCachedData && (
+                    <div className="relative flex-1 min-w-[180px]">
+                      <button
+                        ref={buttonRef}
+                        onClick={() => setShowCacheDropdown(!showCacheDropdown)}
+                        className="btn btn-secondary w-full flex items-center justify-center gap-1.5"
+                      >
+                        <FiClock size={16} />
+                        {showCachedResults
+                          ? "Viewing Previous"
+                          : "View Previous"}
+                        <FiChevronDown
+                          size={14}
+                          className={`transition-transform ${
+                            showCacheDropdown ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
 
-                  {showAnalysisResults && fullAnalysis && (
+                      {/* Render dropdown via portal to avoid clipping/overflow issues */}
+                      {showCacheDropdown &&
+                        dropdownAnchor &&
+                        createPortal(
+                          <div
+                            className="gitproject-cache-dropdown"
+                            style={{
+                              position: "fixed",
+                              left: dropdownAnchor.left,
+                              top: dropdownAnchor.top,
+                              minWidth: dropdownAnchor.width,
+                              zIndex: 999999,
+                            }}
+                            role="dialog"
+                            aria-label="Previous analysis dropdown"
+                          >
+                            <div className="gitproject-cache-dropdown-header">
+                              <h4 className="text-sm font-semibold text-[var(--gp-fg)]">
+                                Previous Analysis
+                              </h4>
+                              <p className="text-xs text-[var(--gp-fg-secondary)] mt-1">
+                                Cached for 24 hours
+                              </p>
+                            </div>
+
+                            <div className="gitproject-cache-dropdown-content">
+                              {showCachedResults ? (
+                                <div
+                                  className="gitproject-cache-item active"
+                                  style={{
+                                    background: "var(--gp-bg-tertiary)",
+                                    borderColor: "var(--gp-primary)",
+                                  }}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-sm font-medium text-[var(--gp-fg)]">
+                                        Previous Analysis (Active)
+                                      </p>
+                                      <p className="text-xs text-[var(--gp-fg-secondary)]">
+                                        {cachedAnalysis?.label}
+                                      </p>
+                                    </div>
+                                    <span
+                                      className="badge badge-info"
+                                      style={{ fontSize: "0.625rem" }}
+                                    >
+                                      Viewing
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div
+                                  className="gitproject-cache-item"
+                                  onClick={() => {
+                                    handleViewPreviousResults();
+                                    setShowCacheDropdown(false);
+                                  }}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-sm font-medium text-[var(--gp-fg)]">
+                                        Previous Analysis
+                                      </p>
+                                      <p className="text-xs text-[var(--gp-fg-secondary)]">
+                                        {cachedAnalysis?.label}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {showCachedResults && showAnalysisResults && (
+                                <div
+                                  className="gitproject-cache-item"
+                                  onClick={() => {
+                                    handleViewCurrentResults();
+                                    setShowCacheDropdown(false);
+                                  }}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-sm font-medium text-[var(--gp-fg)]">
+                                        Latest Analysis
+                                      </p>
+                                      <p className="text-xs text-[var(--gp-fg-secondary)]">
+                                        Current session
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="gitproject-cache-dropdown-footer">
+                              <button
+                                onClick={() => {
+                                  clearGitProjectCache(
+                                    String(selectedRepo.repoId)
+                                  );
+                                  setCachedAnalysis(null);
+                                  setShowCachedResults(false);
+                                  setShowCacheDropdown(false);
+                                  toast.success("Cache cleared");
+                                }}
+                                className="w-full text-xs py-1.5 px-3 rounded"
+                                style={{
+                                  background: "var(--gp-terminal-error)",
+                                  color: "white",
+                                }}
+                              >
+                                Clear Cache
+                              </button>
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                    </div>
+                  )}
+
+                  {(hasAnalysisData || showCachedResults) && (
                     <>
                       {/* <button
                         onClick={handleViewDetailedReport}
@@ -410,9 +621,27 @@ export default function GitHubImportPage() {
             )}
 
             {/* About Section or Analysis Results */}
-            {!hasAnalysisData && <DefaultAnalysisInfo />}
-            {hasAnalysisData && (
-              <AnalysisResults repo={selectedRepo} analysis={fullAnalysis} />
+            {!hasAnalysisData && !showCachedResults && <DefaultAnalysisInfo />}
+            {(hasAnalysisData || showCachedResults) && (
+              <>
+                {showCachedResults && (
+                  <div className="mb-4 p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                    <div className="flex items-center gap-2 text-blue-400">
+                      <FiClock size={16} />
+                      <p className="text-sm font-medium">
+                        Viewing Previous Analysis
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {cachedAnalysis?.label}
+                    </p>
+                  </div>
+                )}
+                <AnalysisResults
+                  repo={selectedRepo}
+                  analysis={displayAnalysis}
+                />
+              </>
             )}
           </div>
         </div>
@@ -438,7 +667,7 @@ function AnalysisResults({ repo, analysis }: { repo: any; analysis: any }) {
   const refactorFiles = result.refactorPriorityFiles || [];
 
   return (
-    <div className="apple-card space-y-4 animate-fadeIn">
+    <div className="apple-card space-y-4 animate-fadeIn z-10">
       {/* Header */}
       <div className="pb-3 border-b border-[var(--gp-border)]">
         <h3 className="text-base font-semibold text-[var(--gp-fg)] mb-2">
@@ -649,7 +878,7 @@ function DefaultAnalysisInfo() {
   ];
 
   return (
-    <div className="apple-card animate-fadeIn">
+    <div className="apple-card animate-fadeIn z-10">
       <h3 className="text-base font-semibold text-[var(--gp-fg)] mb-2">
         About Code Health Analysis
       </h3>

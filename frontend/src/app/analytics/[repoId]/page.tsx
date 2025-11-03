@@ -18,6 +18,9 @@ import {
   FiBarChart2,
   FiDownload,
   FiRefreshCw,
+  FiClock,
+  FiTrash2,
+  FiChevronDown,
 } from "react-icons/fi";
 import "./analytics.css";
 
@@ -45,24 +48,68 @@ export default function AnalyticsPage() {
     loadingAiInsights,
     error,
     aiInsightsError,
+    cachedAnalysesList,
+    isViewingCached,
+    currentAnalysisTimestamp,
     fetchFullAnalysis,
     fetchAiInsights,
+    loadCachedAnalyses,
+    loadSpecificCachedAnalysis,
+    deleteCachedAnalysis,
+    clearRepoCache,
     exportToCSV,
   } = useAnalysisStore();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showCacheDropdown, setShowCacheDropdown] = useState(false);
 
   useEffect(() => {
     if (repoId) {
-      fetchFullAnalysis(repoId);
+      // Load cached analyses list
+      loadCachedAnalyses(repoId);
+
+      // Fetch analysis (will use cache if available)
+      fetchFullAnalysis(repoId, true);
     }
-  }, [repoId, fetchFullAnalysis]);
+  }, [repoId, fetchFullAnalysis, loadCachedAnalyses]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await fetchFullAnalysis(repoId);
-    setIsRefreshing(false);
-    toast.success("Analytics refreshed");
+    try {
+      // Force fresh fetch (bypass cache) - this triggers new analysis
+      await fetchFullAnalysis(repoId, false);
+      toast.success("New analysis completed and cached");
+    } catch (error) {
+      // Error already handled by store
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleLoadCachedAnalysis = (timestamp: number) => {
+    loadSpecificCachedAnalysis(repoId, timestamp);
+    setShowCacheDropdown(false);
+  };
+
+  const handleDeleteCache = (timestamp: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteCachedAnalysis(repoId, timestamp);
+  };
+
+  const handleClearAllCache = () => {
+    if (confirm("Are you sure you want to clear all cached analyses?")) {
+      clearRepoCache(repoId);
+      setShowCacheDropdown(false);
+    }
+  };
+
+  const handleLoadLatest = () => {
+    // Load the most recent cached analysis
+    const mostRecent = cachedAnalysesList[0];
+    if (mostRecent && mostRecent.timestamp !== currentAnalysisTimestamp) {
+      loadSpecificCachedAnalysis(repoId, mostRecent.timestamp);
+    }
+    setShowCacheDropdown(false);
   };
 
   const handleRefreshAiInsights = async () => {
@@ -225,6 +272,10 @@ export default function AnalyticsPage() {
     quickWins: aiInsights?.insights?.quickWins?.quickWins?.length || 0,
   });
 
+  const currentCacheMetadata = cachedAnalysesList.find(
+    (m) => m.timestamp === currentAnalysisTimestamp
+  );
+
   return (
     <div className="analytics-page">
       <DashboardNavbar currentTeam={null} />
@@ -234,18 +285,247 @@ export default function AnalyticsPage() {
         <div className="analytics-header">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
-              <h1
-                className="font-title"
-                style={{ color: "var(--analytics-text-primary)" }}
-              >
-                Repository Analytics
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1
+                  className="font-title"
+                  style={{ color: "var(--analytics-text-primary)" }}
+                >
+                  Repository Analytics
+                </h1>
+                {isViewingCached && (
+                  <span
+                    className="analytics-badge"
+                    style={{
+                      background: "var(--analytics-info)",
+                      color: "var(--analytics-bg)",
+                      fontSize: "0.75rem",
+                      padding: "0.25rem 0.5rem",
+                    }}
+                  >
+                    Historical View
+                  </span>
+                )}
+              </div>
               <p style={{ color: "var(--analytics-text-secondary)" }}>
                 Comprehensive insights and business metrics{" "}
                 {hasAIInsights && "with AI-powered recommendations"}
+                {currentCacheMetadata && (
+                  <span className="ml-2 analytics-text-xs">
+                    • Analysis from {currentCacheMetadata.label}
+                  </span>
+                )}
               </p>
             </div>
             <div className="flex gap-2">
+              {/* Cache History Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowCacheDropdown(!showCacheDropdown)}
+                  className="analytics-btn-secondary flex items-center gap-2"
+                >
+                  <FiClock size={16} />
+                  History ({cachedAnalysesList.length})
+                  <FiChevronDown
+                    size={14}
+                    className={`transition-transform ${
+                      showCacheDropdown ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {showCacheDropdown && (
+                  <div
+                    className="absolute right-0 mt-2 w-80 rounded-lg shadow-xl z-50"
+                    style={{
+                      background: "var(--analytics-card)",
+                      border: "1px solid var(--analytics-border)",
+                      maxHeight: "400px",
+                      overflowY: "auto",
+                    }}
+                  >
+                    <div
+                      className="p-3 border-b"
+                      style={{ borderColor: "var(--analytics-border)" }}
+                    >
+                      <h4
+                        className="analytics-text-sm font-semibold"
+                        style={{ color: "var(--analytics-text-primary)" }}
+                      >
+                        Analysis History (Last 2)
+                      </h4>
+                      <p
+                        className="analytics-text-xs mt-1"
+                        style={{ color: "var(--analytics-text-tertiary)" }}
+                      >
+                        Cached for 24 hours
+                      </p>
+                    </div>
+
+                    {cachedAnalysesList.length === 0 ? (
+                      <div className="p-4 text-center">
+                        <p
+                          className="analytics-text-sm"
+                          style={{ color: "var(--analytics-text-secondary)" }}
+                        >
+                          No cached analyses available. Click Refresh to run a
+                          new analysis.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        {!isViewingCached && (
+                          <div
+                            className="px-3 py-2 border-b"
+                            style={{
+                              background: "var(--analytics-card-hover)",
+                              borderColor: "var(--analytics-border)",
+                            }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p
+                                  className="analytics-text-sm font-medium"
+                                  style={{
+                                    color: "var(--analytics-text-primary)",
+                                  }}
+                                >
+                                  Current (Latest)
+                                </p>
+                                <p
+                                  className="analytics-text-xs"
+                                  style={{
+                                    color: "var(--analytics-text-secondary)",
+                                  }}
+                                >
+                                  {currentCacheMetadata?.label || "Just now"}
+                                </p>
+                              </div>
+                              <span
+                                className="analytics-badge analytics-badge-success"
+                                style={{ fontSize: "0.625rem" }}
+                              >
+                                Active
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="py-1">
+                          {cachedAnalysesList.map((cache) => {
+                            const isCurrent =
+                              cache.timestamp === currentAnalysisTimestamp;
+
+                            return (
+                              <div
+                                key={cache.timestamp}
+                                className={`px-3 py-2 hover:bg-opacity-50 cursor-pointer transition-colors ${
+                                  isCurrent ? "bg-opacity-20" : ""
+                                }`}
+                                style={{
+                                  background: isCurrent
+                                    ? "var(--analytics-accent)"
+                                    : "transparent",
+                                }}
+                                onClick={() =>
+                                  !isCurrent &&
+                                  handleLoadCachedAnalysis(cache.timestamp)
+                                }
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <p
+                                        className="analytics-text-sm font-medium truncate"
+                                        style={{
+                                          color:
+                                            "var(--analytics-text-primary)",
+                                        }}
+                                      >
+                                        {cache.label}
+                                      </p>
+                                      {isCurrent && isViewingCached && (
+                                        <span
+                                          className="analytics-badge"
+                                          style={{
+                                            background:
+                                              "var(--analytics-success)",
+                                            color: "var(--analytics-bg)",
+                                            fontSize: "0.625rem",
+                                            padding: "0.125rem 0.375rem",
+                                          }}
+                                        >
+                                          Viewing
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-3 analytics-text-xs">
+                                      <span
+                                        style={{
+                                          color:
+                                            "var(--analytics-text-tertiary)",
+                                        }}
+                                      >
+                                        Health: {cache.healthScore.toFixed(1)}%
+                                      </span>
+                                      <span
+                                        style={{
+                                          color:
+                                            "var(--analytics-text-tertiary)",
+                                        }}
+                                      >
+                                        {cache.totalFiles} files
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={(e) =>
+                                      handleDeleteCache(cache.timestamp, e)
+                                    }
+                                    className="p-1 rounded hover:bg-red-500 hover:bg-opacity-20 transition-colors"
+                                    title="Delete cached analysis"
+                                  >
+                                    <FiTrash2
+                                      size={14}
+                                      style={{
+                                        color: "var(--analytics-error)",
+                                      }}
+                                    />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <div
+                          className="p-2 border-t"
+                          style={{ borderColor: "var(--analytics-border)" }}
+                        >
+                          {cachedAnalysesList.length > 1 && isViewingCached && (
+                            <button
+                              onClick={handleLoadLatest}
+                              className="w-full analytics-btn-secondary analytics-text-xs py-1.5 mb-2"
+                            >
+                              Switch to Latest Analysis
+                            </button>
+                          )}
+                          <button
+                            onClick={handleClearAllCache}
+                            className="w-full analytics-text-xs py-1.5 px-3 rounded"
+                            style={{
+                              background: "var(--analytics-error)",
+                              color: "white",
+                            }}
+                          >
+                            Clear All History
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
@@ -255,7 +535,7 @@ export default function AnalyticsPage() {
                   className={isRefreshing ? "animate-spin" : ""}
                   size={16}
                 />
-                Refresh
+                {isRefreshing ? "Analyzing..." : "Run New Analysis"}
               </button>
               <button onClick={handleExport} className="analytics-btn">
                 <FiDownload size={16} />
@@ -264,6 +544,42 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </div>
+
+        {/* Cache Info Banner (when viewing historical analysis) */}
+        {isViewingCached && currentCacheMetadata && (
+          <div
+            className="analytics-card analytics-section"
+            style={{
+              background: "var(--analytics-info)",
+              borderColor: "var(--analytics-info)",
+              color: "var(--analytics-bg)",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FiClock size={20} />
+                <div>
+                  <p className="font-semibold">Viewing Historical Analysis</p>
+                  <p className="analytics-text-sm opacity-90">
+                    From {currentCacheMetadata.label} • Health Score:{" "}
+                    {currentCacheMetadata.healthScore.toFixed(1)}% •{" "}
+                    {currentCacheMetadata.totalFiles} files
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleLoadLatest}
+                className="px-4 py-2 rounded font-medium"
+                style={{
+                  background: "var(--analytics-bg)",
+                  color: "var(--analytics-info)",
+                }}
+              >
+                Switch to Latest
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Critical Metrics Overview - Hero Section */}
         <div className="analytics-grid-4 analytics-section">
