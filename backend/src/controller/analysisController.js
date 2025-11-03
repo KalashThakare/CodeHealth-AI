@@ -237,7 +237,7 @@ export const getAiInsights = async (req, res) => {
     if (cachedData) {
       console.log("Returned from Redis Cache");
       return res.status(200).json({
-        message: "Success (from cache)",
+        message: "Success",
         repoId,
         aiInsights: JSON.parse(cachedData),
       });
@@ -309,7 +309,7 @@ export const getAiInsights = async (req, res) => {
     console.log("Cached new AI insights in Redis");
 
     return res.status(200).json({
-      message: "Success (fresh)",
+      message: "Success",
       repoId,
       aiInsights: response.data,
     });
