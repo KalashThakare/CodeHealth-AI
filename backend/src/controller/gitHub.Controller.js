@@ -258,10 +258,22 @@ export const githubWebhookController = async (req, res) => {
 
   
     if (event === "push") {
+      if (repoId) {
+        const cacheKey = `metrics:repo:${repoId}`;
+        await connection.del(cacheKey);
+        console.log(`Cache invalidated for repo ${repoId} due to push event`);
+      }
       const result = await handlePush(payload);
       return res.status(200).json(result);
     }
     if (event === "pull_request") {
+      if (action === "closed" && payload.pull_request?.merged) {
+        if (repoId) {
+          const cacheKey = `metrics:repo:${repoId}`;
+          await connection.del(cacheKey);
+          console.log(`Cache invalidated for repo ${repoId} due to PR merge`);
+        }
+      }
       const result = await handlePullRequest(payload);
       return res.status(200).json(result);
     }

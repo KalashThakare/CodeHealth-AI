@@ -9,6 +9,9 @@ import {
 import RepositoryAnalysis from "../database/models/analysis.js";
 import RepoMetadata from "../database/models/repoMedata.js";
 import axios from "axios";
+import RepoFileMetrics from "../database/models/repoFileMetrics.js";
+import Commit from "../database/models/commitsMetadata.js";
+import { connection } from "../lib/redis.js";
 dotenv.config();
 
 RepositoryAnalysis.sync();
@@ -17,7 +20,6 @@ export const analyze_repo = async (req, res) => {
   try {
     const { repoId } = req.params;
 
-    console.log("=== ANALYZE REPO DEBUG ===");
     console.log("RepoId:", repoId);
     console.log("User:", req.user?.id);
 
@@ -25,7 +27,6 @@ export const analyze_repo = async (req, res) => {
       where: { repoId: parseInt(repoId) },
     });
 
-    console.log("Repository found:", repo ? "YES" : "NO");
 
     if (!repo) {
       return res.status(404).json({
@@ -34,15 +35,27 @@ export const analyze_repo = async (req, res) => {
       });
     }
 
-    // Check if analysis exists
+    const cacheKey = `metrics:repo:${repoId}`
+    const cachedData = await connection.get(cacheKey);
+
+
+    if (cachedData) {
+      console.log("Returned from Redis Cache");
+      const parsedData = JSON.parse(cachedData);
+
+      return res.status(200).json({
+        message: "Success",
+        repoId,
+        analysis: parsedData,
+      });
+    }
+
     let analysis = await RepositoryAnalysis.findOne({
       where: { repoId: parseInt(repoId) },
     });
 
-    console.log("Existing analysis found:", analysis ? "YES" : "NO");
 
     if (!analysis) {
-      // Create new analysis with default values
       console.log("Creating new analysis record...");
 
       analysis = await RepositoryAnalysis.create({
@@ -86,18 +99,27 @@ export const analyze_repo = async (req, res) => {
       console.log("New analysis created:", analysis.id);
     }
 
-    // Trigger background analysis (don't wait for it)
     triggerBackgroundAnalysis(repoId).catch((err) => {
       console.error("Background analysis error:", err);
     });
 
+    const analysisData = analysis.toJSON();
+    await connection.set(
+      cacheKey,
+      JSON.stringify(analysisData),
+      "EX",
+      60 * 60 * 24
+    );
+
+    console.log("Cached analysis in Redis");
+
     console.log("Returning analysis data...");
     console.log("=== END DEBUG ===");
 
-    // Return the analysis data
     return res.status(200).json({
       message: "Success",
-      analysis: analysis.toJSON(),
+      repoId,
+      analysis: analysisData,
     });
   } catch (error) {
     console.error("=== ANALYZE REPO ERROR ===");
@@ -112,48 +134,92 @@ export const analyze_repo = async (req, res) => {
   }
 };
 
-// Helper function for background processing
 async function triggerBackgroundAnalysis(repoId) {
   try {
     console.log(`[Background] Starting analysis for repo ${repoId}`);
 
-    // Get file metrics from database
+    const parsedRepoId = parseInt(repoId);
+
+
     const fileMetrics = await RepoFileMetrics.findAll({
-      where: { repoId: parseInt(repoId) },
+      where: { repoId: parsedRepoId },
     });
 
-    // Get commit data
-    const commitData = await CommitAnalysisModel.findAll({
-      where: { repoId: parseInt(repoId) },
+    const commitData = await Commit.findAll({
+      where: { repoId: parsedRepoId },
     });
 
     if (fileMetrics.length === 0) {
       console.log(
-        `[Background] No file metrics found for repo ${repoId}, skipping analysis`
+        `[Background] No file metrics found for repo ${parsedRepoId}, skipping analysis`
       );
       return;
     }
 
-    // Calculate metrics
-    const repoMetrics = calculateRepoMetrics(fileMetrics);
-    const commitAnalysis = analyzeCommitPatterns(commitData);
-    const distributions = calculateDistributions(fileMetrics);
-    const healthScore = calculateRepoHealthScore(repoMetrics, commitAnalysis);
+    if (commitData.length === 0) {
+      console.log(
+        `[Background] No commit data found for repo ${parsedRepoId}, skipping commit analysis`
+      );
+    }
 
-    // Update the analysis record
+    const repoMetrics = await calculateRepoMetrics(parsedRepoId);
+    const commitAnalysis = await analyzeCommitPatterns(parsedRepoId);
+    const distributions = await calculateDistributions(parsedRepoId);
+    const healthScore = await calculateRepoHealthScore(parsedRepoId);
+
     await RepositoryAnalysis.update(
       {
-        ...repoMetrics,
-        ...commitAnalysis,
-        ...healthScore,
-        ...distributions,
+        // Repo metrics
+        avgCyclomaticComplexity: repoMetrics.avgCyclomaticComplexity,
+        avgMaintainabilityIndex: repoMetrics.avgMaintainabilityIndex,
+        avgHalsteadVolume: repoMetrics.avgHalsteadVolume,
+        weightedCyclomaticComplexity: repoMetrics.weightedCyclomaticComplexity,
+        weightedMaintainabilityIndex: repoMetrics.weightedMaintainabilityIndex,
+        weightedHalsteadVolume: repoMetrics.weightedHalsteadVolume,
+        technicalDebtScore: repoMetrics.technicalDebtScore,
+        totalLOC: repoMetrics.totalLOC,
+        totalFiles: repoMetrics.totalFiles,
+        refactorPriorityFiles: repoMetrics.refactorPriorityFiles,
+
+        // Commit analysis
+        totalCommits: commitAnalysis.totalCommits,
+        daysActive: commitAnalysis.daysActive,
+        activeDays: commitAnalysis.activeDays,
+        activityRatio: commitAnalysis.activityRatio,
+        avgCommitsPerDay: commitAnalysis.avgCommitsPerDay,
+        recentCommits30Days: commitAnalysis.recentCommits30Days,
+        contributorCount: commitAnalysis.contributorCount,
+        topContributorRatio: commitAnalysis.topContributorRatio,
+        busFactor: commitAnalysis.busFactor,
+        avgMessageLength: commitAnalysis.avgMessageLength,
+        firstCommit: commitAnalysis.firstCommit,
+        lastCommit: commitAnalysis.lastCommit,
+        velocityTrend: commitAnalysis.velocity?.trend,
+        velocityConsistency: commitAnalysis.velocity?.consistency,
+
+        // Health score
+        overallHealthScore: healthScore.overallHealthScore,
+        healthRating: healthScore.healthRating,
+        codeQualityScore: healthScore.componentScores.codeQuality,
+        developmentActivityScore: healthScore.componentScores.developmentActivity,
+        busFactorScore: healthScore.componentScores.busFactor,
+        communityScore: healthScore.componentScores.community,
+        strengths: healthScore.strengths,
+        weaknesses: healthScore.weaknesses,
+
+        // Distributions
+        maintainabilityDistribution: distributions.maintainabilityDistribution,
+        complexityDistribution: distributions.complexityDistribution,
       },
       {
-        where: { repoId: parseInt(repoId) },
+        where: { repoId: parsedRepoId },
       }
     );
 
-    console.log(`[Background] Analysis completed for repo ${repoId}`);
+    const cacheKey = `metrics:repo:${parsedRepoId}`;
+    await connection.del(cacheKey);
+
+    console.log(`[Background] Analysis completed for repo ${parsedRepoId}`);
   } catch (error) {
     console.error(`[Background] Analysis failed for repo ${repoId}:`, error);
     throw error;
@@ -165,28 +231,27 @@ export const getAiInsights = async (req, res) => {
     const { repoId } = req.params;
     if (!repoId) return res.status(404).json({ message: "repoId not found" });
 
-    const repo = await Project.findOne({
-      where: {
-        repoId: repoId,
-      },
-    });
+    const cacheKey = `ai:repo:${repoId}`;
+    const cachedData = await connection.get(cacheKey);
 
+    if (cachedData) {
+      console.log("Returned from Redis Cache");
+      return res.status(200).json({
+        message: "Success (from cache)",
+        repoId,
+        aiInsights: JSON.parse(cachedData),
+      });
+    }
+
+    const repo = await Project.findOne({ where: { repoId } });
     if (!repo) return res.status(404).json({ message: "No repository found" });
 
-    const analysis = await RepositoryAnalysis.findOne({
-      where: {
-        repoId: repoId,
-      },
-    });
-
+    const analysis = await RepositoryAnalysis.findOne({ where: { repoId } });
     if (!analysis)
-      return res
-        .status(404)
-        .json({
-          message: "No analysis found for this repo, please do analysis first",
-        });
+      return res.status(404).json({
+        message: "No analysis found for this repo, please do analysis first",
+      });
 
-    //AI request data from the analysis record
     const aiRequestData = {
       result: {
         avgCyclomaticComplexity: analysis.avgCyclomaticComplexity,
@@ -239,8 +304,12 @@ export const getAiInsights = async (req, res) => {
     const url = process.env.ANALYSIS_INTERNAL_URL + "/v2/api/analyze";
     const response = await axios.post(url, aiRequestData);
 
+    await connection.set(cacheKey, JSON.stringify(response.data), "EX", 60 * 60 * 24);
+
+    console.log("Cached new AI insights in Redis");
+
     return res.status(200).json({
-      message: "Success",
+      message: "Success (fresh)",
       repoId,
       aiInsights: response.data,
     });
