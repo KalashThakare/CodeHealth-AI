@@ -20,7 +20,7 @@ async def push_analyze_repo(req: PushAnalyzeRequest) -> PushAnalyzeResponse:
 
     async with aiohttp.ClientSession() as session:
         async with session.post(
-            "http://localhost:8080/analyze/pushMetric",
+            "http://localhost:8080/scanning/pushMetric",
             json={
                 "message":message, 
                 "impact":impact,

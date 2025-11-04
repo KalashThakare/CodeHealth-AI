@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import User from "../database/models/User.js";
 import { Project } from "../database/models/project.js";
 import { WebhookEvent } from "../database/models/webhookEvents.js";
-import { pushAnalysisQueue, webhookQueue } from "../lib/redis.js";
+import { connection, pushAnalysisQueue, webhookQueue } from "../lib/redis.js";
 import { handlePush } from "../services/handlers/push.handler.js";
 import { handleIssues } from "../services/handlers/issues.handler.js";
 import { Analyse_repo } from "./scanController.js";
