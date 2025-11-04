@@ -36,6 +36,7 @@ import {
   hasGitProjectCache,
 } from "@/utils/gitProjectCache";
 import "./gitProject.css";
+import { Span } from "next/dist/trace";
 
 export default function GitHubImportPage() {
   const router = useRouter();
@@ -64,6 +65,7 @@ export default function GitHubImportPage() {
   } = useAnalysisStore();
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [analytics, setAnalytics] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<any>(null);
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
   const [cachedAnalysis, setCachedAnalysis] = useState<any>(null);
@@ -456,7 +458,7 @@ export default function GitHubImportPage() {
                       <button
                         ref={buttonRef}
                         onClick={() => setShowCacheDropdown(!showCacheDropdown)}
-                        className="btn btn-secondary w-full flex items-center justify-center gap-1.5"
+                        className="btn glassmorphism-button-primary w-full flex items-center justify-center gap-1.5"
                       >
                         <FiClock size={16} />
                         {showCachedResults
@@ -475,7 +477,7 @@ export default function GitHubImportPage() {
                         dropdownAnchor &&
                         createPortal(
                           <div
-                            className="gitproject-cache-dropdown"
+                            className="gitproject-cache-dropdown w-fit"
                             style={{
                               position: "fixed",
                               left: dropdownAnchor.left,
@@ -491,7 +493,7 @@ export default function GitHubImportPage() {
                                 Previous Analysis
                               </h4>
                               <p className="text-xs text-[var(--gp-fg-secondary)] mt-1">
-                                Cached for 24 hours
+                                Saved for 24 hours only
                               </p>
                             </div>
 
@@ -591,30 +593,23 @@ export default function GitHubImportPage() {
                   )}
 
                   {(hasAnalysisData || showCachedResults) && (
-                    <>
-                      {/* <button
-                        onClick={handleViewDetailedReport}
-                        className="btn glassmorphism-button-primary flex items-center justify-center gap-1.5 px-4"
-                        title="View Detailed Report"
-                      >
-                        <FiFileText size={16} />
-                        Report
-                      </button> */}
+                    <div className="w-full flex justify-center items-center">
                       <button
-                        onClick={() =>
-                          router.push(`/analytics/${selectedRepo.repoId}`)
-                        }
-                        className="btn glassmorphism-button-primary flex-1 min-w-[180px] flex items-center justify-center gap-1.5 px-4"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, var(--terminal-info), #6366f1)",
+                        onClick={() => {
+                          setAnalytics(true);
+                          router.push(`/analytics/${selectedRepo.repoId}`);
                         }}
+                        className="repo-item flex gap-2 justify-center items-center"
                         title="View Analytics Dashboard"
                       >
                         <FiActivity size={16} />
-                        Analytics
+                        {analytics ? (
+                          <span>Loading ...</span>
+                        ) : (
+                          <span>View Detailed Analytics</span>
+                        )}
                       </button>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
