@@ -529,7 +529,7 @@ export default function AnalyticsPage() {
               <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="analytics-btn-secondary"
+                className="analytics-btn-secondary flex gap-2 items-center justify-center"
               >
                 <FiRefreshCw
                   className={isRefreshing ? "animate-spin" : ""}

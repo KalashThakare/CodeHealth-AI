@@ -604,7 +604,7 @@ textarea::placeholder {
   right: 0;
   min-width: 320px;
   background: var(--gp-card);
-  border: 1px solid var(--gp-border);
+  border: 1px solid var(--gp-fg-secondary);
   border-radius: 0.75rem;
   box-shadow: var(--gp-shadow-xl);
   z-index: 50;
