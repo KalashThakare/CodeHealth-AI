@@ -7,11 +7,7 @@ import CommitsAnalysis from "../database/models/commit_analysis.js";
 import Commit from "../database/models/commitsMetadata.js";
 import RepoMetadata from "../database/models/repoMedata.js";
 
-await Project.sync();
-await PushAnalysisMetrics.sync();
-await CommitsAnalysis.sync();
-await Commit.sync();
-await RepoMetadata.sync();
+
 
 export const Analyse_repo = async (repoId) => {
   try {

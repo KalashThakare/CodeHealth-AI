@@ -6,17 +6,17 @@ class RefactorPriorityFile(BaseModel):
     riskScore: float
     cyclomaticComplexity: int
     maintainabilityIndex: float
-    halsteadVolume: float
+    halsteadVolume: Optional[float] = None
     locTotal: int
     reason: str
 
 class RepoMetrics(BaseModel):
     avgCyclomaticComplexity: float
     avgMaintainabilityIndex: float
-    avgHalsteadVolume: float
+    avgHalsteadVolume: Optional[float] = None
     weightedCyclomaticComplexity: float
     weightedMaintainabilityIndex: float
-    weightedHalsteadVolume: float
+    weightedHalsteadVolume: Optional[float] = None
     technicalDebtScore: float
     totalLOC: int
     totalFiles: int

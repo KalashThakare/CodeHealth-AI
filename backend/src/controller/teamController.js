@@ -4,10 +4,7 @@ import TeamInvite from "../database/models/teamInvite.js";
 import TeamMember from "../database/models/teamMember.js";
 import sequelize from "../database/db.js";
 
-Team.sync();
-TeamMember.sync();
-TeamInvite.sync();
-User.sync();
+
 
 export const createTeam = async (req, res) => {
   const t = await sequelize.transaction();

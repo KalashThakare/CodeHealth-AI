@@ -1,6 +1,7 @@
 import RepositoryAnalysis from "./analysis.js";
 import CommitsAnalysis from "./commit_analysis.js";
 import Commit from "./commitsMetadata.js";
+import OAuthConnection from "./OauthConnections.js";
 import { Project } from "./project.js";
 import PushAnalysisMetrics from "./pushAnalysisMetrics.js";
 import  RepoFileMetrics  from "./repoFileMetrics.js";
@@ -108,5 +109,15 @@ RepositoryAnalysis.belongsTo(Project, {
   foreignKey: 'repoId',
   targetKey: 'repoId',
   as: 'project'
+});
+
+User.hasMany(OAuthConnection, { 
+  foreignKey: 'userId',
+  as: 'oauthConnections' 
+});
+
+OAuthConnection.belongsTo(User, { 
+  foreignKey: 'userId',
+  as: 'user' 
 });
 

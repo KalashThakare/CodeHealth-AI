@@ -15,40 +15,35 @@ const User = sequelize.define("User", {
   },
   password: {
     type: DataTypes.STRING,
+    allowNull: true, // Null for OAuth users
+  },
+  name: {
+    type: DataTypes.STRING,
     allowNull: true,
   },
-
+  
+  // OPTIONAL: Keep these fields for backward compatibility
+  // or remove them after migration
   oauthProvider: {
     type: DataTypes.STRING,
     allowNull: true,
   },
-
   oauthProviderId: {
     type: DataTypes.STRING,
-    unique: true,
     allowNull: true,
   },
-
   oauthAccessToken: {
     type: DataTypes.TEXT,
     allowNull: true,
   },
-
   oauthRefreshToken: {
     type: DataTypes.TEXT,
-    allowNull: true,
-  },
-
-  name: {
-    type: DataTypes.STRING,
     allowNull: true,
   },
   githubInstallationId: {
     type: DataTypes.BIGINT,
     allowNull: true,
   },
-
-
 }, {
   tableName: "users",
   timestamps: true,

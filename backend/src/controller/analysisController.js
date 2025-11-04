@@ -14,7 +14,6 @@ import Commit from "../database/models/commitsMetadata.js";
 import { connection } from "../lib/redis.js";
 dotenv.config();
 
-RepositoryAnalysis.sync();
 
 export const analyze_repo = async (req, res) => {
   try {

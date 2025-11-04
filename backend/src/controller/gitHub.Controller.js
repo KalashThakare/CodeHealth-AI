@@ -9,10 +9,9 @@ import { pushAnalysisQueue, webhookQueue } from "../lib/redis.js";
 import { handlePush } from "../services/handlers/push.handler.js";
 import { handleIssues } from "../services/handlers/issues.handler.js";
 import { Analyse_repo } from "./scanController.js";
+import OAuthConnection from "../database/models/OauthConnections.js";
 
-await User.sync();
-await Project.sync();
-await WebhookEvent.sync();
+
 
 function eventToJobName(event) {
   switch (event) {
@@ -199,10 +198,17 @@ export const githubWebhookController = async (req, res) => {
         return res.status(400).json({ error: "Missing installation account id" });
       } 
 
-      const user = await User.findOne({ where: { oauthProviderId: accountId } }); 
+      const user = await OAuthConnection.findOne({ where:
+        { 
+          provider:"github",
+          providerId: accountId 
+        } 
+      }); 
       if (!user) {
         return res.status(404).json({ error: "User not found for this installation account" });
       }
+
+      const userId = user.userId;
 
       if (event === "installation" && action === "created") {
         const repos = payload.repositories || [];
@@ -211,7 +217,7 @@ export const githubWebhookController = async (req, res) => {
           await Project.findOrCreate({
             where: { repoId: repo.id }, 
             defaults: {
-              userId: user?.id ?? null,
+              userId: userId,
               repoId: repo.id,
               repoName: repo.name,
               fullName: repo.full_name,
@@ -229,7 +235,7 @@ export const githubWebhookController = async (req, res) => {
           await Project.findOrCreate({
             where: { repoId: repo.id },
             defaults: {
-              userId: user?.id ?? null,
+              userId: userId,
               repoId: repo.id,
               repoName: repo.name,
               fullName: repo.full_name,
