@@ -1,4 +1,5 @@
 import { pushAnalysisQueue } from "../../lib/redis.js";
+import { pushScanQueue } from "../../lib/redis.js";
 
 export async function handlePush(payload) {
   try {
@@ -17,6 +18,47 @@ export async function handlePush(payload) {
       console.log("[push] skipped by branch-policy", { branch, defaultBranch });
       return { skipped: true, reason: "branch-policy", branch, defaultBranch };
     }
+
+    const added = new Set();
+    const removed = new Set();
+    const modified = new Set();
+
+    for (const commit of commits) {
+      (commit.added || []).forEach(file => added.add(file));
+      (commit.removed || []).forEach(file => removed.add(file));
+      (commit.modified || []).forEach(file => modified.add(file));
+    }
+
+    modified.forEach(file => {
+      if (added.has(file)) {
+        modified.delete(file);
+      }
+    });
+
+    added.forEach(file => {
+      if (removed.has(file)) {
+        added.delete(file);
+        removed.delete(file);
+      }
+    });
+
+    modified.forEach(file => {
+      if (removed.has(file)) {
+        modified.delete(file);
+      }
+    });
+
+    const scanJobId = `scan-${repoId}-${headCommit?.id || Date.now()}`;
+    const safeScanJobId = scanJobId.replace(/[^\w.-]/g, "_");
+
+    const ScanJobData = {added, modified, removed};
+
+    const ScanJob = await pushScanQueue.add("Scan", ScanJobData,{
+      jobId:safeScanJobId
+    })
+
+    console.log("[pushScan] enqueue request", { ScanJobData });
+
 
     const jobData = { repo, repoId, branch, headCommit, installationId, commits, pusher };
 
