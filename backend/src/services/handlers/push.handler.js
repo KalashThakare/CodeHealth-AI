@@ -12,6 +12,7 @@ export async function handlePush(payload) {
     const pusher = payload.pusher?.name || payload.sender?.login || "unknown";
     const headCommit = payload.head_commit || null;
     const commits = payload.commits || [];
+    const commitSha = payload.head_commit?.id || payload.after || null;
 
     const shouldAnalyze = branch && defaultBranch && branch === defaultBranch;
     if (!shouldAnalyze) {
@@ -48,10 +49,14 @@ export async function handlePush(payload) {
       }
     });
 
+    const addedArray = Array.from(added);
+    const modifiedArray = Array.from(modified);
+    const removedArray = Array.from(removed);
+
     const scanJobId = `scan-${repoId}-${headCommit?.id || Date.now()}`;
     const safeScanJobId = scanJobId.replace(/[^\w.-]/g, "_");
 
-    const ScanJobData = {repoId, added, modified, removed};
+    const ScanJobData = {repoId, repo, installationId, commitSha, added:addedArray, modified:modifiedArray, removed:removedArray};
 
     const ScanJob = await pushScanQueue.add("Scan", ScanJobData,{
       jobId:safeScanJobId
@@ -71,12 +76,12 @@ export async function handlePush(payload) {
 
     const safeId = baseId.replace(/[^\w.-]/g, "_");
 
-    const job = await pushAnalysisQueue.add("analysis.push", jobData, {
-      jobId: safeId,
-    });
+    // const job = await pushAnalysisQueue.add("analysis.push", jobData, {
+    //   jobId: safeId,
+    // });
 
-    const state = await job.getState();
-    const counts = await pushAnalysisQueue.getJobCounts();
+    // const state = await job.getState();
+    // const counts = await pushAnalysisQueue.getJobCounts();
 
     console.log("[push] enqueued", { id: job.id, state, counts });
 

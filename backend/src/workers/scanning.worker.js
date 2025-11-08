@@ -19,8 +19,8 @@ export const ScanPushWorker = new Worker(
             return{skipped:true, reason:"unknown", name:job.name}
         }
 
-        const {repoId, added, removed, modified} = job.data || {};
-        if(!added || ! removed || !modified || !repoId){
+        const {repoId, added, removed, modified, commitSha, repo, installationId} = job.data || {};
+        if(!added || ! removed || !modified || !repoId || !commitSha || !repo || !installationId){
             throw new Error("Invalid job data fields are missing");
         }
 
@@ -29,14 +29,17 @@ export const ScanPushWorker = new Worker(
 
         const payload = {
             repoId,
-            filesAdded:added,
-            filesModified:modified,
-            filesRemoved:removed
+            installationId,
+            repoName:repo,
+            commitSha,
+            filesAdded: Array.from(added),      
+            filesModified: Array.from(modified), 
+            filesRemoved: Array.from(removed)  
         }
 
         try{
 
-            const url = process.env.ANALYSIS_INTERNAL_URL + "/v1/internal/analysis/run";
+            const url = process.env.ANALYSIS_INTERNAL_URL + "/v3/internal/pushScan/run";
             const {data} = await axios.post(url, payload, {
                 timeout:10_000,
                 signal:controller.signal

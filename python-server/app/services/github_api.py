@@ -59,6 +59,85 @@ async def fetch_repo_code(owner:str, repo:str, branch:str, token:str, exts=(".py
 
         return files
     
+async def fetch_changed_files_code(repoFullName: str, repoId: str, token: str, addedFiles: List, modifiedFiles: List):
+    headers = _gh_headers(token)
+    files = []
+    
+    try:
+        # Combine added and modified files (both need to be fetched)
+        all_files_to_fetch = list(set(addedFiles) | set(modifiedFiles))
+        
+        for file_path in all_files_to_fetch:
+            try:
+                # Check if file should be analyzed (skip binaries, large files, etc.)
+                if not _should_analyze_file(file_path):
+                    print(f"Skipping {file_path} - not analyzable")
+                    continue
+                
+                # Construct GitHub API URL to fetch raw file content
+                url = f"https://api.github.com/repos/{repoFullName}/contents/{file_path}"
+                
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url, headers=headers) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            
+                            # GitHub returns base64 encoded content
+                            if data.get('encoding') == 'base64' and 'content' in data:
+                                import base64
+                                content = base64.b64decode(data['content']).decode('utf-8')
+                                
+                                files.append({
+                                    'path': file_path,
+                                    'content': content,
+                                    'size': data.get('size', 0),
+                                    'sha': data.get('sha'),
+                                    'status': 'added' if file_path in addedFiles else 'modified'
+                                })
+                            else:
+                                print(f"Unexpected encoding for {file_path}: {data.get('encoding')}")
+                        
+                        elif response.status == 404:
+                            print(f"File not found: {file_path}")
+                        
+                        elif response.status == 403:
+                            print(f"Rate limit or permission issue for {file_path}")
+                            # Optional: break or wait
+                        
+                        else:
+                            print(f"Failed to fetch {file_path}: status {response.status}")
+            
+            except Exception as file_error:
+                print(f"Error fetching {file_path}: {str(file_error)}")
+                continue
+        
+        return files
+    
+    except Exception as e:
+        print(f"Error in fetch_changed_files_code: {str(e)}")
+        return []
+
+
+def _should_analyze_file(file_path: str) -> bool:
+    """Check if file should be analyzed based on extension and path"""
+    analyzable_extensions = {
+        '.js', '.jsx', '.ts', '.tsx',
+        '.py'
+    }
+    
+    skip_patterns = [
+        'node_modules/', '.git/', 'dist/', 'build/',
+        'vendor/', '__pycache__/', '.min.js', '.bundle.js'
+    ]
+    
+    # Skip if matches any skip pattern
+    if any(pattern in file_path for pattern in skip_patterns):
+        return False
+    
+    # Check if file has analyzable extension
+    return any(file_path.endswith(ext) for ext in analyzable_extensions)
+
+
 async def get_all_commits(owner: str, repo: str, token: str):
     url = f"{GITHUB_API}repos/{owner}/{repo}/commits"
     headers = _gh_headers(token)

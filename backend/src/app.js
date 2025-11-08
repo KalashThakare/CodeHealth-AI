@@ -15,6 +15,7 @@ import scanningRoutes from "./routes/scanning.Routes.js";
 import analysisRoutes from "./routes/analysisRoutes.js";
 import "./database/models/index.js"
 import "./workers/analysis.worker.js"
+import "./workers/scanning.worker.js"
 
 
 dotenv.config();
