@@ -56,7 +56,7 @@ export async function handlePush(payload) {
     const scanJobId = `scan-${repoId}-${headCommit?.id || Date.now()}`;
     const safeScanJobId = scanJobId.replace(/[^\w.-]/g, "_");
 
-    const ScanJobData = {repoId, repo, installationId, commitSha, added:addedArray, modified:modifiedArray, removed:removedArray};
+    const ScanJobData = {repoId, repo, installationId, commitSha, branch, added:addedArray, modified:modifiedArray, removed:removedArray};
 
     const ScanJob = await pushScanQueue.add("Scan", ScanJobData,{
       jobId:safeScanJobId
