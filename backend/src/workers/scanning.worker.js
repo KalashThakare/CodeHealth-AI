@@ -19,8 +19,8 @@ export const ScanPushWorker = new Worker(
             return{skipped:true, reason:"unknown", name:job.name}
         }
 
-        const {repoId, added, removed, modified, commitSha, repo, installationId, branch} = job.data || {};
-        if(!added || ! removed || !modified || !repoId || !commitSha || !repo || !installationId || !branch){
+        const {repoId, added, modified, commitSha, repo, installationId, branch} = job.data || {};
+        if(!added || !modified || !repoId || !commitSha || !repo || !installationId || !branch){
             throw new Error("Invalid job, data fields are missing");
         }
 
@@ -34,8 +34,7 @@ export const ScanPushWorker = new Worker(
             commitSha,
             branch,
             filesAdded: Array.from(added),      
-            filesModified: Array.from(modified), 
-            filesRemoved: Array.from(removed)  
+            filesModified: Array.from(modified),   
         }
 
         try{
