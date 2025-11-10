@@ -1,3 +1,6 @@
+import { Project } from "../database/models/project.js";
+import RepoFileMetrics from "../database/models/repoFileMetrics.js";
+
 export const mean = (arr) => {
   if (!arr || arr.length === 0) return 0;
   return arr.reduce((sum, val) => sum + val, 0) / arr.length;
@@ -26,3 +29,31 @@ export const createHistogram = (values, minVal, maxVal, bins) => {
 
   return histogram;
 };
+
+export const removeFiles = async (repoId, removedArray) =>{
+  if(!repoId || !removedArray){
+    console.log("Fields are empty");
+    return;
+  }
+
+  const repo = await Project.findOne({
+    where:{
+      repoId:repoId
+    }
+  });
+
+  if(!repo){
+    throw new Error("Repo not found");
+  }
+
+  const deletedCount = await RepoFileMetrics.destroy({
+    where: {
+      repoId: repoId,
+      path: removedArray
+    }
+  });
+
+  console.log(`Deleted ${deletedCount} file(s) from repository ${repoId}`);
+  return deletedCount;
+
+}

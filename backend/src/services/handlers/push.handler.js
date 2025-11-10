@@ -1,5 +1,6 @@
 import { pushAnalysisQueue } from "../../lib/redis.js";
 import { pushScanQueue } from "../../lib/redis.js";
+import { removeFiles } from "../../utils/functions.js";
 
 export async function handlePush(payload) {
   try {
@@ -53,10 +54,17 @@ export async function handlePush(payload) {
     const modifiedArray = Array.from(modified);
     const removedArray = Array.from(removed);
 
+    if(removedArray.length != 0){
+      const res = await removeFiles(repoId, removedArray);
+      if(res){
+        console.log("Success fully deleted the files from database", res);
+      }
+    }
+
     const scanJobId = `scan-${repoId}-${headCommit?.id || Date.now()}`;
     const safeScanJobId = scanJobId.replace(/[^\w.-]/g, "_");
 
-    const ScanJobData = {repoId, repo, installationId, commitSha, branch, added:addedArray, modified:modifiedArray, removed:removedArray};
+    const ScanJobData = {repoId, repo, installationId, commitSha, branch, added:addedArray, modified:modifiedArray};
 
     const ScanJob = await pushScanQueue.add("Scan", ScanJobData,{
       jobId:safeScanJobId

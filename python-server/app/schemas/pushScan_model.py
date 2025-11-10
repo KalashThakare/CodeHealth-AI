@@ -10,7 +10,6 @@ class PushScanPayload(BaseModel):
     
     filesAdded: List[str] = Field(default_factory=list)
     filesModified: List[str] = Field(default_factory=list)
-    filesRemoved: List[str] = Field(default_factory=list)
 
 class PushScanResponse(BaseModel):
     ok:bool
