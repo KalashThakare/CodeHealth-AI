@@ -50,7 +50,7 @@ export const DesktopNavLinks: React.FC<DesktopNavLinksProps> = ({
         >
           <Link
             href={link.href}
-            className="relative text-sm px-4 py-2 rounded transition-colors duration-150 z-10"
+            className="relative text-sm px-4 py-1 mb-0.5 rounded transition-colors duration-150 z-10"
             style={{
               color: isActive(link.href)
                 ? "var(--color-fg)"
@@ -66,7 +66,7 @@ export const DesktopNavLinks: React.FC<DesktopNavLinksProps> = ({
           <div
             className="absolute bottom-0 left-0 w-full transition-all duration-130"
             style={{
-              height: "1px",
+              height: "2px",
               backgroundColor: isActive(link.href)
                 ? "var(--color-fg)"
                 : "transparent",

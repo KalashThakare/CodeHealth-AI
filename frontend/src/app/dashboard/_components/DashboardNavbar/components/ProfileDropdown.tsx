@@ -43,7 +43,7 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
   return (
     <div
-      className="absolute top-full right-0 mt-2 w-64 rounded-lg shadow-lg border overflow-hidden z-50"
+      className="absolute top-full right-0 mt-2 w-64 rounded-lg shadow-lg border overflow-hidden z-[1000]"
       style={{
         backgroundColor: "var(--color-card)",
         borderColor: "var(--color-border)",

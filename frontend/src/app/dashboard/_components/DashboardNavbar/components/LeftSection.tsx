@@ -1,29 +1,50 @@
+"use client";
 import React from "react";
+import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
 import { Logo } from "./Logo";
 import { TeamDropdown } from "./TeamDropdown";
-import { NavbarState, DropdownRefs } from "../types";
 
 interface LeftSectionProps {
-  state: NavbarState;
-  refs: DropdownRefs;
+  state: any;
+  refs: any;
+  isScrolled: boolean;
 }
 
-export const LeftSection: React.FC<LeftSectionProps> = ({ state, refs }) => {
+export const LeftSection: React.FC<LeftSectionProps> = ({
+  state,
+  refs,
+  isScrolled,
+}) => {
   const { authUser } = useAuthStore();
 
   return (
-    <div className="flex items-center space-x-3" ref={refs.teamDropdownRef}>
-      <Logo />
+    <div className="flex items-center gap-3">
+      <Link href="/dashboard">
+        <Logo />
+      </Link>
 
-      <span
-        className="hidden min-[440px]:block text-sm font-medium"
-        style={{ color: "var(--color-fg)" }}
-      >
-        {authUser?.name?.split(" ")[0] || "Your"}'s projects
-      </span>
-
-      <TeamDropdown state={state} refs={refs} />
+      {/* User name and team dropdown - hide when scrolled */}
+      {!isScrolled && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+          }}
+        >
+          <span
+            className="text-sm font-medium hidden sm:block"
+            style={{
+              color: "var(--color-fg)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {authUser?.name?.split(" ")?.[0] || "Your"}'s projects
+          </span>
+          <TeamDropdown state={state} refs={refs} />
+        </div>
+      )}
     </div>
   );
 };

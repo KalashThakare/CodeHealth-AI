@@ -1,44 +1,58 @@
+"use client";
 import React from "react";
 import { useAuthStore } from "@/store/authStore";
-import { Menu } from "lucide-react";
 import { DesktopActions } from "./DesktopActions";
 import { ProfileDropdown } from "./ProfileDropdown";
 import { MobileMenu } from "./MobileMenu";
-import { NavbarState, DropdownRefs } from "../types";
 
 interface RightSectionProps {
-  state: NavbarState;
-  refs: DropdownRefs;
+  state: any;
+  refs: any;
   handleLogOut: () => void;
+  isScrolled: boolean;
 }
 
 export const RightSection: React.FC<RightSectionProps> = ({
   state,
   refs,
   handleLogOut,
+  isScrolled,
 }) => {
   const { authUser } = useAuthStore();
 
   return (
-    <div className="flex items-center space-x-3">
-      <DesktopActions state={state} />
+    <div className="flex items-center gap-3">
+      {/* Desktop Actions - smooth hide with transition */}
+      <div
+        style={{
+          display: isScrolled ? "none" : "block",
+        }}
+      >
+        <DesktopActions state={state} />
+      </div>
 
-      {/* Profile Button (Desktop) */}
-      <div className="hidden sm:block relative" ref={refs.profileDropdownRef}>
+      {/* Profile Button & Dropdown - smooth hide with transition */}
+      <div
+        className="hidden sm:block relative rounded-full"
+        ref={refs.profileDropdownRef}
+        style={{
+          display: isScrolled ? "none" : "block",
+        }}
+      >
         <button
-          onClick={() =>
-            state.setIsProfileDropdownOpen(!state.isProfileDropdownOpen)
-          }
-          className="!px-3 !py-1 !font-normal !text-sm !rounded-full border transition-all hover:opacity-80"
+          onClick={(e) => {
+            e.stopPropagation();
+            state.setIsProfileDropdownOpen(!state.isProfileDropdownOpen);
+          }}
+          className="!px-3 !py-1.25 font-normal text-sm !rounded-full border transition-all hover:opacity-80 cursor-pointer"
           style={{
-            backgroundColor: "var(--color-primary)",
+            backgroundColor: "var(--color-bg-tertiary)",
             color: "var(--color-fg)",
             borderColor: "var(--color-border)",
-            boxShadow: "none !important",
           }}
         >
           <span
-            className="text-white font-bold text-lg"
+            className="font-bold text-base"
             style={{
               color: "var(--color-fg)",
             }}
@@ -54,25 +68,8 @@ export const RightSection: React.FC<RightSectionProps> = ({
         />
       </div>
 
-      {/* Mobile Menu Button */}
-      <div className="sm:hidden relative" ref={refs.mobileMenuRef}>
-        <button
-          onClick={() => state.setIsMobileMenuOpen(!state.isMobileMenuOpen)}
-          className="!p-2 !rounded-lg border transition-all hover:opacity-80"
-          style={{
-            backgroundColor: state.isMobileMenuOpen
-              ? "var(--color-bg-secondary)"
-              : "transparent",
-            color: "var(--color-fg)",
-            borderColor: "var(--color-border)",
-            boxShadow: "none !important",
-          }}
-        >
-          <Menu className="w-4 h-4" />
-        </button>
-
-        <MobileMenu state={state} refs={refs} handleLogOut={handleLogOut} />
-      </div>
+      {/* Mobile Menu - always visible */}
+      <MobileMenu state={state} refs={refs} handleLogOut={handleLogOut} />
     </div>
   );
 };

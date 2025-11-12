@@ -16,7 +16,6 @@ import {
   FiGitBranch,
   FiLock,
   FiUnlock,
-  FiFileText,
   FiActivity,
   FiTrendingUp,
   FiCode,
@@ -33,10 +32,9 @@ import {
   loadGitProjectCache,
   saveGitProjectCache,
   clearGitProjectCache,
-  hasGitProjectCache,
 } from "@/utils/gitProjectCache";
 import "./gitProject.css";
-import { Span } from "next/dist/trace";
+import { DashboardNavbar } from "../dashboard/_components/DashboardNavbar";
 
 export default function GitHubImportPage() {
   const router = useRouter();
@@ -200,9 +198,12 @@ export default function GitHubImportPage() {
   };
 
   return (
-    <div className="gitproject-page min-h-screen bg-[var(--gp-bg)] py-8 px-4 sm:px-6 lg:px-8">
+    <div className="gitproject-page min-h-screen bg-[var(--gp-bg)]">
+      <DashboardNavbar />
+
+
       {/* Theme Toggle */}
-      <div className="theme-toggle-container">
+      {/* <div className="theme-toggle-container">
         {mounted && (
           <div className="theme-toggle-wrapper">
             <button
@@ -234,9 +235,9 @@ export default function GitHubImportPage() {
             </button>
           </div>
         )}
-      </div>
+      </div> */}
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto p-4">
         {/* Header */}
         <header className="mb-6">
           <h1 className="text-2xl font-bold text-[var(--gp-fg)] mb-1">

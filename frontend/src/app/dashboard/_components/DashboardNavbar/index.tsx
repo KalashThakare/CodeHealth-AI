@@ -5,10 +5,12 @@ import { useAuthStore } from "@/store/authStore";
 import { useNavbarState } from "./hooks/useNavbarState";
 import { useDropdownClose } from "./hooks/useDropdownClose";
 import { useHighlightEffect } from "./hooks/useHighlightEffect";
+import { useScrollNavbar } from "./hooks/useScrollNavbar";
 import { LeftSection } from "./components/LeftSection";
 import { RightSection } from "./components/RightSection";
 import { DesktopNavLinks } from "./components/DesktopNavLinks";
 import { FeedbackModal } from "./components/FeedbackModal";
+import { Logo } from "./components/Logo";
 import { DashboardNavbarProps } from "./types";
 
 export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
@@ -21,6 +23,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
   const state = useNavbarState();
   const refs = useDropdownClose(state);
   const highlightState = useHighlightEffect(refs);
+  const { isScrolled } = useScrollNavbar();
 
   // Handler functions
   const handleLogOut = async () => {
@@ -32,28 +35,75 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
     <>
       {/* Main Navbar */}
       <nav
-        className="sticky h-fit pt-3 pb-1.5 top-0 z-50 border-b transition-all duration-200"
+        className="sticky top-0 z-50 border-b glassmorphism-navbar"
         style={{
           backgroundColor: "var(--color-bg-secondary)",
           borderColor: "var(--color-border)",
+          paddingTop: isScrolled ? "0.5rem" : "0.75rem",
+          paddingBottom: isScrolled ? "0.4rem" : "0.375rem",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
         <div className="h-fit mx-auto px-1 sm:px-6">
-          <div className="flex-col items-center justify-between">
-            <div className="flex justify-between items-center space-x-8">
-              {/* Left Section */}
-              <LeftSection state={state} refs={refs} />
+          {/* Top row with logo, user info, and actions */}
+          <div
+            className="flex justify-between items-center w-full"
+            style={{
+              opacity: isScrolled ? 0 : 1,
+              maxHeight: isScrolled ? "0px" : "50px",
+              marginBottom: isScrolled ? "0" : "0.375rem",
+              overflow: isScrolled ? "hidden" : "visible",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            }}
+          >
+            {/* Left Section */}
+            <LeftSection state={state} refs={refs} isScrolled={false} />
 
-              {/* Right Section */}
-              <RightSection 
-                state={state} 
-                refs={refs} 
-                handleLogOut={handleLogOut} 
-              />
+            {/* Right Section */}
+            <RightSection
+              state={state}
+              refs={refs}
+              handleLogOut={handleLogOut}
+              isScrolled={false}
+            />
+          </div>
+
+          {/* Bottom row - nav links and logo when scrolled */}
+          <div
+            className="flex items-center w-full"
+            style={{
+              transform: isScrolled ? "translateY(0)" : "translateY(0)",
+              transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            }}
+          >
+            {/* Logo - only visible when scrolled */}
+            <div
+              style={{
+                width: "100%",
+                opacity: isScrolled ? 1 : 0,
+                maxWidth: isScrolled ? "40px" : "0px",
+                marginRight: isScrolled ? "0" : "0",
+                overflow: "hidden",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+            >
+              <Logo />
             </div>
 
-            {/* Desktop Navigation Links */}
-            <DesktopNavLinks highlightState={highlightState} refs={{ navLinksRef: refs.navLinksRef as React.RefObject<HTMLDivElement> }} />
+            {/* Desktop Navigation Links - Always visible */}
+            <div
+              style={{
+                width: "100%",
+              }}
+            >
+              <DesktopNavLinks
+                highlightState={highlightState}
+                refs={{
+                  navLinksRef:
+                    refs.navLinksRef as React.RefObject<HTMLDivElement>,
+                }}
+              />
+            </div>
           </div>
         </div>
       </nav>

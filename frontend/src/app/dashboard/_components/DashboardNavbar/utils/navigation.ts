@@ -2,7 +2,7 @@ import { NavLink } from "../types";
 import { Activity, Eye, HelpCircle, Settings } from "lucide-react";
 
 export const navLinks: NavLink[] = [
-  { name: "Overview", href: "/dashboard", icon: Activity },
+  { name: "Projects", href: "/dashboard", icon: Activity },
   { name: "Activity", href: "/dashboard/activity", icon: Activity },
   { name: "Observability", href: "/dashboard/observability", icon: Eye },
   { name: "Support", href: "/dashboard/support", icon: HelpCircle },
