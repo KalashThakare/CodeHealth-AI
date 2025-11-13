@@ -61,6 +61,7 @@ export const ListRepos = async (req, res) => {
           model: Project,
           attributes: [
             "id",
+            "fullName",
             "repoName",
             "repoId",
             "repoUrl",
@@ -75,6 +76,8 @@ export const ListRepos = async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+
+    console.log(user.Projects)
 
     res.json(user.Projects);
   } catch (error) {
