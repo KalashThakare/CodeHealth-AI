@@ -249,7 +249,7 @@ const SettingsPage = () => {
         </div>
 
         {/* Error Banner */}
-        {error && (
+        {/* {error && (
           <div
             className="rounded-lg border px-4 py-3 mb-6 text-sm flex items-center justify-between"
             style={{
@@ -266,7 +266,7 @@ const SettingsPage = () => {
               ✕
             </button>
           </div>
-        )}
+        )} */}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar Navigation */}
