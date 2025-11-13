@@ -144,7 +144,9 @@ export default function SocketTester() {
             <div>
               <h3 className="font-bold text-lg">Socket Tester</h3>
               <p className="text-xs opacity-90">
-                {isConnected ? `ID: ${socket?.id?.slice(0, 12)}...` : "Not connected"}
+                {isConnected
+                  ? `ID: ${socket?.id?.slice(0, 12)}...`
+                  : "Not connected"}
               </p>
             </div>
           </div>
@@ -226,9 +228,7 @@ export default function SocketTester() {
         <ol className="list-decimal list-inside space-y-0.5 text-blue-800 dark:text-blue-400">
           <li>Check if connection status is green</li>
           <li>Click "Send Ping" and wait for "pong" response</li>
-          <li>
-            Trigger a GitHub push event (push code to your repo)
-          </li>
+          <li>Trigger a GitHub push event (push code to your repo)</li>
           <li>Watch for "notification" events in the logs</li>
         </ol>
       </div>

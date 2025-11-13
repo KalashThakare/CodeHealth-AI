@@ -184,7 +184,7 @@ const Dashboard = () => {
   return (
     <div className="vercel-dashboard">
       <DashboardNavbar currentTeam={teams[0]} />
-      
+
       {/* Socket Status Indicator */}
       <SocketStatus showDetails={false} position="bottom-right" />
 

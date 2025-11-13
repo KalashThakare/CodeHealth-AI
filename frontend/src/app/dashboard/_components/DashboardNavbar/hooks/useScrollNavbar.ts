@@ -11,7 +11,7 @@ export const useScrollNavbar = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
-          
+
           // Calculate total scrollable height
           const documentHeight = document.documentElement.scrollHeight;
           const windowHeight = window.innerHeight;
@@ -46,7 +46,7 @@ export const useScrollNavbar = () => {
       const documentHeight = document.documentElement.scrollHeight;
       const windowHeight = window.innerHeight;
       const maxScrollableHeight = documentHeight - windowHeight;
-      
+
       // If content is not scrollable or barely scrollable, keep navbar open
       if (maxScrollableHeight <= 20 || window.scrollY <= 10) {
         setIsScrolled(false);
@@ -59,7 +59,7 @@ export const useScrollNavbar = () => {
     // Also check when window is resized (content might become scrollable/non-scrollable)
     window.addEventListener("resize", checkScrollability);
     window.addEventListener("scroll", handleScroll, { passive: true });
-    
+
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", checkScrollability);
