@@ -16,8 +16,8 @@ export const useScrollNavbar = () => {
           if (currentScrollY > lastScrollY && currentScrollY > 0) {
             setIsScrolled(true);
           }
-          // Show when near the top (within 10px threshold)
-          else if (currentScrollY <= 35) {
+          // Show when near the top (within 35px threshold)
+          else if (currentScrollY <= 40) {
             setIsScrolled(false);
           }
 

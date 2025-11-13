@@ -6,13 +6,8 @@ import { useTeamStore } from "@/store/teamStore";
 import { useGitHubStore } from "@/store/githubStore";
 import { useRouter } from "next/navigation";
 import { DashboardNavbar } from "./_components/DashboardNavbar";
-import Link from "next/link";
 import {
-  FiSearch,
-  FiGrid,
-  FiList,
   FiPlus,
-  FiChevronDown,
   FiGithub,
   FiExternalLink,
   FiMoreHorizontal,
@@ -161,6 +156,7 @@ const Dashboard = () => {
 
   const handleProjectClick = (repo: any) => {
     selectRepository(repo);
+    console.log("Navigating to project:", repo.fullName);
     router.push("/gitProject");
   };
 
@@ -187,51 +183,6 @@ const Dashboard = () => {
   return (
     <div className="vercel-dashboard">
       <DashboardNavbar currentTeam={teams[0]} />
-
-      {/* Search Bar */}
-      {/* <div className="search-bar-container">
-        <div className="search-bar">
-          <FiSearch className="search-icon" size={18} />
-          <input
-            type="text"
-            placeholder="Search Projects..."
-            className="search-input"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <div className="search-actions">
-            <div className="view-toggle">
-              <button
-                className={`view-btn ${viewMode === "list" ? "active" : ""}`}
-                onClick={() => setViewMode("list")}
-              >
-                <FiList size={16} />
-              </button>
-              <button
-                className={`view-btn ${viewMode === "grid" ? "active" : ""}`}
-                onClick={() => setViewMode("grid")}
-              >
-                <FiGrid size={16} />
-              </button>
-            </div>
-            <div className="add-new-dropdown">
-              <button
-                className="add-new-btn"
-                onClick={() =>
-                  router.push(
-                    process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI ||
-                      "/gitProject"
-                  )
-                }
-              >
-                <FiPlus size={18} />
-                Add New...
-                <FiChevronDown className="dropdown-chevron" size={14} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div> */}
 
       <div className="dashboard-container">
         {/* Left Sidebar */}
@@ -267,7 +218,7 @@ const Dashboard = () => {
         <main className="dashboard-main !gap-4">
           {/* Projects Header */}
           <div className="projects-header">
-            <h2>Projects</h2>
+            <h2 className="!text-[15px]">Projects</h2>
           </div>
 
           {/* Projects Grid/List */}
@@ -310,44 +261,56 @@ const Dashboard = () => {
                   className="project-card"
                   onClick={() => handleProjectClick(repo)}
                 >
-                  <div className="project-card-header">
-                    <div className="project-icon" data-index={index % 10}>
-                      {getProjectIcon(repo.repoName)}
-                    </div>
-                    <button
-                      className="project-menu"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <FiMoreHorizontal size={20} />
-                    </button>
-                  </div>
+                  <div className="project-card-header mb-2">
+                    <div className="flex items-center gap-4">
+                      <div className="project-icon" data-index={index % 10}>
+                        {getProjectIcon(repo.repoName)}
+                      </div>
 
-                  <div className="project-info">
-                    <div className="project-name">
-                      {repo.repoName}
-                      <span className="visibility-badge">
-                        {repo.visibility === "private" ? (
-                          <>
-                            <FiLock size={10} /> Private
-                          </>
-                        ) : (
-                          <>
-                            <FiUnlock size={10} /> Public
-                          </>
-                        )}
-                      </span>
+                      <div className="project-info">
+                        <div className="project-name">{repo.repoName}</div>
+                        <div className="flex items-center">
+                          <a
+                            href={repo.repoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="project-url"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <FiGithub size={12} className="github-icon" />
+                            {repo.fullName}
+                            <FiExternalLink size={10} />
+                          </a>
+                          <span className="visibility-badge">
+                            {repo.visibility === "private" ? (
+                              <>
+                                <FiLock size={10} /> Private
+                              </>
+                            ) : (
+                              <>
+                                <FiUnlock size={10} /> Public
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <a
-                      href={repo.repoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="project-url"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <FiGithub size={12} className="github-icon" />
-                      {repo.fullName}
-                      <FiExternalLink size={10} />
-                    </a>
+
+                    <div className="flex items-center gap-4">
+                      <FiActivity
+                        size={32}
+                        style={{
+                          backgroundColor: "var(--color-bg-tertiary)",
+                          color: "var(--color-fg)",
+                          borderColor: "var(--color-border)",
+                        }}
+                        className="border-4 rounded-full p-1"
+                      />
+                      <FiMoreHorizontal
+                        size={20}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
                   </div>
 
                   <div className="project-meta">
