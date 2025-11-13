@@ -30,6 +30,7 @@
     "nodemailer": "^7.0.5",
     "pg": "^8.16.3",
     "redis": "^5.8.2",
-    "sequelize": "^6.37.7"
+    "sequelize": "^6.37.7",
+    "socket.io": "^4.8.1"
   }
 }

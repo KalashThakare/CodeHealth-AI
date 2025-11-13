@@ -5,9 +5,20 @@ import ngrok from '@ngrok/ngrok';
 import sequelize from "./database/db.js";
 import "./database/models/association.js"
 
+import {Server} from "socket.io";
+import { initSocket } from "./socket.js";
+
 
 const server = http.createServer(app);
 const port = process.env.PORT;
+
+export const io = new Server(server,{
+  cors:{
+    origin:"http://localhost:3000"
+  }
+})
+
+initSocket(io);
 
 const connectToDb = await startApp();
 

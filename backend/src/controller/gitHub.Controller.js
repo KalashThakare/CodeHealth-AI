@@ -11,7 +11,7 @@ import { handleIssues } from "../services/handlers/issues.handler.js";
 import { Analyse_repo } from "./scanController.js";
 import OAuthConnection from "../database/models/OauthConnections.js";
 
-
+import { io } from "../server.js";
 
 function eventToJobName(event) {
   switch (event) {
@@ -191,19 +191,20 @@ export const githubWebhookController = async (req, res) => {
     }
 
     if (event === "installation" || event === "installation_repositories") {
-      const action = payload.action; 
+      const action = payload.action;
       const accountId = payload.installation?.account?.id?.toString() ?? null;
 
       if (!accountId) {
         return res.status(400).json({ error: "Missing installation account id" });
-      } 
+      }
 
-      const user = await OAuthConnection.findOne({ where:
-        { 
-          provider:"github",
-          providerId: accountId 
-        } 
-      }); 
+      const user = await OAuthConnection.findOne({
+        where:
+        {
+          provider: "github",
+          providerId: accountId
+        }
+      });
       if (!user) {
         return res.status(404).json({ error: "User not found for this installation account" });
       }
@@ -215,7 +216,7 @@ export const githubWebhookController = async (req, res) => {
         for (const repo of repos) {
           const repoUrl = repo.html_url || `https://github.com/${repo.full_name}`;
           await Project.findOrCreate({
-            where: { repoId: repo.id }, 
+            where: { repoId: repo.id },
             defaults: {
               userId: userId,
               repoId: repo.id,
@@ -246,7 +247,7 @@ export const githubWebhookController = async (req, res) => {
 
           const result = await Analyse_repo(repo.id);
           return res.status(200).json(result);
-          
+
         }
       }
 
@@ -262,13 +263,30 @@ export const githubWebhookController = async (req, res) => {
       }
     }
 
-  
+
     if (event === "push") {
+
+      if (!project) {
+        if (repoId) project = await Project.findOne({ where: { repoId } });
+        if (!project && repoName) project = await Project.findOne({ where: { repoName } });
+      }
+
       if (repoId) {
         const cacheKey = `metrics:repo:${repoId}`;
         await connection.del(cacheKey);
         console.log(`Cache invalidated for repo ${repoId} due to push event`);
       }
+
+      if (project && project.userId) {
+        io.to(`user:${project.userId}`).emit("notification", {
+          type: "push",
+          repoName,
+          repoId,
+          message: `New push on ${fullName}`,
+          time: Date.now()
+        });
+      }
+
       const result = await handlePush(payload);
       return res.status(200).json(result);
     }
