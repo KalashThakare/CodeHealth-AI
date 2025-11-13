@@ -6,6 +6,7 @@ import { useTeamStore } from "@/store/teamStore";
 import { useGitHubStore } from "@/store/githubStore";
 import { useRouter } from "next/navigation";
 import { DashboardNavbar } from "./_components/DashboardNavbar";
+import SocketStatus from "@/components/SocketStatus";
 import {
   FiPlus,
   FiGithub,
@@ -183,6 +184,9 @@ const Dashboard = () => {
   return (
     <div className="vercel-dashboard">
       <DashboardNavbar currentTeam={teams[0]} />
+      
+      {/* Socket Status Indicator */}
+      <SocketStatus showDetails={false} position="bottom-right" />
 
       <div className="dashboard-container">
         {/* Left Sidebar */}
