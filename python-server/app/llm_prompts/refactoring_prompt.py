@@ -2,48 +2,75 @@ from typing import List
 from ..schemas.analysis_model import RefactorPriorityFile, RepoMetrics
 
 def build_refactoring_prompt(files_data: List[RefactorPriorityFile], metrics: RepoMetrics) -> str:
-    """Build prompt for comprehensive refactoring analysis with business prioritization"""
+    """Build improved prompt for comprehensive refactoring analysis with business-oriented prioritization."""
     
     files_info = "\n\n".join([
         f"File: {f.path}\n"
-        f"- Risk Score: {f.riskScore}/100 (production incident probability)\n"
+        f"- Risk Score: {f.riskScore}/100 (probability of production issues)\n"
         f"- Cyclomatic Complexity: {f.cyclomaticComplexity} (developer cognitive load)\n"
-        f"- Maintainability Index: {f.maintainabilityIndex} (change effort multiplier)\n"
-        f"- Halstead Volume: {f.halsteadVolume} (comprehension difficulty)\n"
+        f"- Maintainability Index: {f.maintainabilityIndex} (ease of change)\n"
+        f"- Halstead Volume: {f.halsteadVolume} (mental processing cost)\n"
         f"- Lines of Code: {f.locTotal}\n"
         f"- Issues: {f.reason}"
         for f in files_data[:10]
     ])
-    
+
     prompt = f"""
-You are an expert senior software engineer and technical debt strategist.
+You are acting as a **principal software engineer**, **refactoring architect**, and **technical debt strategist**.
 
-Analyze the following repository metrics and high-risk files, then respond ONLY in valid JSON. 
-Do NOT include explanations, markdown, or commentary outside of the JSON.
+Your job is to help a developer clearly understand:
+- where their biggest risks are,
+- which refactors matter most,
+- how much effort is required,
+- what business/team benefits each change brings.
 
-Repository Metrics:
-- Technical Debt Score: {metrics.technicalDebtScore}/100
-- Avg Cyclomatic Complexity: {metrics.avgCyclomaticComplexity}
-- Avg Maintainability Index: {metrics.avgMaintainabilityIndex}
-- Avg Halstead Volume: {metrics.avgHalsteadVolume}
-- Total Files: {metrics.totalFiles}, Total LOC: {metrics.totalLOC}
+Your explanations must be **user-friendly, structured, and focused on clarity**.  
+Respond **ONLY in valid JSON.** No markdown, no extra commentary.
 
-Weighted Metrics (impact-adjusted by LOC):
-- Weighted Complexity: {metrics.weightedCyclomaticComplexity}
-- Weighted Maintainability: {metrics.weightedMaintainabilityIndex}
-- Weighted Halstead Volume: {metrics.weightedHalsteadVolume}
+---
 
-High-Risk Files:
+# 📊 Repository Overview
+Use the following metrics to understand the repo’s current engineering health:
+
+- Technical Debt Score: {metrics.technicalDebtScore}/100  
+- Avg Complexity: {metrics.avgCyclomaticComplexity}  
+- Avg Maintainability: {metrics.avgMaintainabilityIndex}  
+- Avg Halstead Volume: {metrics.avgHalsteadVolume}  
+- Total Files: {metrics.totalFiles}  
+- Total LOC: {metrics.totalLOC}  
+
+### Weighted Metrics  
+These represent the true developer cost after accounting for file size:
+
+- Weighted Complexity: {metrics.weightedCyclomaticComplexity}  
+- Weighted Maintainability: {metrics.weightedMaintainabilityIndex}  
+- Weighted Halstead Volume: {metrics.weightedHalsteadVolume}  
+
+---
+
+# 🚨 High-Risk Files (Most Valuable Refactoring Targets)
+The following files contribute the most to maintenance cost, onboarding difficulty, and defect probability:
+
 {files_info}
 
-Your tasks:
-1. Provide refactoring recommendations with business justification.
-2. Prioritize files based on business + technical risk.
-3. Evaluate team impact (burnout, knowledge risks).
-4. Predict post-refactor velocity gain & ROI.
-5. Give coaching insights to prevent future debt.
+---
 
-STRICT JSON OUTPUT FORMAT (MANDATORY):
+# 🧭 Your Tasks
+Provide a complete, practical refactoring analysis that helps the user understand exactly **what to fix**, **why it matters**, and **what benefit they get**.
+
+### You must:
+1. Give **clear refactoring recommendations** with business impact explained in simple words.  
+2. Prioritize files using a **business + technical risk matrix**.  
+3. Evaluate **team impact** (knowledge concentration, burnout indicators, ownership risks).  
+4. Predict **ROI**, including expected velocity gains after refactoring.  
+5. Offer **preventive coaching insights** so the team avoids repeating the same issues.
+
+All output must be direct, useful, and immediately understandable by a developer.
+
+---
+
+# 📦 STRICT JSON OUTPUT FORMAT (MANDATORY)
+
 {{
     "refactoringSuggestions": [
         {{
@@ -87,12 +114,12 @@ STRICT JSON OUTPUT FORMAT (MANDATORY):
     }}
 }}
 
-IF NO MEANINGFUL RECOMMENDATIONS EXIST:
-Return EXACTLY:
+---
+
+# 📌 If no meaningful recommendations exist, return EXACTLY:
 {{
   "refactoringSuggestions": [],
   "message": "No suggestions available"
 }}
 """
-
     return prompt

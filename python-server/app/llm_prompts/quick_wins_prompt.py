@@ -1,77 +1,112 @@
-from ..schemas.analysis_model import RefactorPriorityFile, RepoMetrics
+from ..schemas.analysis_model import RefactorPriorityFile, RepoMetrics 
 from typing import List
 
 def build_quick_wins_prompt(files_data: List[RefactorPriorityFile], metrics: RepoMetrics) -> str:
-    """Build prompt for identifying quick wins with immediate ROI"""
+    """Build prompt for identifying quick wins with immediate ROI (user-friendly version)"""
     
     small_high_risk = [f for f in files_data if f.locTotal < 300 and f.riskScore > 70]
     reducible_complexity = [f for f in files_data if 10 < f.cyclomaticComplexity < 25]
-    
-    prompt = f"""You are identifying quick wins - high-ROI refactoring tasks that immediately improve team productivity and reduce risk.
 
-OBJECTIVE: Find low-effort, high-impact improvements that demonstrate immediate business value and build momentum for larger refactoring efforts.
+    prompt = f"""
+You are helping a developer understand their repository and identify **Quick Wins** — small, safe, high-impact improvements that immediately boost productivity, readability, and stability.
 
-Repository Context:
-- Total Files: {metrics.totalFiles}
-- Total LOC: {metrics.totalLOC}
-- Technical Debt: {metrics.technicalDebtScore}/100 (monthly cost in developer time)
+### 🎯 Goal
+Provide clear, easy-to-understand suggestions that:
+- Can be completed quickly (under 4 hours)
+- Reduce complexity and maintenance cost
+- Make the codebase easier for the team to work with
+- Improve reliability without major rewrites
+- Give the user confidence about where to start refactoring
 
-Small High-Risk Files (quick improvement opportunities):
+---
+
+## 📌 Repository Overview
+- Total Files: **{metrics.totalFiles}**
+- Total Lines of Code: **{metrics.totalLOC}**
+- Technical Debt Score: **{metrics.technicalDebtScore}/100**
+  (Higher score = higher ongoing development cost)
+
+---
+
+## 🔍 Quick Win Candidates
+
+### 1. Small but High-Risk Files  
+These files are short but have risky patterns — meaning small changes can yield big improvements:
+
 {chr(10).join([f"- {f.path}: Complexity {f.cyclomaticComplexity}, Maintainability {f.maintainabilityIndex}, {f.locTotal} LOC" for f in small_high_risk[:5]])}
 
-Files with Reducible Complexity (velocity boosters):
+### 2. Files with Moderate Complexity  
+These files aren't huge but have enough complexity that small refactors can meaningfully improve developer experience:
+
 {chr(10).join([f"- {f.path}: Complexity {f.cyclomaticComplexity}, {f.locTotal} LOC" for f in reducible_complexity[:5]])}
 
-All High-Priority Files:
+### 3. Overall High-Priority Files  
+(Useful for understanding general hotspots)
+
 {chr(10).join([f"- {f.path}: Risk {f.riskScore}" for f in files_data[:10]])}
 
-Identify 8-12 quick wins meeting ALL criteria:
-1. Completable in less than 4 hours
-2. Immediate measurable impact (complexity reduction, error rate drop, faster reviews)
-3. Low risk of regression (minimal breaking changes)
-4. Minimal testing overhead
-5. Independent implementation (no blocking dependencies)
-6. Visible improvements for team morale
+---
 
-Quick win categories prioritized by business impact:
-- Extract complex functions (reduce review time, improve testability)
-- Add missing error handling (reduce production incidents)
-- Remove dead code (improve codebase clarity, faster onboarding)
-- Simplify conditional logic (reduce cognitive load, fewer bugs)
-- Extract magic numbers to constants (reduce configuration errors)
-- Add type safety (catch bugs in development, not production)
-- Improve variable naming (faster code comprehension)
-- Split large files (enable parallel development)
-- Add targeted documentation (reduce knowledge bottleneck)
-- Reduce nesting levels (lower cyclomatic complexity)
+## 🧩 What to Identify  
+Find **8–12 Quick Wins** that meet ALL of the following:
 
-For each quick win provide:
-- File/area with current pain points
-- Specific action with expected outcome
-- Realistic time estimate based on complexity
-- Quantified impact (complexity -X, review time -Y%, incident risk -Z%)
-- Risk assessment (regression probability)
-- Detailed implementation steps
-- Verification method with success criteria
-- Team productivity benefit
+1. Can be finished in **under 4 hours**
+2. Provide visible improvement (faster reviews, fewer bugs, less confusion)
+3. Have **low risk of breaking existing behavior**
+4. Require minimal testing effort
+5. Can be done independently (no waiting on other modules)
+6. Improve the team’s perception of code quality and maintainability
 
-Format as JSON:
+---
+
+## 🏆 High-Impact Quick Win Categories  
+Focus on suggestions that developers can understand immediately:
+
+- Extract overly complex functions  
+- Add missing or weak error handling  
+- Remove unused/dead code  
+- Simplify nested or repeated conditional logic  
+- Replace magic numbers/strings with constants  
+- Improve naming for clarity  
+- Reduce unnecessarily deep nesting  
+- Add targeted comments or small documentation blocks  
+- Improve type safety  
+- Split oversized files or components  
+
+---
+
+## 📝 For Each Quick Win, Provide:
+- **File or specific area** causing issues  
+- **Simple explanation of the pain point** (user should understand it immediately)  
+- **Clear action** with the expected improvement  
+- **Time estimate** (in hours)  
+- **Measurable impact** (complexity drop, review time improvement, risk reduction)  
+- **Effort level** (low/medium)  
+- **Risk level** + risk mitigation  
+- **Step-by-step implementation plan**  
+- **Verification method** (how the user confirms success)  
+- **Priority score** (1 = highest ROI)
+
+---
+
+## 📦 JSON Response Format
+
 {{
     "quickWins": [
         {{
             "file": "path/to/file",
-            "action": "specific refactoring with measurable goal",
+            "action": "specific refactoring with clear benefit",
             "estimatedTime": "X hours",
-            "impact": "complexity X→Y, Z% faster reviews, incident risk reduced",
+            "impact": "complexity X→Y, Z% faster reviews, reduced bug risk",
             "effort": "low|medium",
-            "risk": "very low|low - specific risk mitigation",
-            "steps": ["concrete step 1", "concrete step 2"],
-            "verificationMethod": "how to confirm success with metrics",
+            "risk": "very low|low - reason",
+            "steps": ["step 1", "step 2"],
+            "verificationMethod": "how user confirms improvement",
             "priority": 1
         }}
     ],
-    "totalEstimatedTime": "X-Y hours total investment",
-    "expectedImpact": "cumulative ROI: Z hours saved monthly, W% velocity increase, incident reduction"
+    "totalEstimatedTime": "X–Y hours total",
+    "expectedImpact": "saves Z hours/month, improves developer velocity by W%"
 }}
 """
     return prompt
