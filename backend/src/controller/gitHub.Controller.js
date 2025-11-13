@@ -291,6 +291,12 @@ export const githubWebhookController = async (req, res) => {
       return res.status(200).json(result);
     }
     if (event === "pull_request") {
+
+      if (!project) {
+        if (repoId) project = await Project.findOne({ where: { repoId } });
+        if (!project && repoName) project = await Project.findOne({ where: { repoName } });
+      }
+
       if (action === "closed" && payload.pull_request?.merged) {
         if (repoId) {
           const cacheKey = `metrics:repo:${repoId}`;
@@ -298,6 +304,17 @@ export const githubWebhookController = async (req, res) => {
           console.log(`Cache invalidated for repo ${repoId} due to PR merge`);
         }
       }
+
+      if (project && project.userId) {
+        io.to(`user:${project.userId}`).emit("notification", {
+          type: "pull",
+          repoName,
+          repoId,
+          message: `New pull request closed and merged on ${fullName}`,
+          time: Date.now()
+        });
+      }
+
       const result = await handlePullRequest(payload);
       return res.status(200).json(result);
     }

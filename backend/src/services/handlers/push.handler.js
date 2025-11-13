@@ -84,12 +84,12 @@ export async function handlePush(payload) {
 
     const safeId = baseId.replace(/[^\w.-]/g, "_");
 
-    // const job = await pushAnalysisQueue.add("analysis.push", jobData, {
-    //   jobId: safeId,
-    // });
+    const job = await pushAnalysisQueue.add("analysis.push", jobData, {
+      jobId: safeId,
+    });
 
-    // const state = await job.getState();
-    // const counts = await pushAnalysisQueue.getJobCounts();
+    const state = await job.getState();
+    const counts = await pushAnalysisQueue.getJobCounts();
 
     console.log("[push] enqueued", { id: job.id, state, counts });
 

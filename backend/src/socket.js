@@ -18,7 +18,7 @@ export function initSocket(io) {
   });
 
   io.on("connection", (socket) => {
-    const userId = socket.user.id;
+    const userId = socket.user.userId;
     console.log(`User connected: ${userId}`);
 
     socket.join(`user:${userId}`);

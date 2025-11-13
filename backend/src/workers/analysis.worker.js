@@ -5,6 +5,9 @@ import dotenv from "dotenv";
 import { analyzeFile } from "../utils/AST.js";
 import RepoFileMetrics  from "../database/models/repoFileMetrics.js";
 import { Project } from "../database/models/project.js";
+
+import { io } from "../server.js";
+
 dotenv.config();
 
 
@@ -498,8 +501,41 @@ export const ASTworker = new Worker(
 
 ASTworker.on("ready", () => console.log("[ast] worker ready"));
 ASTworker.on("error", err => console.error("[ast] worker error", err));
-ASTworker.on("failed", (job, err) => console.error(`[ast] job failed ${job?.id}`, err));
-ASTworker.on("completed", job => console.log(`[ast] job completed ${job.id}`));
+ASTworker.on("failed", async (job, err) => {
+  console.error(`[ast] job failed ${job?.id}`, err);
+  
+  if (job?.data && io) {
+    const { repoId, repoName, fullName, userId } = job.data;
+    
+    io.to(`user:${userId}`).emit('analysis_complete', {
+      success: false,
+      repoId,
+      repoName,
+      fullName,
+      stage: 'ast_analysis',
+      error: err.message || 'AST analysis failed',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+ASTworker.on("completed", async (job) => {
+  console.log(`[ast] job completed ${job.id}`);
+  
+  if (job?.data && io) {
+    const { repoId, repoName, fullName, userId } = job.data;
+    
+    io.to(`user:${userId}`).emit('analysis_complete', {
+      success: true,
+      repoId,
+      repoName,
+      fullName,
+      stage: 'ast_analysis',
+      message: 'Files analysis completed successfully',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
 
 const astEvents = new QueueEvents("repoFiles", { connection });
 astEvents.on("waiting", ({ jobId }) => console.log("[ast] waiting", jobId));
