@@ -3,6 +3,7 @@ import httpx, aiohttp
 from app.services.github_auth import _gh_headers
 import base64
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -421,3 +422,78 @@ async def get_repo_metadata(owner: str, repo: str, token: str):
     
     logger.info(f"Metadata: {metadata}")
     return metadata
+
+async def fetch_merged_files(token:str, owner:str, repo:str, pull_number:int):
+    url = f"GET /repos/{owner}/{repo}/pulls/{pull_number}/files"
+    header = _gh_headers(token)
+    files = []
+
+    logger.info(f"Fetching files for {owner}/{repo}")
+    logger.debug(f"Request URL: {url}")
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=header) as resp:
+            logger.debug(f"Status {resp.status}")
+
+            if resp.status == 200:
+                data = await resp.json()
+
+                files = [
+                    {
+                        "path": file_obj["filename"],
+                        "sha": file_obj["sha"]
+                    }
+                    for file_obj in data
+                ]
+
+                logger.info(f"found {len(files)} files")
+                logger.debug(f"files: {files}")
+            
+            else:
+                logger.error(f"Failed to fetch files: {resp.status}")
+                error_text = await resp.text()
+                logger.error(f"Error response: {error_text}")
+
+    return files        
+            
+async def fetch_file_content(owner: str, repo: str, files: List[Dict], token: str):
+    """
+    Fetch content for multiple files concurrently from GitHub API.
+    """
+    header = _gh_headers(token)
+    
+    async def fetch_single_file(session, file):
+        path = file["path"]
+        sha = file["sha"]
+        url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={sha}"
+        
+        try:
+            async with session.get(url, headers=header) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    content = base64.b64decode(data["content"]).decode("utf-8")
+                    
+                    logger.info(f"Fetched content for {path}")
+                    return {
+                        "path": path,
+                        "sha": sha,
+                        "content": content
+                    }
+                else:
+                    logger.error(f"Failed to fetch {path}: {resp.status}")
+                    return None
+                    
+        except Exception as e:
+            logger.error(f"Error fetching {path}: {str(e)}")
+            return None
+    
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch_single_file(session, file) for file in files]
+        results = await asyncio.gather(*tasks)
+        
+        files_with_content = [r for r in results if r is not None]
+    
+    logger.info(f"Successfully fetched {len(files_with_content)}/{len(files)} files")
+    return files_with_content
+    
+

@@ -3,7 +3,7 @@ from app.schemas.pull_analyze import PullAnalyzeRequest, PullAnalyzeResponse
 from app.services.impact_analyzer import seed_impact
 from app.services.prioritization import seed_prioritization
 from app.schemas.fullrepo_analyze import FullRepoAnalysisRequest, FullRepoAnalysisResponse, StaticAnalysisResponse, Halstead, Cyclomatic, Maintainability
-from app.services.github_api import fetch_repo_code, get_all_commits, get_all_contributors, get_all_issues, get_all_pr, get_all_releases, get_repo_metadata
+from app.services.github_api import fetch_repo_code, get_all_commits, get_all_contributors, get_all_issues, get_all_pr, get_all_releases, get_repo_metadata, fetch_merged_files, fetch_file_content
 from app.services.github_auth import get_installation_token
 import asyncio
 import aiohttp
@@ -36,7 +36,31 @@ async def push_analyze_repo(req: PushAnalyzeRequest) -> PushAnalyzeResponse:
     return PushAnalyzeResponse(ok=ok, score=score, message=message)
 
 
-def pull_analyze_repo(payload: PullAnalyzeRequest) -> PullAnalyzeResponse:
+async def pull_analyze_repo(payload: PullAnalyzeRequest) -> PullAnalyzeResponse:
+    token = await get_installation_token(payload.installationId)
+    repoFullName = payload.repo
+    owner, repo = repoFullName.split("/")
+    print("Owner:", owner)
+    print("Repo:", repo)
+    modifiedFiles = await fetch_merged_files(
+        token=token,
+        owner=owner,
+        repo=repo,
+        pull_number=payload.prNumber
+    )
+
+    data = await fetch_file_content(
+        token=token,
+        owner=owner,
+        repo=repo,
+        files=modifiedFiles
+    )
+
+    print(data)
+
+    
+
+
     return PullAnalyzeResponse(
         ok=True,
         message=f"Analyzed {payload.repo} on {payload.branch}",

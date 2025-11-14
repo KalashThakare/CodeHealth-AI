@@ -194,7 +194,19 @@ pullEvents.on("waiting", ({ jobId }) => console.log("[pull] waiting", jobId));
 pullEvents.on("active", ({ jobId }) => console.log("[pull] active", jobId));
 pullEvents.on("completed", ({ jobId }) => console.log("[pull] completed", jobId));
 pullEvents.on("failed", ({ jobId, failedReason }) => console.error("[pull] failed", jobId, failedReason));
+process.on("SIGTERM", async () => {
+  console.log("Closing connections...");
+  await pullEvents.close();
+  await pullAnalysisWorker.close();
+  process.exit(0);
+});
 
+process.on("SIGINT", async () => {
+  console.log("Closing connections...");
+  await pullEvents.close();
+  await pullAnalysisWorker.close();
+  process.exit(0);
+});
 
 
 export const issuesAnalysisWorker = new Worker("issuesAnalysis",async job=>{

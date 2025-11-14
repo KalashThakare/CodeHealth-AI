@@ -49,15 +49,15 @@ export async function startApp() {
 
 app.use("/auth",OAuth);
 app.use("/manual-auth",Auth);
-app.use("/github",githubRoutes)
-app.use("/teams",teamRoutes)
+app.use("/github",githubRoutes);
+app.use("/teams",teamRoutes);
 
 app.post("/feedback",protectRoute,receiveFeedbackController);
 
-app.use("/account",accountRoutes)
+app.use("/account",accountRoutes);
 
-app.use("/scanning",scanningRoutes)
+app.use("/scanning",scanningRoutes);
 
-app.use("/analyze",analysisRoutes)
+app.use("/analyze",analysisRoutes);
 
 export default app;
