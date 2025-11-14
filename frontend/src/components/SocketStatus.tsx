@@ -30,7 +30,6 @@ export default function SocketStatus({
   });
 
   const [lastPing, setLastPing] = useState<Date | null>(null);
-  const [notifications, setNotifications] = useState<number>(0);
 
   useEffect(() => {
     if (!socket) return;
@@ -38,18 +37,10 @@ export default function SocketStatus({
     // Listen for pong to track connection health
     socket.on("pong", () => {
       setLastPing(new Date());
-      console.log("✅ Socket heartbeat received");
-    });
-
-    // Listen for notifications (example)
-    socket.on("notification", (data) => {
-      console.log("📬 Notification received:", data);
-      setNotifications((prev) => prev + 1);
     });
 
     return () => {
       socket.off("pong");
-      socket.off("notification");
     };
   }, [socket]);
 
@@ -118,14 +109,6 @@ export default function SocketStatus({
             <div className="flex justify-between">
               <span>Last ping:</span>
               <span>{lastPing.toLocaleTimeString()}</span>
-            </div>
-          )}
-          {notifications > 0 && (
-            <div className="flex justify-between">
-              <span>Notifications:</span>
-              <span className="font-semibold text-blue-600">
-                {notifications}
-              </span>
             </div>
           )}
         </div>

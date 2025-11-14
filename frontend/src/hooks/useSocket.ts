@@ -81,6 +81,10 @@ export function useSocket(options: UseSocketOptions = {}) {
         setIsConnected(false);
       });
 
+      socketInstance.on("connect_error", (error) => {
+        console.error("Socket connection error:", error);
+      });
+
       // Start heartbeat
       if (heartbeatInterval > 0) {
         heartbeatIntervalRef.current = setInterval(() => {

@@ -27,6 +27,8 @@ export interface NavbarState {
   setIsSubmittingFeedback: (submitting: boolean) => void;
   isProjectDropdownOpen: boolean;
   setIsProjectDropdownOpen: (open: boolean) => void;
+  isNotificationsOpen: boolean;
+  setIsNotificationsOpen: (open: boolean) => void;
 }
 
 export interface HighlightState {

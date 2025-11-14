@@ -1,7 +1,7 @@
 import axios from "axios";
 import { generateState, generateCodeVerifier } from "arctic";
 import { github } from "../lib/OAuth/github.js";
-import crypto from 'crypto';
+import crypto from "crypto";
 import User from "../database/models/User.js";
 import { Project } from "../database/models/project.js";
 import { WebhookEvent } from "../database/models/webhookEvents.js";
@@ -15,41 +15,41 @@ import { io } from "../server.js";
 
 function eventToJobName(event) {
   switch (event) {
-    case 'push':
-      return 'repo.push';
-    case 'pull_request':
-      return 'repo.pull_request';
-    case 'issues':
-      return 'repo.issues';
+    case "push":
+      return "repo.push";
+    case "pull_request":
+      return "repo.pull_request";
+    case "issues":
+      return "repo.issues";
     default:
-      return 'misc.unhandled';
+      return "misc.unhandled";
   }
 }
 
 function isRepoScoped(event) {
-  return event === 'push' || event === 'pull_request' || event === 'issues';
+  return event === "push" || event === "pull_request" || event === "issues";
 }
 
 function mapRepo(payload) {
   const repo = payload?.repository;
-  if (!repo) return { repoId: null, fullName: null, repoUrl: null, repoName: null };
+  if (!repo)
+    return { repoId: null, fullName: null, repoUrl: null, repoName: null };
   const fullName = repo.full_name;
-  const repoName = fullName?.split('/')?.[10] ?? null;
+  const repoName = fullName?.split("/")?.[10] ?? null;
   return {
     repoId: repo.id ?? null,
     fullName,
     repoName,
-    repoUrl: repo.html_url || (fullName ? `https://github.com/${fullName}` : null),
+    repoUrl:
+      repo.html_url || (fullName ? `https://github.com/${fullName}` : null),
   };
 }
 
-
-
 export const ListRepos = async (req, res) => {
   try {
-    console.log(req.user)
+    console.log(req.user);
     const userId = req.user?.id;
-    console.log(userId)
+    console.log(userId);
     if (!userId) {
       return res.status(401).json({ error: "Unauthorised" });
     }
@@ -77,18 +77,17 @@ export const ListRepos = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    console.log(user.Projects)
+    console.log(user.Projects);
 
     res.json(user.Projects);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });
   }
-}
+};
 
 export const manageGitHubScopes = async (req, res) => {
   try {
-
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
     const scopes = ["repo", "read:user", "user:email"];
@@ -104,18 +103,14 @@ export const manageGitHubScopes = async (req, res) => {
       sameSite: "lax",
     });
 
-
     const authURL = github.createAuthorizationURL(state, scopes);
 
     res.redirect(authURL);
-
   } catch (error) {
-
-    console.error('GitHub API error:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Internal server error' });
-
+    console.error("GitHub API error:", error.response?.data || error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
-}
+};
 
 export const tokenStatus = (req, res) => {
   const token = req.cookies?.gitHubtoken;
@@ -124,27 +119,27 @@ export const tokenStatus = (req, res) => {
   } else {
     res.json({ hasToken: false });
   }
-}
+};
 
 export const getGitHubUser = async (req, res) => {
   try {
-    const token = req.cookies?.gitHubtoken || req.headers.authorization?.split(" ")[1];
+    const token =
+      req.cookies?.gitHubtoken || req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(400).json({ message: "Unauthorised" });
     }
-    const response = await axios.get('https://api.github.com/user', {
+    const response = await axios.get("https://api.github.com/user", {
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github+json',
-      }
+        Accept: "application/vnd.github+json",
+      },
     });
     return res.status(200).json(response.data);
   } catch (error) {
-    console.error('GitHub API error:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to fetch user profile' });
+    console.error("GitHub API error:", error.response?.data || error.message);
+    res.status(500).json({ error: "Failed to fetch user profile" });
   }
-}
-
+};
 
 export const githubWebhookController = async (req, res) => {
   try {
@@ -159,7 +154,8 @@ export const githubWebhookController = async (req, res) => {
 
     const secret = process.env.GITHUB_WEBHOOK_SECRET;
     const hmac = crypto.createHmac("sha256", secret);
-    const digest = "sha256=" + hmac.update(JSON.stringify(payload)).digest("hex");
+    const digest =
+      "sha256=" + hmac.update(JSON.stringify(payload)).digest("hex");
 
     const sigBuffer = Buffer.from(signature, "utf8");
     const digestBuffer = Buffer.from(digest, "utf8");
@@ -177,7 +173,8 @@ export const githubWebhookController = async (req, res) => {
     let project = null;
     if (isRepoScoped(event)) {
       if (repoId) project = await Project.findOne({ where: { repoId } });
-      if (!project && repoName) project = await Project.findOne({ where: { repoName } });
+      if (!project && repoName)
+        project = await Project.findOne({ where: { repoName } });
       if (!project) return res.status(404).send("Repository not registered");
 
       await WebhookEvent.create({
@@ -190,7 +187,6 @@ export const githubWebhookController = async (req, res) => {
         status: "received",
         payload,
       });
-
     }
 
     if (event === "installation" || event === "installation_repositories") {
@@ -198,18 +194,21 @@ export const githubWebhookController = async (req, res) => {
       const accountId = payload.installation?.account?.id?.toString() ?? null;
 
       if (!accountId) {
-        return res.status(400).json({ error: "Missing installation account id" });
+        return res
+          .status(400)
+          .json({ error: "Missing installation account id" });
       }
 
       const user = await OAuthConnection.findOne({
-        where:
-        {
+        where: {
           provider: "github",
-          providerId: accountId
-        }
+          providerId: accountId,
+        },
       });
       if (!user) {
-        return res.status(404).json({ error: "User not found for this installation account" });
+        return res
+          .status(404)
+          .json({ error: "User not found for this installation account" });
       }
 
       const userId = user.userId;
@@ -217,7 +216,8 @@ export const githubWebhookController = async (req, res) => {
       if (event === "installation" && action === "created") {
         const repos = payload.repositories || [];
         for (const repo of repos) {
-          const repoUrl = repo.html_url || `https://github.com/${repo.full_name}`;
+          const repoUrl =
+            repo.html_url || `https://github.com/${repo.full_name}`;
           await Project.findOrCreate({
             where: { repoId: repo.id },
             defaults: {
@@ -235,7 +235,8 @@ export const githubWebhookController = async (req, res) => {
       if (event === "installation_repositories" && action === "added") {
         const repos = payload.repositories_added || [];
         for (const repo of repos) {
-          const repoUrl = repo.html_url || `https://github.com/${repo.full_name}`;
+          const repoUrl =
+            repo.html_url || `https://github.com/${repo.full_name}`;
           await Project.findOrCreate({
             where: { repoId: repo.id },
             defaults: {
@@ -250,7 +251,6 @@ export const githubWebhookController = async (req, res) => {
 
           const result = await Analyse_repo(repo.id);
           return res.status(200).json(result);
-
         }
       }
 
@@ -266,12 +266,11 @@ export const githubWebhookController = async (req, res) => {
       }
     }
 
-
     if (event === "push") {
-
       if (!project) {
         if (repoId) project = await Project.findOne({ where: { repoId } });
-        if (!project && repoName) project = await Project.findOne({ where: { repoName } });
+        if (!project && repoName)
+          project = await Project.findOne({ where: { repoName } });
       }
 
       if (repoId) {
@@ -286,7 +285,7 @@ export const githubWebhookController = async (req, res) => {
           repoName,
           repoId,
           message: `New push on ${fullName}`,
-          time: Date.now()
+          time: Date.now(),
         });
       }
 
@@ -294,10 +293,10 @@ export const githubWebhookController = async (req, res) => {
       return res.status(200).json(result);
     }
     if (event === "pull_request") {
-
       if (!project) {
         if (repoId) project = await Project.findOne({ where: { repoId } });
-        if (!project && repoName) project = await Project.findOne({ where: { repoName } });
+        if (!project && repoName)
+          project = await Project.findOne({ where: { repoName } });
       }
 
       if (action === "closed" && payload.pull_request?.merged) {
@@ -314,7 +313,7 @@ export const githubWebhookController = async (req, res) => {
           repoName,
           repoId,
           message: `New pull request closed and merged on ${fullName}`,
-          time: Date.now()
+          time: Date.now(),
         });
       }
 
@@ -337,18 +336,25 @@ export const retryWebhookDelivery = async (req, res) => {
   try {
     const { deliveryId } = req.params;
     const evt = await WebhookEvent.findByPk(deliveryId);
-    if (!evt) return res.status(404).send('Delivery not found');
+    if (!evt) return res.status(404).send("Delivery not found");
 
     if (isRepoScoped(evt.event) && !evt.projectId) {
-      return res.status(409).send('Cannot retry: repository not registered');
+      return res.status(409).send("Cannot retry: repository not registered");
     }
 
     const jobName = eventToJobName(evt.event);
-    await webhookQueue.add(jobName, { event: evt.event, payload: evt.payload }, { jobId: deliveryId });
-    await WebhookEvent.update({ status: 'enqueued' }, { where: { deliveryId } });
-    return res.status(202).send('Re-enqueued');
+    await webhookQueue.add(
+      jobName,
+      { event: evt.event, payload: evt.payload },
+      { jobId: deliveryId }
+    );
+    await WebhookEvent.update(
+      { status: "enqueued" },
+      { where: { deliveryId } }
+    );
+    return res.status(202).send("Re-enqueued");
   } catch (err) {
-    console.error('retry error:', err);
-    return res.status(500).send('Internal Server Error');
+    console.error("retry error:", err);
+    return res.status(500).send("Internal Server Error");
   }
 };

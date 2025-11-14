@@ -9,6 +9,7 @@ export const useNavbarState = (): NavbarState => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   return {
     isTeamDropdownOpen,
@@ -25,5 +26,7 @@ export const useNavbarState = (): NavbarState => {
     setIsSubmittingFeedback,
     isProjectDropdownOpen,
     setIsProjectDropdownOpen,
+    isNotificationsOpen,
+    setIsNotificationsOpen,
   };
 };

@@ -100,41 +100,6 @@ export default function GitHubImportPage() {
     <div className="gitproject-page min-h-screen bg-[var(--gp-bg)]">
       <DashboardNavbar />
 
-      {/* Theme Toggle */}
-      {/* <div className="theme-toggle-container">
-        {mounted && (
-          <div className="theme-toggle-wrapper">
-            <button
-              onClick={setSystemTheme}
-              className={`theme-toggle-btn ${
-                theme === "system" ? "active" : ""
-              }`}
-              title="System theme"
-            >
-              <FiMonitor size={18} />
-            </button>
-
-            <button
-              onClick={setLightTheme}
-              className={`theme-toggle-btn ${
-                theme === "light" ? "active" : ""
-              }`}
-              title="Light theme"
-            >
-              <FiSun size={18} />
-            </button>
-
-            <button
-              onClick={setDarkTheme}
-              className={`theme-toggle-btn ${theme === "dark" ? "active" : ""}`}
-              title="Dark theme"
-            >
-              <FiMoon size={18} />
-            </button>
-          </div>
-        )}
-      </div> */}
-
       <div className="max-w-7xl mx-auto p-4">
         {/* Header */}
         <header className="mb-6">

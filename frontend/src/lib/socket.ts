@@ -60,11 +60,6 @@ class SocketService {
     this.socket.on("error", (error) => {
       console.error("Socket error:", error);
     });
-
-    // Heartbeat to keep connection alive
-    this.socket.on("pong", () => {
-      console.log("Heartbeat received");
-    });
   }
 
   /**

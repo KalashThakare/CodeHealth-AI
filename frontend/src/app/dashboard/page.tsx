@@ -273,7 +273,7 @@ const Dashboard = () => {
 
                       <div className="project-info">
                         <div className="project-name">{repo.repoName}</div>
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-2">
                           <a
                             href={repo.repoUrl}
                             target="_blank"
@@ -281,8 +281,6 @@ const Dashboard = () => {
                             className="project-url"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <FiGithub size={12} className="github-icon" />
-                            {repo.fullName}
                             <FiExternalLink size={10} />
                           </a>
                           <span className="visibility-badge">
@@ -319,9 +317,26 @@ const Dashboard = () => {
 
                   <div className="project-meta">
                     <span>
-                      {repo.installationId
-                        ? "GitHub App Connected"
-                        : "Imported Repository"}
+                      {repo.installationId ? (
+                        <div
+                          className="flex gap-1 rounded-full w-fit px-1 py-0.5"
+                          style={{
+                            backgroundColor: "var(--color-bg-secondary)",
+                          }}
+                        >
+                          <FiGithub
+                            size={18}
+                            className="github-icon rounded-full p-[3px]"
+                            style={{
+                              backgroundColor: "var(--color-bg)",
+                              color: "var(--color-fg)",
+                            }}
+                          />
+                          <span>{repo.fullName}</span>
+                        </div>
+                      ) : (
+                        "Imported Repository"
+                      )}
                     </span>
                   </div>
 
