@@ -48,9 +48,9 @@ function mapRepo(payload) {
 
 export const ListRepos = async (req, res) => {
   try {
-    console.log(req.user);
+    // console.log(req.user);
     const userId = req.user?.id;
-    console.log(userId);
+    // console.log(userId);
     if (!userId) {
       return res.status(401).json({ error: "Unauthorised" });
     }
@@ -78,7 +78,7 @@ export const ListRepos = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    console.log(user.Projects);
+    // console.log(user.Projects);
 
     res.json(user.Projects);
   } catch (error) {
