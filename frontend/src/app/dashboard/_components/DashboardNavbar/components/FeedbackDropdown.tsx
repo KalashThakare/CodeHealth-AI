@@ -104,7 +104,7 @@ export const FeedbackDropdown: React.FC<FeedbackDropdownProps> = ({
         <button
           onClick={onClose}
           className="!p-1 !rounded-md !hover:opacity-70 !transition-opacity"
-        //   style={{ color: "var(--color-fg-muted)" }}
+          //   style={{ color: "var(--color-fg-muted)" }}
         >
           <X className="w-4 h-4" />
         </button>

@@ -16,6 +16,7 @@ import {
 interface NotificationsDropdownProps {
   isOpen: boolean;
   onClose: () => void;
+  buttonRef?: React.RefObject<HTMLButtonElement | null>;
 }
 
 const formatTimeAgo = (timestamp: string) => {
@@ -85,6 +86,7 @@ const getNotificationTitle = (notification: any) => {
 export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
   isOpen,
   onClose,
+  buttonRef,
 }) => {
   const {
     notifications,
@@ -96,13 +98,16 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
   } = useNotificationStore();
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        !dropdownRef.current.contains(event.target as Node) &&
+        buttonRef?.current &&
+        !buttonRef.current.contains(event.target as Node)
       ) {
         onClose();
       }
@@ -117,6 +122,29 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
     };
   }, [isOpen, onClose]);
 
+  // Prevent page scroll when mouse is over dropdown
+  useEffect(() => {
+    const dropdown = dropdownRef.current;
+    if (!dropdown || !isOpen) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Manually scroll the scroll container
+      const scrollContainer = scrollContainerRef.current;
+      if (scrollContainer) {
+        scrollContainer.scrollTop += e.deltaY;
+      }
+    };
+
+    dropdown.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      dropdown.removeEventListener("wheel", handleWheel);
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleNotificationClick = (notificationId: string) => {
@@ -130,7 +158,7 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
       style={{
         backgroundColor: "var(--color-bg)",
         borderColor: "var(--color-border)",
-        maxHeight: "80vh",
+        maxHeight: "480px",
         display: "flex",
         flexDirection: "column",
       }}
@@ -190,7 +218,11 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
       </div>
 
       {/* Notifications List */}
-      <div className="overflow-y-auto flex-1">
+      <div
+        ref={scrollContainerRef}
+        className="overflow-y-auto flex-1"
+        style={{ maxHeight: "360px" }}
+      >
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center">
             <Bell

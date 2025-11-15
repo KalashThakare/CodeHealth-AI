@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Bell, MessageSquare } from "lucide-react";
 import { NavbarState } from "../types";
 import { NotificationsDropdown } from "./NotificationsDropdown";
+import { FeedbackDropdown } from "./FeedbackDropdown";
 import { useNotificationStore } from "@/store/notificationStore";
 import { socketService } from "@/lib/socket";
 import { toast } from "sonner";
@@ -14,6 +15,8 @@ interface DesktopActionsProps {
 
 export const DesktopActions: React.FC<DesktopActionsProps> = ({ state }) => {
   const { unreadCount, addNotification } = useNotificationStore();
+  const notificationButtonRef = useRef<HTMLButtonElement>(null);
+  const feedbackButtonRef = useRef<HTMLButtonElement>(null);
 
   // Listen for Socket.IO events using the singleton service
   useEffect(() => {
@@ -61,18 +64,30 @@ export const DesktopActions: React.FC<DesktopActionsProps> = ({ state }) => {
       }
     };
 
-    // Wait for socket to be available and register listeners
-    const checkAndRegister = () => {
+    // Register listeners on socket (socket is managed globally by SocketProvider)
+    const registerListeners = () => {
       const socket = socketService.getSocket();
       if (socket) {
         socket.on("notification", handleNotification);
         socket.on("analysis_progress", handleAnalysisProgress);
-      } else {
-        setTimeout(checkAndRegister, 100);
+        return true;
       }
+      return false;
     };
 
-    checkAndRegister();
+    // Try to register immediately, if fails retry after short delay
+    if (!registerListeners()) {
+      const timeout = setTimeout(registerListeners, 500);
+
+      return () => {
+        clearTimeout(timeout);
+        const socket = socketService.getSocket();
+        if (socket) {
+          socket.off("notification", handleNotification);
+          socket.off("analysis_progress", handleAnalysisProgress);
+        }
+      };
+    }
 
     return () => {
       const socket = socketService.getSocket();
@@ -86,25 +101,35 @@ export const DesktopActions: React.FC<DesktopActionsProps> = ({ state }) => {
   return (
     <div className="hidden sm:flex items-center space-x-3">
       {/* Feedback Button */}
-      <button
-        onClick={() => state.setIsFeedbackOpen(true)}
-        className="!py-1.5 !px-3 !font-normal !text-sm rounded-lg border transition-all hover:opacity-80"
-        style={{
-          backgroundColor: "transparent",
-          color: "var(--color-fg)",
-          borderColor: "var(--color-border)",
-          boxShadow: "none !important",
-        }}
-      >
-        Feedback
-      </button>
+      <div className="relative">
+        <button
+          ref={feedbackButtonRef}
+          onClick={() => state.setIsFeedbackOpen((prev) => !prev)}
+          className="!p-1.5 !rounded-full border hover:opacity-80 transition-all"
+          style={{
+            backgroundColor: "transparent",
+            color: "var(--color-fg)",
+            borderColor: "var(--color-border)",
+          }}
+        >
+          <MessageSquare className="w-5 h-5" />
+        </button>
+
+        {/* Feedback Dropdown */}
+        <FeedbackDropdown
+          isOpen={state.isFeedbackOpen}
+          onClose={() => state.setIsFeedbackOpen(false)}
+          buttonRef={feedbackButtonRef}
+        />
+      </div>
 
       {/* Notifications */}
       <div className="relative">
         <button
-          onClick={() =>
-            state.setIsNotificationsOpen(!state.isNotificationsOpen)
-          }
+          ref={notificationButtonRef}
+          onClick={() => {
+            state.setIsNotificationsOpen((prev) => !prev);
+          }}
           className="!p-1.5 !rounded-full border hover:opacity-80 transition-all relative"
           style={{
             backgroundColor: "transparent",
@@ -149,6 +174,7 @@ export const DesktopActions: React.FC<DesktopActionsProps> = ({ state }) => {
         <NotificationsDropdown
           isOpen={state.isNotificationsOpen}
           onClose={() => state.setIsNotificationsOpen(false)}
+          buttonRef={notificationButtonRef}
         />
       </div>
     </div>
