@@ -2,27 +2,27 @@ import { pullAnalysisQueue } from "../../lib/redis.js";
 
 export async function handlePullRequest(payload) {
   
-  const repo = payload.repository?.full_name;         // owner/repo
+  const repoFullName = payload.repository?.full_name;       
   const repoId = payload.repository?.id;
-  const action = payload.action;                      // opened|synchronize|reopened|closed|...
-  const pr = payload.pull_request;                    // PR object
+  const action = payload.action;               
+  const pr = payload.pull_request;                
   const installationId = payload.installation?.id || null;
   const sender = payload.sender?.login || "unknown";
 
   // Validate minimal requirements
-  if (!repo || !pr || !installationId) {
-    console.warn("Invalid PR payload:", { repo, installationId, hasPr: Boolean(pr) });
-    return { skipped: true, reason: "invalid-payload", repo, installationId, hasPr: Boolean(pr) };
+  if (!repoFullName || !pr || !installationId) {
+    console.warn("Invalid PR payload:", { repoFullName, installationId, hasPr: Boolean(pr) });
+    return { skipped: true, reason: "invalid-payload", repoFullName, installationId, hasPr: Boolean(pr) };
   }
 
   // Extract PR specifics
   const prNumber = pr.number;
-  const head = pr.head;                   // source branch/ref
-  const base = pr.base;                   // target branch/ref
+  const head = pr.head;                 
+  const base = pr.base;               
   const headSha = head?.sha || null;
   const baseSha = base?.sha || null;
-  const headRef = head?.ref || null;      // e.g., feature/x
-  const baseRef = base?.ref || null;      // e.g., main
+  const headRef = head?.ref || null;    
+  const baseRef = base?.ref || null;  
   const isFromFork = head?.repo && base?.repo
     ? head.repo.id !== base.repo.id
     : false;
@@ -35,13 +35,13 @@ export async function handlePullRequest(payload) {
   }
 
   const jobData = {
-    type: "pull_request",  // Added for Python service
-    repoFullName: repo,    // Changed to match Python model
+    type: "pull_request",  
+    repoFullName,    
     repoId,
     installationId,
     prNumber,
     action,
-    sender: {              // Changed to object format
+    sender: {              
       login: sender,
       id: payload.sender?.id || null,
     },
@@ -60,38 +60,37 @@ export async function handlePullRequest(payload) {
     isFromFork,
   };
 
-  const headKey = headSha ? `-${headSha.substring(0, 7)}` : "";  // Shortened SHA for readability
-  const jobId = `pr-${repo.replace('/', '-')}-${prNumber}${headKey}`;  // Sanitize repo name
+  const headKey = headSha ? `-${headSha.substring(0, 7)}` : "";  
+  const jobId = `pr-${repoFullName.replace('/', '-')}-${prNumber}${headKey}`;  
 
   try {
     await pullAnalysisQueue.add("analysis.pr", jobData, {
       jobId,
       attempts: 3,
       backoff: { type: "exponential", delay: 2000 },
-      removeOnComplete: { count: 1000 },  // Fixed: should be object
-      removeOnFail: { count: 1000 },      // Fixed: should be object
+      removeOnComplete: { count: 1000 },
+      removeOnFail: { count: 1000 },      
       priority: 3,
     });
 
     console.log(`Enqueued PR analysis: ${jobId}`);
     
-    // Respond quickly to the webhook
     return { 
       enqueued: true, 
-      repo, 
+      repoFullName,
       prNumber, 
       action, 
       headSha, 
       baseRef, 
       headRef,
-      jobId  // Added for tracking
+      jobId 
     };
   } catch (error) {
     console.error("Failed to enqueue PR analysis:", error);
     return {
       enqueued: false,
       error: error.message,
-      repo,
+      repoFullName, 
       prNumber,
     };
   }

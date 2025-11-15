@@ -85,14 +85,14 @@ events.on("failed", ({ jobId, failedReason }) => console.error("[push] failed", 
 
 
 export const pullAnalysisWorker = new Worker(
-  "pullAnalysis", // Queue name
+  "pullAnalysis", 
   async (job) => {
     if (job.name !== "analysis.pr") {
       return { skipped: true, reason: "unknown-job", name: job.name };
     }
 
     const {
-      repoFullName, // Changed from 'repo' to match Python model
+      repoFullName, 
       repoId,
       installationId,
       prNumber,
@@ -103,7 +103,6 @@ export const pullAnalysisWorker = new Worker(
       isFromFork,
     } = job.data || {};
 
-    // Use repoFullName consistently
     if (!repoFullName || !installationId || !prNumber || !head || !base) {
       throw new Error(
         `Invalid job data: repo=${repoFullName} installationId=${installationId} prNumber=${prNumber} head=${!!head} base=${!!base}`
@@ -130,12 +129,12 @@ export const pullAnalysisWorker = new Worker(
     try {
       const runPayload = {
         type: "pull_request",
-        repoFullName, // Changed from 'repo'
+        repoFullName, 
         repoId,
         installationId,
         prNumber,
         action,
-        sender, // Already an object from handlePullRequest
+        sender, 
         isFromFork,
         head: {
           ref: headRef,
@@ -153,14 +152,13 @@ export const pullAnalysisWorker = new Worker(
 
       await job.updateProgress({ stage: "dispatch", to: "v1/internal/analysis/pr" });
 
-      // Fixed URL construction
-      const url = process.env.ANALYSIS_INTERNAL_URL + "/v1/internal/analysis/pr"// Simplified endpoint
+      const url = process.env.ANALYSIS_INTERNAL_URL + "/v1/internal/analysis/pr"
 
       console.log(`Calling Python service: ${url}`);
       console.log(`Payload:`, JSON.stringify(runPayload, null, 2));
 
       const resp = await axios.post(url, runPayload, {
-        timeout: Math.min(DEADLINE_MS - 1000, 60_000), // Increased to 60s
+        timeout: Math.min(DEADLINE_MS - 1000, 60_000),
         signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
@@ -169,7 +167,9 @@ export const pullAnalysisWorker = new Worker(
 
       await job.updateProgress({ stage: "completed", status: resp.status });
 
-      console.log(`✅ PR analysis completed for ${repoFullName}#${prNumber}`);
+      console.log(`PR analysis completed for ${repoFullName}#${prNumber}`);
+
+      console.log(resp.data);
 
       return {
         ok: true,
@@ -178,23 +178,21 @@ export const pullAnalysisWorker = new Worker(
         headSha,
         baseRef,
         headRef,
-        analysis: resp.data, // Return full analysis
+        analysis: resp.data, 
         summary: resp.data?.summary || null,
         score: resp.data?.score || null,
         metrics: resp.data?.metrics || null,
       };
     } catch (err) {
-      // Recognize deadline timeouts and mark accordingly
       if (err.name === "AbortError") {
-        console.error(`❌ PR analysis deadline exceeded (${DEADLINE_MS}ms) for ${repoFullName}#${prNumber}`);
+        console.error(`PR analysis deadline exceeded (${DEADLINE_MS}ms) for ${repoFullName}#${prNumber}`);
         err.message = `PR analysis deadline exceeded (${DEADLINE_MS}ms)`;
       } else if (axios.isAxiosError(err)) {
-        // Add context for axios failures
         const code = err.code || "AXIOS_ERR";
         const status = err.response?.status;
         const errorData = err.response?.data;
 
-        console.error(`❌ PR analysis axios error for ${repoFullName}#${prNumber}:`, {
+        console.error(`PR analysis axios error for ${repoFullName}#${prNumber}:`, {
           code,
           status,
           message: err.message,
@@ -203,10 +201,9 @@ export const pullAnalysisWorker = new Worker(
 
         err.message = `PR analysis axios error code=${code} status=${status || "n/a"}: ${err.message}`;
       } else {
-        console.error(`❌ PR analysis unexpected error for ${repoFullName}#${prNumber}:`, err);
+        console.error(`PR analysis unexpected error for ${repoFullName}#${prNumber}:`, err);
       }
 
-      // Let BullMQ handle retries/backoff per job options
       throw err;
     } finally {
       clearTimeout(timer);

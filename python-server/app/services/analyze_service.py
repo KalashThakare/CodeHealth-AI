@@ -78,7 +78,6 @@ async def pull_analyze_repo(payload: PullAnalyzeRequest) -> PullAnalyzeResponse:
     # Analyze the PR
     analysis = await analyze_pr_opened(pr_files)
     
-    # Convert analysis to annotations
     annotations = []
     
     # Add security warnings as annotations
@@ -91,26 +90,26 @@ async def pull_analyze_repo(payload: PullAnalyzeRequest) -> PullAnalyzeResponse:
     # Add missing tests annotation
     if analysis.get("missingTests"):
         annotations.append(Annotation(
-            message="⚠️ No test files detected. Please add tests for the code changes.",
+            message="No test files detected. Please add tests for the code changes.",
             severity="warning"
         ))
     
     # Add missing docs annotation
     if analysis.get("missingDocs"):
         annotations.append(Annotation(
-            message="📝 Documentation updates recommended for this PR size.",
+            message="Documentation updates recommended for this PR size.",
             severity="info"
         ))
     
     # Add high risk annotation
     if analysis["riskScore"] > 70:
         annotations.append(Annotation(
-            message=f"🔴 High risk PR (score: {analysis['riskScore']}/100). Extra scrutiny recommended.",
+            message=f"High risk PR (score: {analysis['riskScore']}/100). Extra scrutiny recommended.",
             severity="error"
         ))
     elif analysis["riskScore"] > 50:
         annotations.append(Annotation(
-            message=f"🟡 Medium-high risk PR (score: {analysis['riskScore']}/100). Additional review recommended.",
+            message=f"Medium-high risk PR (score: {analysis['riskScore']}/100). Additional review recommended.",
             severity="warning"
         ))
     
@@ -142,14 +141,14 @@ async def pull_analyze_repo(payload: PullAnalyzeRequest) -> PullAnalyzeResponse:
     
     # Create summary
     summary = (
-        f"📊 PR Analysis for #{payload.prNumber}\n"
+        f"PR Analysis for #{payload.prNumber}\n"
         f"Risk: {analysis['criticality'].upper()} ({analysis['riskScore']:.1f}/100) | "
         f"Complexity: {analysis['complexityScore']:.1f}/100\n"
-        f"📁 {analysis['filesChanged']} files changed "
+        f"{analysis['filesChanged']} files changed "
         f"(+{analysis['filesAdded']} new, ~{analysis['filesModified']} modified, "
         f"-{analysis['filesRemoved']} removed)\n"
-        f"📝 +{analysis['linesAdded']} / -{analysis['linesDeleted']} lines\n"
-        f"🎯 Impact areas: {', '.join(analysis['impactAreas'][:5]) if analysis['impactAreas'] else 'N/A'}"
+        f"+{analysis['linesAdded']} / -{analysis['linesDeleted']} lines\n"
+        f"Impact areas: {', '.join(analysis['impactAreas'][:5]) if analysis['impactAreas'] else 'N/A'}"
     )
     
     # Calculate overall quality score (inverse of risk, 0-1)

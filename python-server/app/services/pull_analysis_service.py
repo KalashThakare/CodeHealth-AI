@@ -60,11 +60,7 @@ async def analyze_pr_opened(files: list[dict]) -> dict:
     else:
         criticality = "high"
 
-    impact_dirs = list({
-        f.get("filename", "").split("/")[0]
-        for f in files
-        if "/" in f.get("filename", "")
-    })
+    impact_dirs = [f.get("filename", "") for f in files]
     
     file_extensions = list({
         f.get("filename", "").split(".")[-1]
@@ -120,30 +116,30 @@ async def analyze_pr_opened(files: list[dict]) -> dict:
     suggestions = []
     
     if missingTests:
-        suggestions.append("🧪 Add unit tests for the modified code")
+        suggestions.append("Add unit tests for the modified code")
     
     if missingDocs:
-        suggestions.append("📝 Update documentation to reflect changes")
+        suggestions.append("Update documentation to reflect changes")
     
     if risk > 70:
-        suggestions.append("🔴 High risk PR - consider splitting into smaller changes")
+        suggestions.append("High risk PR - consider splitting into smaller changes")
     elif risk > 50:
-        suggestions.append("🟡 Medium-high risk - request additional reviewers")
+        suggestions.append("Medium-high risk - request additional reviewers")
     
     if total_add > 500:
-        suggestions.append("📏 Large code additions - ensure code review coverage")
+        suggestions.append("Large code additions - ensure code review coverage")
     
     if file_count > 15:
-        suggestions.append(f"📂 PR touches {file_count} files - consider breaking into focused PRs")
+        suggestions.append(f"PR touches {file_count} files - consider breaking into focused PRs")
     
     if len(added_files) > 10:
-        suggestions.append(f"➕ {len(added_files)} new files added - verify they follow project structure")
+        suggestions.append(f"{len(added_files)} new files added - verify they follow project structure")
     
     if len(removed_files) > 0:
-        suggestions.append(f"🗑️ {len(removed_files)} files removed - ensure no breaking changes")
+        suggestions.append(f"{len(removed_files)} files removed - ensure no breaking changes")
     
     if securityWarnings:
-        suggestions.append("🔐 Security review recommended due to sensitive file changes")
+        suggestions.append("Security review recommended due to sensitive file changes")
 
     # Recommend reviewers based on impact areas
     recommendedReviewers = []
