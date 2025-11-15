@@ -8,6 +8,7 @@ import { WebhookEvent } from "../database/models/webhookEvents.js";
 import { connection, pushAnalysisQueue, webhookQueue } from "../lib/redis.js";
 import { handlePush } from "../services/handlers/push.handler.js";
 import { handleIssues } from "../services/handlers/issues.handler.js";
+import {handlePullRequest} from "../services/handlers/pull.handler.js";
 import { Analyse_repo } from "./scanController.js";
 import OAuthConnection from "../database/models/OauthConnections.js";
 
@@ -293,6 +294,9 @@ export const githubWebhookController = async (req, res) => {
       return res.status(200).json(result);
     }
     if (event === "pull_request") {
+
+      const action = payload.action
+
       if (!project) {
         if (repoId) project = await Project.findOne({ where: { repoId } });
         if (!project && repoName)
@@ -305,17 +309,30 @@ export const githubWebhookController = async (req, res) => {
           await connection.del(cacheKey);
           console.log(`Cache invalidated for repo ${repoId} due to PR merge`);
         }
+
+        if (project && project.userId) {
+          io.to(`user:${project.userId}`).emit("notification", {
+            type: "pull",
+            repoName,
+            repoId,
+            message: `New pull request closed and merged on ${fullName}`,
+            time: Date.now(),
+          });
+        }
       }
 
-      if (project && project.userId) {
-        io.to(`user:${project.userId}`).emit("notification", {
-          type: "pull",
-          repoName,
-          repoId,
-          message: `New pull request closed and merged on ${fullName}`,
-          time: Date.now(),
-        });
-      }
+      if (action === "opened") {
+    if (project && project.userId) {
+      io.to(`user:${project.userId}`).emit("notification", {
+        type: "pull",
+        repoName,
+        repoId,
+        action: "opened",
+        message: `New pull request #${payload.pull_request.number} opened on ${fullName}`,
+        time: Date.now(),
+      });
+    }
+  }
 
       const result = await handlePullRequest(payload);
       return res.status(200).json(result);

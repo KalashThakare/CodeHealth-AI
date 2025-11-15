@@ -1,13 +1,19 @@
 from app.schemas.push_analyze import PushAnalyzeRequest, PushAnalyzeResponse
-from app.schemas.pull_analyze import PullAnalyzeRequest, PullAnalyzeResponse
+from app.schemas.pull_analyze import AnalysisMetrics, Annotation, PullAnalyzeRequest, PullAnalyzeResponse, Suggestion
 from app.services.impact_analyzer import seed_impact
 from app.services.prioritization import seed_prioritization
 from app.schemas.fullrepo_analyze import FullRepoAnalysisRequest, FullRepoAnalysisResponse, StaticAnalysisResponse, Halstead, Cyclomatic, Maintainability
-from app.services.github_api import fetch_repo_code, get_all_commits, get_all_contributors, get_all_issues, get_all_pr, get_all_releases, get_repo_metadata, fetch_merged_files, fetch_file_content
+from app.services.github_api import fetch_repo_code, get_all_commits, get_all_contributors, get_all_issues, get_all_pr, get_all_releases, get_repo_metadata, fetch_pr_files
 from app.services.github_auth import get_installation_token
+from app.services.pull_analysis_service import analyze_pr_opened
 import asyncio
 import aiohttp
 from app.services.scanning import analysisClass
+import logging
+from datetime import datetime
+import uuid
+
+logger = logging.getLogger(__name__)
 
 
 async def push_analyze_repo(req: PushAnalyzeRequest) -> PushAnalyzeResponse:
@@ -37,33 +43,135 @@ async def push_analyze_repo(req: PushAnalyzeRequest) -> PushAnalyzeResponse:
 
 
 async def pull_analyze_repo(payload: PullAnalyzeRequest) -> PullAnalyzeResponse:
+    """
+    Main function to analyze a pull request
+    """
     token = await get_installation_token(payload.installationId)
-    repoFullName = payload.repo
+    repoFullName = payload.repoFullName
     owner, repo = repoFullName.split("/")
-    print("Owner:", owner)
-    print("Repo:", repo)
-    modifiedFiles = await fetch_merged_files(
+    
+    logger.info(f"Analyzing PR #{payload.prNumber} in {owner}/{repo}")
+    logger.info(f"Action: {payload.action}")
+    
+    run_id = str(uuid.uuid4())
+  
+    pr_files = await fetch_pr_files(
         token=token,
         owner=owner,
         repo=repo,
         pull_number=payload.prNumber
     )
-
-    data = await fetch_file_content(
-        token=token,
-        owner=owner,
-        repo=repo,
-        files=modifiedFiles
-    )
-
-    print(data)
-
     
+    if not pr_files:
+        logger.warning(f"No files found for PR #{payload.prNumber}")
+        return PullAnalyzeResponse(
+            ok=True,
+            repo=repoFullName,
+            prNumber=payload.prNumber,
+            headSha=payload.head.sha,
+            baseRef=payload.base.ref,
+            summary="No files changed in this PR",
+            runId=run_id,
+            analyzedAt=datetime.utcnow().isoformat(),
+        )
+    
+    # Analyze the PR
+    analysis = await analyze_pr_opened(pr_files)
+    
+    # Convert analysis to annotations
+    annotations = []
+    
+    # Add security warnings as annotations
+    for warning in analysis.get("securityWarnings", []):
+        annotations.append(Annotation(
+            message=warning,
+            severity="warning"
+        ))
+    
+    # Add missing tests annotation
+    if analysis.get("missingTests"):
+        annotations.append(Annotation(
+            message="⚠️ No test files detected. Please add tests for the code changes.",
+            severity="warning"
+        ))
+    
+    # Add missing docs annotation
+    if analysis.get("missingDocs"):
+        annotations.append(Annotation(
+            message="📝 Documentation updates recommended for this PR size.",
+            severity="info"
+        ))
+    
+    # Add high risk annotation
+    if analysis["riskScore"] > 70:
+        annotations.append(Annotation(
+            message=f"🔴 High risk PR (score: {analysis['riskScore']}/100). Extra scrutiny recommended.",
+            severity="error"
+        ))
+    elif analysis["riskScore"] > 50:
+        annotations.append(Annotation(
+            message=f"🟡 Medium-high risk PR (score: {analysis['riskScore']}/100). Additional review recommended.",
+            severity="warning"
+        ))
+    
+    # Convert suggestions
+    suggestions_list = []
+    for suggestion_text in analysis.get("suggestions", []):
+        suggestions_list.append(Suggestion(
+            title="Recommendation",
+            message=suggestion_text
+        ))
+    
+    # Create metrics object
+    metrics = AnalysisMetrics(
+        riskScore=analysis["riskScore"],
+        complexityScore=analysis["complexityScore"],
+        criticality=analysis["criticality"],
+        filesChanged=analysis["filesChanged"],
+        filesAdded=analysis["filesAdded"],
+        filesModified=analysis["filesModified"],
+        filesRemoved=analysis["filesRemoved"],
+        filesRenamed=analysis["filesRenamed"],
+        linesAdded=analysis["linesAdded"],
+        linesDeleted=analysis["linesDeleted"],
+        impactAreas=analysis["impactAreas"],
+        fileExtensions=analysis["fileExtensions"],
+        missingTests=analysis["missingTests"],
+        missingDocs=analysis["missingDocs"],
+    )
+    
+    # Create summary
+    summary = (
+        f"📊 PR Analysis for #{payload.prNumber}\n"
+        f"Risk: {analysis['criticality'].upper()} ({analysis['riskScore']:.1f}/100) | "
+        f"Complexity: {analysis['complexityScore']:.1f}/100\n"
+        f"📁 {analysis['filesChanged']} files changed "
+        f"(+{analysis['filesAdded']} new, ~{analysis['filesModified']} modified, "
+        f"-{analysis['filesRemoved']} removed)\n"
+        f"📝 +{analysis['linesAdded']} / -{analysis['linesDeleted']} lines\n"
+        f"🎯 Impact areas: {', '.join(analysis['impactAreas'][:5]) if analysis['impactAreas'] else 'N/A'}"
+    )
+    
+    # Calculate overall quality score (inverse of risk, 0-1)
+    quality_score = max(0.0, min(1.0, 1.0 - (analysis["riskScore"] / 100)))
 
-
+    print(summary)
+    
     return PullAnalyzeResponse(
         ok=True,
-        message=f"Analyzed {payload.repo} on {payload.branch}",
+        repo=repoFullName,
+        prNumber=payload.prNumber,
+        headSha=payload.head.sha,
+        baseRef=payload.base.ref,
+        score=round(quality_score, 2),
+        summary=summary,
+        metrics=metrics,
+        annotations=annotations if annotations else None,
+        suggestions=suggestions_list if suggestions_list else None,
+        securityWarnings=analysis.get("securityWarnings") if analysis.get("securityWarnings") else None,
+        recommendedReviewers=analysis.get("recommendedReviewers") if analysis.get("recommendedReviewers") else None,
+        runId=run_id,
+        analyzedAt=datetime.utcnow().isoformat(),
     )
 
 

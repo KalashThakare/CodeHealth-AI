@@ -3,7 +3,7 @@ import { QueueEvents, Worker } from "bullmq";
 import { connection } from "../lib/redis.js";
 import dotenv from "dotenv";
 import { analyzeFile } from "../utils/AST.js";
-import RepoFileMetrics  from "../database/models/repoFileMetrics.js";
+import RepoFileMetrics from "../database/models/repoFileMetrics.js";
 import { Project } from "../database/models/project.js";
 
 import { io } from "../server.js";
@@ -84,14 +84,15 @@ events.on("failed", ({ jobId, failedReason }) => console.error("[push] failed", 
 
 
 
-export const pullAnalysisWorker = new Worker("pullAnalysis",async job=>{
-
+export const pullAnalysisWorker = new Worker(
+  "pullAnalysis", // Queue name
+  async (job) => {
     if (job.name !== "analysis.pr") {
       return { skipped: true, reason: "unknown-job", name: job.name };
     }
 
     const {
-      repo,
+      repoFullName, // Changed from 'repo' to match Python model
       repoId,
       installationId,
       prNumber,
@@ -102,9 +103,10 @@ export const pullAnalysisWorker = new Worker("pullAnalysis",async job=>{
       isFromFork,
     } = job.data || {};
 
-    if (!repo || !installationId || !prNumber || !head || !base) {
+    // Use repoFullName consistently
+    if (!repoFullName || !installationId || !prNumber || !head || !base) {
       throw new Error(
-        `Invalid job data: repo=${repo} installationId=${installationId} prNumber=${prNumber} head=${!!head} base=${!!base}`
+        `Invalid job data: repo=${repoFullName} installationId=${installationId} prNumber=${prNumber} head=${!!head} base=${!!base}`
       );
     }
 
@@ -113,7 +115,14 @@ export const pullAnalysisWorker = new Worker("pullAnalysis",async job=>{
     const headRef = head.ref || null;
     const baseRef = base.ref || null;
 
-    await job.updateProgress({ stage: "init", repo, prNumber, headSha, baseRef, headRef });
+    await job.updateProgress({
+      stage: "init",
+      repo: repoFullName,
+      prNumber,
+      headSha,
+      baseRef,
+      headRef
+    });
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), DEADLINE_MS);
@@ -121,55 +130,82 @@ export const pullAnalysisWorker = new Worker("pullAnalysis",async job=>{
     try {
       const runPayload = {
         type: "pull_request",
-        repoFullName: repo,
+        repoFullName, // Changed from 'repo'
         repoId,
         installationId,
         prNumber,
         action,
-        sender,
+        sender, // Already an object from handlePullRequest
         isFromFork,
         head: {
           ref: headRef,
           sha: headSha,
-          repoId: head.repoId || (head.repo && head.repo.id) || null,
-          repoFullName: head.repoFullName || (head.repo && head.repo.full_name) || null,
+          repoId: head.repoId || null,
+          repoFullName: head.repoFullName || null,
         },
         base: {
           ref: baseRef,
           sha: baseSha,
-          repoId: base.repoId || (base.repo && base.repo.id) || null,
-          repoFullName: base.repoFullName || (base.repo && base.repo.full_name) || null,
+          repoId: base.repoId || null,
+          repoFullName: base.repoFullName || null,
         },
       };
 
-      await job.updateProgress({ stage: "dispatch", to: "/internal/analysis/pr" });
+      await job.updateProgress({ stage: "dispatch", to: "v1/internal/analysis/pr" });
 
-      const url = process.env.ANALYSIS_INTERNAL_URL + "/internal/analysis/pr";
+      // Fixed URL construction
+      const url = process.env.ANALYSIS_INTERNAL_URL + "/v1/internal/analysis/pr"// Simplified endpoint
+
+      console.log(`Calling Python service: ${url}`);
+      console.log(`Payload:`, JSON.stringify(runPayload, null, 2));
+
       const resp = await axios.post(url, runPayload, {
-        timeout: Math.min(DEADLINE_MS - 1000, 30_000),
+        timeout: Math.min(DEADLINE_MS - 1000, 60_000), // Increased to 60s
         signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
 
       await job.updateProgress({ stage: "completed", status: resp.status });
 
+      console.log(`✅ PR analysis completed for ${repoFullName}#${prNumber}`);
+
       return {
         ok: true,
-        repo,
+        repo: repoFullName,
         prNumber,
         headSha,
         baseRef,
-        summary: resp.data && resp.data.summary ? resp.data.summary : null,
+        headRef,
+        analysis: resp.data, // Return full analysis
+        summary: resp.data?.summary || null,
+        score: resp.data?.score || null,
+        metrics: resp.data?.metrics || null,
       };
     } catch (err) {
       // Recognize deadline timeouts and mark accordingly
-      if (err && err.name === "AbortError") {
+      if (err.name === "AbortError") {
+        console.error(`❌ PR analysis deadline exceeded (${DEADLINE_MS}ms) for ${repoFullName}#${prNumber}`);
         err.message = `PR analysis deadline exceeded (${DEADLINE_MS}ms)`;
-      } else if (axios.isAxiosError && axios.isAxiosError(err)) {
+      } else if (axios.isAxiosError(err)) {
         // Add context for axios failures
         const code = err.code || "AXIOS_ERR";
-        const status = err.response && err.response.status;
+        const status = err.response?.status;
+        const errorData = err.response?.data;
+
+        console.error(`❌ PR analysis axios error for ${repoFullName}#${prNumber}:`, {
+          code,
+          status,
+          message: err.message,
+          data: errorData,
+        });
+
         err.message = `PR analysis axios error code=${code} status=${status || "n/a"}: ${err.message}`;
+      } else {
+        console.error(`❌ PR analysis unexpected error for ${repoFullName}#${prNumber}:`, err);
       }
+
       // Let BullMQ handle retries/backoff per job options
       throw err;
     } finally {
@@ -179,10 +215,12 @@ export const pullAnalysisWorker = new Worker("pullAnalysis",async job=>{
   {
     connection,
     concurrency: CONCURRENCY,
-    // lockDuration can be tuned if the job holds the lock longer than default
-    // lockDuration: 600000,
+    limiter: {
+      max: 10, // Max 10 jobs
+      duration: 1000, // per second
+    },
   }
-)
+);
 
 pullAnalysisWorker.on("ready", () => console.log("[pull] worker ready"));
 pullAnalysisWorker.on("error", err => console.error("[pull] worker error", err));
@@ -209,81 +247,81 @@ process.on("SIGINT", async () => {
 });
 
 
-export const issuesAnalysisWorker = new Worker("issuesAnalysis",async job=>{
-  
+export const issuesAnalysisWorker = new Worker("issuesAnalysis", async job => {
+
   if (job.name !== "analysis.issue") {
-      return { skipped: true, reason: "unknown-job", name: job.name };
+    return { skipped: true, reason: "unknown-job", name: job.name };
+  }
+
+  const { repo, repoId, installationId, action, sender, issue, isFromFork } = job.data || {};
+  if (!repo || !installationId || !issue || !issue.number) {
+    throw new Error(
+      `Invalid job data: repo=${repo} installationId=${installationId} issue#=${issue && issue.number}`
+    );
+  }
+
+  await job.updateProgress({ stage: "init", repo, issueNumber: issue.number, action });
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), DEADLINE_MS);
+
+  try {
+    const runPayload = {
+      type: "issue",
+      repoFullName: repo,
+      repoId,
+      installationId,
+      action,
+      sender,
+      isFromFork: Boolean(isFromFork),
+      issue: {
+        number: issue.number,
+        title: issue.title || null,
+        state: issue.state || null,
+        labels: Array.isArray(issue.labels)
+          ? issue.labels.map(l => (typeof l === "string" ? l : l && l.name)).filter(Boolean)
+          : [],
+        assignees: Array.isArray(issue.assignees)
+          ? issue.assignees.map(a => a && a.login).filter(Boolean)
+          : [],
+        author: issue.user && issue.user.login,
+        createdAt: issue.createdAt || issue.created_at || null,
+        updatedAt: issue.updatedAt || issue.updated_at || null,
+        closedAt: issue.closedAt || issue.closed_at || null,
+        body: issue.body || null,
+      },
+    };
+
+    await job.updateProgress({ stage: "dispatch", to: "/internal/analysis/issue" });
+
+    const url = process.env.ANALYSIS_INTERNAL_URL + "/internal/analysis/issue";
+    const resp = await axios.post(url, runPayload, {
+      timeout: Math.min(DEADLINE_MS - 1000, 20_000),
+      signal: controller.signal,
+    });
+
+    await job.updateProgress({ stage: "completed", status: resp.status });
+
+    return {
+      ok: true,
+      repo,
+      issueNumber: issue.number,
+      action,
+      summary: resp.data && resp.data.summary ? resp.data.summary : null,
+    };
+  } catch (err) {
+    if (err && err.name === "AbortError") {
+      err.message = `Issue analysis deadline exceeded (${DEADLINE_MS}ms)`;
+    } else if (axios.isAxiosError && axios.isAxiosError(err)) {
+      const code = err.code || "AXIOS_ERR";
+      const status = err.response && err.response.status;
+      err.message = `Issue analysis axios error code=${code} status=${status || "n/a"}: ${err.message}`;
     }
-
-    const { repo, repoId, installationId, action, sender, issue, isFromFork } = job.data || {};
-    if (!repo || !installationId || !issue || !issue.number) {
-      throw new Error(
-        `Invalid job data: repo=${repo} installationId=${installationId} issue#=${issue && issue.number}`
-      );
-    }
-
-    await job.updateProgress({ stage: "init", repo, issueNumber: issue.number, action });
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), DEADLINE_MS);
-
-    try {
-      const runPayload = {
-        type: "issue",
-        repoFullName: repo,
-        repoId,
-        installationId,
-        action,
-        sender,
-        isFromFork: Boolean(isFromFork),
-        issue: {
-          number: issue.number,
-          title: issue.title || null,
-          state: issue.state || null,
-          labels: Array.isArray(issue.labels)
-            ? issue.labels.map(l => (typeof l === "string" ? l : l && l.name)).filter(Boolean)
-            : [],
-          assignees: Array.isArray(issue.assignees)
-            ? issue.assignees.map(a => a && a.login).filter(Boolean)
-            : [],
-          author: issue.user && issue.user.login,
-          createdAt: issue.createdAt || issue.created_at || null,
-          updatedAt: issue.updatedAt || issue.updated_at || null,
-          closedAt: issue.closedAt || issue.closed_at || null,
-          body: issue.body || null,
-        },
-      };
-
-      await job.updateProgress({ stage: "dispatch", to: "/internal/analysis/issue" });
-
-      const url = process.env.ANALYSIS_INTERNAL_URL + "/internal/analysis/issue";
-      const resp = await axios.post(url, runPayload, {
-        timeout: Math.min(DEADLINE_MS - 1000, 20_000),
-        signal: controller.signal,
-      });
-
-      await job.updateProgress({ stage: "completed", status: resp.status });
-
-      return {
-        ok: true,
-        repo,
-        issueNumber: issue.number,
-        action,
-        summary: resp.data && resp.data.summary ? resp.data.summary : null,
-      };
-    } catch (err) {
-      if (err && err.name === "AbortError") {
-        err.message = `Issue analysis deadline exceeded (${DEADLINE_MS}ms)`;
-      } else if (axios.isAxiosError && axios.isAxiosError(err)) {
-        const code = err.code || "AXIOS_ERR";
-        const status = err.response && err.response.status;
-        err.message = `Issue analysis axios error code=${code} status=${status || "n/a"}: ${err.message}`;
-      }
-      throw err;
-    } finally {
-      clearTimeout(timer);
-    }
-  },
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+},
   {
     connection,
     concurrency: CONCURRENCY,
@@ -415,7 +453,7 @@ export const ASTworker = new Worker(
 
       const validExtensions = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
       const fileExtension = path.substring(path.lastIndexOf('.'));
-      
+
       if (!validExtensions.includes(fileExtension)) {
         console.log(`[ast] Skipping ${path} - not a JS/TS file`);
         return {
@@ -436,7 +474,7 @@ export const ASTworker = new Worker(
 
       const metricData = {
         path: path,
-        branch:branch,
+        branch: branch,
         repoId: repoId,
         cyclomaticComplexity: metrics.cc,
         maintainabilityIndex: Math.round(metrics.mi * 100) / 100,
@@ -446,13 +484,13 @@ export const ASTworker = new Worker(
         locComments: metrics.loc.cloc,
         locBlank: metrics.loc.blank,
         halsteadUniqueOperators: metrics.halstead.n1,
-        halsteadUniqueOperands: metrics.halstead.n2, 
-        halsteadTotalOperators: metrics.halstead.N1, 
-        halsteadTotalOperands: metrics.halstead.N2, 
-        halsteadVocabulary: metrics.halstead.vocabulary, 
+        halsteadUniqueOperands: metrics.halstead.n2,
+        halsteadTotalOperators: metrics.halstead.N1,
+        halsteadTotalOperands: metrics.halstead.N2,
+        halsteadVocabulary: metrics.halstead.vocabulary,
         halsteadLength: metrics.halstead.length,
         halsteadVolume: Math.round(metrics.halstead.volume * 100) / 100,
-        analyzedAt: new Date() 
+        analyzedAt: new Date()
       };
 
       if (metric) {
@@ -496,7 +534,7 @@ export const ASTworker = new Worker(
 
     } catch (error) {
       console.error(`[ast] Error analyzing ${path}:`, error.message);
-      
+
       return {
         path,
         error: true,
@@ -505,7 +543,7 @@ export const ASTworker = new Worker(
       };
     }
   },
-  { 
+  {
     connection,
     concurrency: 5
   }
@@ -515,10 +553,10 @@ ASTworker.on("ready", () => console.log("[ast] worker ready"));
 ASTworker.on("error", err => console.error("[ast] worker error", err));
 ASTworker.on("failed", async (job, err) => {
   console.error(`[ast] job failed ${job?.id}`, err);
-  
+
   if (job?.data && io) {
     const { repoId, repoName, fullName, userId } = job.data;
-    
+
     io.to(`user:${userId}`).emit('analysis_complete', {
       success: false,
       repoId,
@@ -533,10 +571,10 @@ ASTworker.on("failed", async (job, err) => {
 
 ASTworker.on("completed", async (job) => {
   console.log(`[ast] job completed ${job.id}`);
-  
+
   if (job?.data && io) {
     const { repoId, repoName, fullName, userId } = job.data;
-    
+
     io.to(`user:${userId}`).emit('analysis_complete', {
       success: true,
       repoId,

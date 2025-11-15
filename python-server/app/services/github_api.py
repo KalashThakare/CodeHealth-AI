@@ -423,12 +423,13 @@ async def get_repo_metadata(owner: str, repo: str, token: str):
     logger.info(f"Metadata: {metadata}")
     return metadata
 
-async def fetch_merged_files(token:str, owner:str, repo:str, pull_number:int):
-    url = f"GET /repos/{owner}/{repo}/pulls/{pull_number}/files"
+async def fetch_pr_files(token: str, owner: str, repo: str, pull_number: int):
+    """Fetch detailed file information for a pull request"""
+    url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/files"  # Fixed URL
     header = _gh_headers(token)
     files = []
 
-    logger.info(f"Fetching files for {owner}/{repo}")
+    logger.info(f"Fetching files for PR #{pull_number} in {owner}/{repo}")
     logger.debug(f"Request URL: {url}")
 
     async with aiohttp.ClientSession() as session:
@@ -440,21 +441,26 @@ async def fetch_merged_files(token:str, owner:str, repo:str, pull_number:int):
 
                 files = [
                     {
-                        "path": file_obj["filename"],
-                        "sha": file_obj["sha"]
+                        "filename": file_obj["filename"],
+                        "sha": file_obj["sha"],
+                        "status": file_obj["status"],  # added, modified, removed, renamed
+                        "additions": file_obj.get("additions", 0),
+                        "deletions": file_obj.get("deletions", 0),
+                        "changes": file_obj.get("changes", 0),
+                        "patch": file_obj.get("patch", ""),  # The actual diff
                     }
                     for file_obj in data
                 ]
 
-                logger.info(f"found {len(files)} files")
-                logger.debug(f"files: {files}")
+                logger.info(f"Found {len(files)} files")
+                logger.debug(f"Files: {files}")
             
             else:
                 logger.error(f"Failed to fetch files: {resp.status}")
                 error_text = await resp.text()
                 logger.error(f"Error response: {error_text}")
 
-    return files        
+    return files       
             
 async def fetch_file_content(owner: str, repo: str, files: List[Dict], token: str):
     """

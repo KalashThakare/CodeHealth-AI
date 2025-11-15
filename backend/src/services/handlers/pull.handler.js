@@ -1,16 +1,17 @@
-import { pullAnalysisQueue } from "../../lib/redis";
+import { pullAnalysisQueue } from "../../lib/redis.js";
 
 export async function handlePullRequest(payload) {
   
-  const repo = payload.repository && payload.repository.full_name;         // owner/repo
-  const repoId = payload.repository && payload.repository.id;
-  const action = payload.action;                                           // opened|synchronize|reopened|closed|...
-  const pr = payload.pull_request;                                         // PR object
-  const installationId = (payload.installation && payload.installation.id) || null;
-  const sender = (payload.sender && payload.sender.login) || "unknown";
+  const repo = payload.repository?.full_name;         // owner/repo
+  const repoId = payload.repository?.id;
+  const action = payload.action;                      // opened|synchronize|reopened|closed|...
+  const pr = payload.pull_request;                    // PR object
+  const installationId = payload.installation?.id || null;
+  const sender = payload.sender?.login || "unknown";
 
   // Validate minimal requirements
   if (!repo || !pr || !installationId) {
+    console.warn("Invalid PR payload:", { repo, installationId, hasPr: Boolean(pr) });
     return { skipped: true, reason: "invalid-payload", repo, installationId, hasPr: Boolean(pr) };
   }
 
@@ -18,54 +19,80 @@ export async function handlePullRequest(payload) {
   const prNumber = pr.number;
   const head = pr.head;                   // source branch/ref
   const base = pr.base;                   // target branch/ref
-  const headSha = (head && head.sha) || null;
-  const baseSha = (base && base.sha) || null;
-  const headRef = (head && head.ref) || null;   // e.g., feature/x
-  const baseRef = (base && base.ref) || null;   // e.g., main
-  const isFromFork = head && base && head.repo && base.repo
+  const headSha = head?.sha || null;
+  const baseSha = base?.sha || null;
+  const headRef = head?.ref || null;      // e.g., feature/x
+  const baseRef = base?.ref || null;      // e.g., main
+  const isFromFork = head?.repo && base?.repo
     ? head.repo.id !== base.repo.id
     : false;
 
   // Only analyze actionable PR events
   const actionable = action === "opened" || action === "reopened" || action === "synchronize";
   if (!actionable) {
+    console.log(`Skipping non-actionable PR event: ${action} for PR #${prNumber}`);
     return { skipped: true, reason: "non-actionable", action, prNumber };
   }
 
   const jobData = {
-    repo,
+    type: "pull_request",  // Added for Python service
+    repoFullName: repo,    // Changed to match Python model
     repoId,
     installationId,
     prNumber,
     action,
-    sender,
+    sender: {              // Changed to object format
+      login: sender,
+      id: payload.sender?.id || null,
+    },
     head: {
       ref: headRef,
       sha: headSha,
-      repoId: head && head.repo && head.repo.id,
-      repoFullName: head && head.repo && head.repo.full_name,
+      repoId: head?.repo?.id || null,
+      repoFullName: head?.repo?.full_name || null,
     },
     base: {
       ref: baseRef,
       sha: baseSha,
-      repoId: base && base.repo && base.repo.id,
-      repoFullName: base && base.repo && base.repo.full_name,
+      repoId: base?.repo?.id || null,
+      repoFullName: base?.repo?.full_name || null,
     },
     isFromFork,
   };
 
-  const headKey = headSha ? `-${headSha}` : "";
-  const jobId = `pr-${repo}-${prNumber}${headKey}`; 
+  const headKey = headSha ? `-${headSha.substring(0, 7)}` : "";  // Shortened SHA for readability
+  const jobId = `pr-${repo.replace('/', '-')}-${prNumber}${headKey}`;  // Sanitize repo name
 
-  await pullAnalysisQueue.add("analysis.pr", jobData, {
-    jobId,
-    attempts: 3,
-    backoff: { type: "exponential", delay: 2000 },
-    removeOnComplete: 1000,
-    removeOnFail: 1000,
-    priority: 3,
-  });
+  try {
+    await pullAnalysisQueue.add("analysis.pr", jobData, {
+      jobId,
+      attempts: 3,
+      backoff: { type: "exponential", delay: 2000 },
+      removeOnComplete: { count: 1000 },  // Fixed: should be object
+      removeOnFail: { count: 1000 },      // Fixed: should be object
+      priority: 3,
+    });
 
-  // Respond quickly to the webhook
-  return { enqueued: true, repo, prNumber, action, headSha, baseRef, headRef };
+    console.log(`Enqueued PR analysis: ${jobId}`);
+    
+    // Respond quickly to the webhook
+    return { 
+      enqueued: true, 
+      repo, 
+      prNumber, 
+      action, 
+      headSha, 
+      baseRef, 
+      headRef,
+      jobId  // Added for tracking
+    };
+  } catch (error) {
+    console.error("Failed to enqueue PR analysis:", error);
+    return {
+      enqueued: false,
+      error: error.message,
+      repo,
+      prNumber,
+    };
+  }
 }
