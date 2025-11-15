@@ -9,7 +9,6 @@ import { useScrollNavbar } from "./hooks/useScrollNavbar";
 import { LeftSection } from "./components/LeftSection";
 import { RightSection } from "./components/RightSection";
 import { DesktopNavLinks } from "./components/DesktopNavLinks";
-import { FeedbackModal } from "./components/FeedbackModal";
 import { Logo } from "./components/Logo";
 import { DashboardNavbarProps } from "./types";
 
@@ -107,9 +106,6 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
           </div>
         </div>
       </nav>
-
-      {/* Feedback Modal */}
-      <FeedbackModal state={state} />
     </>
   );
 };

@@ -14,21 +14,21 @@ export interface NavLink {
 
 export interface NavbarState {
   isTeamDropdownOpen: boolean;
-  setIsTeamDropdownOpen: (open: boolean) => void;
+  setIsTeamDropdownOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
   isProfileDropdownOpen: boolean;
-  setIsProfileDropdownOpen: (open: boolean) => void;
+  setIsProfileDropdownOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
   isFeedbackOpen: boolean;
-  setIsFeedbackOpen: (open: boolean) => void;
+  setIsFeedbackOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
   feedbackText: string;
   setFeedbackText: (text: string) => void;
   isMobileMenuOpen: boolean;
-  setIsMobileMenuOpen: (open: boolean) => void;
+  setIsMobileMenuOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
   isSubmittingFeedback: boolean;
   setIsSubmittingFeedback: (submitting: boolean) => void;
   isProjectDropdownOpen: boolean;
-  setIsProjectDropdownOpen: (open: boolean) => void;
+  setIsProjectDropdownOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
   isNotificationsOpen: boolean;
-  setIsNotificationsOpen: (open: boolean) => void;
+  setIsNotificationsOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
 }
 
 export interface HighlightState {
