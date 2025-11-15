@@ -70,6 +70,7 @@ class AnalysisMetrics(BaseModel):
 
 class PullAnalyzeResponse(BaseModel):
     ok: bool = True
+    repoId: int
     repo: Optional[str] = None
     prNumber: Optional[int] = None
     headSha: Optional[str] = None

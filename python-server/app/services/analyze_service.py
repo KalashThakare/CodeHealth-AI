@@ -48,6 +48,7 @@ async def pull_analyze_repo(payload: PullAnalyzeRequest) -> PullAnalyzeResponse:
     """
     token = await get_installation_token(payload.installationId)
     repoFullName = payload.repoFullName
+    repoId = payload.repoId
     owner, repo = repoFullName.split("/")
     
     logger.info(f"Analyzing PR #{payload.prNumber} in {owner}/{repo}")
@@ -158,6 +159,7 @@ async def pull_analyze_repo(payload: PullAnalyzeRequest) -> PullAnalyzeResponse:
     
     return PullAnalyzeResponse(
         ok=True,
+        repoId=repoId,
         repo=repoFullName,
         prNumber=payload.prNumber,
         headSha=payload.head.sha,

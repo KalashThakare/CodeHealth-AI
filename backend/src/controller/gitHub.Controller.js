@@ -334,6 +334,19 @@ export const githubWebhookController = async (req, res) => {
         }
       }
 
+      if (action === "synchronize") {
+        if (project && project.userId) {
+          io.to(`user:${project.userId}`).emit("notification", {
+            type: "pull",
+            repoName,
+            repoId,
+            action: "opened",
+            message: `New pull request #${payload.pull_request.number} synchronized on ${fullName}`,
+            time: Date.now(),
+          });
+        }
+      }
+
       const result = await handlePullRequest(payload);
       return res.status(200).json(result);
     }

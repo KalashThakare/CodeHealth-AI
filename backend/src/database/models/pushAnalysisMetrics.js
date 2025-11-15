@@ -44,7 +44,7 @@ const PushAnalysisMetrics = sequelize.define(
     },
     ok: {
       type: DataTypes.BOOLEAN,
-      allowNull: false,
+      allowNull: true,
     },
     message: {
       type: DataTypes.TEXT,

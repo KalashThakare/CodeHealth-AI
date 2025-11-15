@@ -7,6 +7,7 @@ import RepoFileMetrics from "../database/models/repoFileMetrics.js";
 import { Project } from "../database/models/project.js";
 
 import { io } from "../server.js";
+import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
 
 dotenv.config();
 
@@ -85,14 +86,14 @@ events.on("failed", ({ jobId, failedReason }) => console.error("[push] failed", 
 
 
 export const pullAnalysisWorker = new Worker(
-  "pullAnalysis", 
+  "pullAnalysis",
   async (job) => {
     if (job.name !== "analysis.pr") {
       return { skipped: true, reason: "unknown-job", name: job.name };
     }
 
     const {
-      repoFullName, 
+      repoFullName,
       repoId,
       installationId,
       prNumber,
@@ -129,12 +130,12 @@ export const pullAnalysisWorker = new Worker(
     try {
       const runPayload = {
         type: "pull_request",
-        repoFullName, 
+        repoFullName,
         repoId,
         installationId,
         prNumber,
         action,
-        sender, 
+        sender,
         isFromFork,
         head: {
           ref: headRef,
@@ -171,14 +172,77 @@ export const pullAnalysisWorker = new Worker(
 
       console.log(resp.data);
 
+      if (resp.data.repoId) {
+        const repo = await Project.findOne({
+          where: {
+            repoId: resp.data.repoId
+          }
+        })
+
+        if (!repo) {
+          throw new Error("Repository dosent exist");
+        }
+
+        const pr = await PullRequestAnalysis.findOne({
+          where: {
+            repoId: repoId,
+            prNumber: prNumber
+          }
+        })
+
+        if (pr) {
+
+          await PullRequestAnalysis.update({
+            repoId: resp.data.repoId,
+            repo: resp.data.repo,
+            prNumber: resp.data.prNumber,
+            baseRef: resp.data.baseRef,
+            score: resp.data.score,
+            summary: resp.data.summary,
+            metrics: resp.data.metrics,
+            annotations: resp.data.annotations,
+            suggestions: resp.data.suggestions,
+            securityWarnings: resp.data.securityWarnings,
+            recommendedReviewers: resp.data.recommendedReviewers,
+            analyzedAt: resp.data.analyzedAt ? new Date(resp.data.analyzedAt) : new Date()
+          },
+
+            {
+              where: {
+                repoId: repoId,
+                prNumber: prNumber
+              }
+            }
+
+          );
+
+        } else {
+          await PullRequestAnalysis.create({
+            repoId: resp.data.repoId,
+            repo: resp.data.repo,
+            prNumber: resp.data.prNumber,
+            baseRef: resp.data.baseRef,
+            score: resp.data.score,
+            summary: resp.data.summary,
+            metrics: resp.data.metrics,
+            annotations: resp.data.annotations,
+            suggestions: resp.data.suggestions,
+            securityWarnings: resp.data.securityWarnings,
+            recommendedReviewers: resp.data.recommendedReviewers,
+            analyzedAt: resp.data.analyzedAt ? new Date(resp.data.analyzedAt) : new Date()
+          });
+        }
+      }
+
       return {
         ok: true,
+        repoId,
         repo: repoFullName,
         prNumber,
         headSha,
         baseRef,
         headRef,
-        analysis: resp.data, 
+        analysis: resp.data,
         summary: resp.data?.summary || null,
         score: resp.data?.score || null,
         metrics: resp.data?.metrics || null,

@@ -2,6 +2,7 @@ import RepositoryAnalysis from "./analysis.js";
 import CommitsAnalysis from "./commit_analysis.js";
 import Commit from "./commitsMetadata.js";
 import OAuthConnection from "./OauthConnections.js";
+import PullRequestAnalysis from "./pr_analysis_metrics.js";
 import { Project } from "./project.js";
 import PushAnalysisMetrics from "./pushAnalysisMetrics.js";
 import  RepoFileMetrics  from "./repoFileMetrics.js";
@@ -106,6 +107,19 @@ Project.hasMany(RepositoryAnalysis, {
 });
 
 RepositoryAnalysis.belongsTo(Project, {
+  foreignKey: 'repoId',
+  targetKey: 'repoId',
+  as: 'project'
+});
+
+Project.hasMany(PullRequestAnalysis, {
+  foreignKey: 'repoId',
+  sourceKey:'repoId',
+  as: 'pr_analyses',
+  onDelete: 'CASCADE'
+});
+
+PullRequestAnalysis.belongsTo(Project, {
   foreignKey: 'repoId',
   targetKey: 'repoId',
   as: 'project'
