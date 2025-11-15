@@ -3,8 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 // import { Toggle } from "@/components/ui/themeToggle";
 import { Toaster } from "sonner";
-import "@/app/glass.css"
+import "@/app/glass.css";
 import { LenisProvider } from "@/components/ui/LenisProvider";
+import { SocketProvider } from "@/components/SocketProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,10 +49,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <LenisProvider>
-          <Toaster />
-          {children}
-        </LenisProvider>
+        <SocketProvider>
+          <LenisProvider>
+            <Toaster />
+            {children}
+          </LenisProvider>
+        </SocketProvider>
       </body>
     </html>
   );

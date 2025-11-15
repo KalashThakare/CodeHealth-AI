@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSocket } from "@/hooks/useSocket";
+import { socketService } from "@/lib/socket";
 
 interface SocketStatusProps {
   /**
@@ -24,25 +24,49 @@ export default function SocketStatus({
   showDetails = false,
   position = "bottom-right",
 }: SocketStatusProps) {
-  const { socket, isConnected } = useSocket({
-    autoConnect: true,
-    heartbeatInterval: 30000,
-  });
-
+  const [isConnected, setIsConnected] = useState(false);
+  const [socketId, setSocketId] = useState<string | undefined>();
   const [lastPing, setLastPing] = useState<Date | null>(null);
 
   useEffect(() => {
-    if (!socket) return;
+    const updateStatus = () => {
+      const socket = socketService.getSocket();
+      setIsConnected(socketService.isConnected());
+      setSocketId(socket?.id);
+    };
 
-    // Listen for pong to track connection health
-    socket.on("pong", () => {
+    const handlePong = () => {
       setLastPing(new Date());
-    });
+    };
+
+    const handleConnect = () => {
+      updateStatus();
+    };
+
+    const handleDisconnect = () => {
+      updateStatus();
+    };
+
+    // Initial update
+    updateStatus();
+
+    // Listen to socket events for status updates
+    const socket = socketService.getSocket();
+    if (socket) {
+      socket.on("connect", handleConnect);
+      socket.on("disconnect", handleDisconnect);
+      socket.on("pong", handlePong);
+    }
 
     return () => {
-      socket.off("pong");
+      const socket = socketService.getSocket();
+      if (socket) {
+        socket.off("connect", handleConnect);
+        socket.off("disconnect", handleDisconnect);
+        socket.off("pong", handlePong);
+      }
     };
-  }, [socket]);
+  }, []);
 
   const positionClasses = {
     "top-left": "top-4 left-4",
@@ -58,7 +82,7 @@ export default function SocketStatus({
         className={`fixed ${positionClasses[position]} z-50`}
         title={
           isConnected
-            ? `Socket connected (ID: ${socket?.id})`
+            ? `Socket connected (ID: ${socketId})`
             : "Socket disconnected"
         }
       >
@@ -97,12 +121,12 @@ export default function SocketStatus({
         </span>
       </div>
 
-      {socket && isConnected && (
+      {socketId && isConnected && (
         <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
           <div className="flex justify-between">
             <span>Socket ID:</span>
             <span className="font-mono text-[10px]">
-              {socket.id?.slice(0, 8)}...
+              {socketId?.slice(0, 8)}...
             </span>
           </div>
           {lastPing && (
