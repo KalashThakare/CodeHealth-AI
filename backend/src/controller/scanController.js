@@ -7,6 +7,7 @@ import CommitsAnalysis from "../database/models/commit_analysis.js";
 import Commit from "../database/models/commitsMetadata.js";
 import RepoMetadata from "../database/models/repoMedata.js";
 import { triggerBackgroundAnalysis } from "./analysisController.js";
+import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
 
 
 
@@ -558,5 +559,48 @@ export const getContributers = async(req,res)=>{
   } catch (error) {
     console.error(error);
     return res.status(500).json({message:"Internal server error"});
+  }
+}
+
+export const getPrAnalysis=async(req,res)=>{
+  try {
+    const {repoId} = req.params;
+
+    if(!repoId){
+      return res.status(404).json({message:"RepoId not found"});
+    }
+
+    const repo = await Project.findOne({
+      where:{
+        repoId:repoId
+      }
+    });
+
+    if(!repo){
+      return res.status(400).json({message:"No project exist with this repoId"});
+    }
+
+    const prAnanlysis = await PullRequestAnalysis.findAll({
+      where:{
+        repoId:repoId
+      }
+    });
+
+    if(!prAnanlysis){
+      return res.status(400).json({message:"prAnanlysis not found"});
+    }
+
+    return res.status(200).json({
+      success:true,
+      message:"pr-Ananlysis returned successfully",
+      prAnanlysis
+    });
+
+  } catch (error) {
+    console.error("Internal server error", error);
+    return res.status(500).json({
+      success:false,
+      message:"Internal server error"
+    });
   }
 }
