@@ -93,13 +93,12 @@ export default function GitHubImportPage() {
   const displayAnalysis = fullAnalysis;
 
   const handleAddNewRepo = () => {
-    router.push(`${process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI}`);
+    window.open(`${process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI}`);
   };
 
   return (
     <div className="gitproject-page min-h-screen bg-[var(--gp-bg)]">
       <DashboardNavbar />
-
       <div className="max-w-7xl mx-auto p-4">
         {/* Header */}
         <header className="mb-6">
@@ -319,13 +318,13 @@ export default function GitHubImportPage() {
 
                 {/* View Analytics Button */}
                 {hasAnalysisData && (
-                  <div className="w-full flex justify-center items-center">
+                  <div className="w-full mt-2 flex justify-center items-center !bg-transparent">
                     <button
                       onClick={() => {
                         setAnalytics(true);
                         router.push(`/analytics/${selectedRepo.repoId}`);
                       }}
-                      className="repo-item flex gap-2 justify-center items-center"
+                      className="repo-item active flex gap-2 justify-center items-center"
                       title="View Analytics Dashboard"
                     >
                       <FiActivity size={16} />
