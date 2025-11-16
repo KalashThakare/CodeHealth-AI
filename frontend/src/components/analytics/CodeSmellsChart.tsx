@@ -248,9 +248,9 @@ export default function CodeSmellsChart({
       </div>
 
       {/* Chart */}
-      <div style={{ height: "250px" }}>
+      {/* <div style={{ height: "250px" }}>
         <Bar data={chartData} options={options} />
-      </div>
+      </div> */}
 
       {/* Severity Legend */}
       <div className="flex flex-wrap gap-2">
