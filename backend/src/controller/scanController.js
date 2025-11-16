@@ -6,6 +6,7 @@ import RepoFileMetrics from "../database/models/repoFileMetrics.js";
 import CommitsAnalysis from "../database/models/commit_analysis.js";
 import Commit from "../database/models/commitsMetadata.js";
 import RepoMetadata from "../database/models/repoMedata.js";
+import { triggerBackgroundAnalysis } from "./analysisController.js";
 
 
 
@@ -239,6 +240,15 @@ export const collectePythonMetrics = async (req, res) => {
     });
 
     console.log(`Successfully saved ${savedRecords.length} file metrics to database`);
+
+    const backgroundAnalysis = await triggerBackgroundAnalysis(repoId);
+
+    if (!backgroundAnalysis) {
+      return res.status(500).json({ 
+        message: "Failed to complete repository analysis",
+        filesProcessed: savedRecords.length 
+      });
+    }
 
     return res.status(200).json({
       success: true,

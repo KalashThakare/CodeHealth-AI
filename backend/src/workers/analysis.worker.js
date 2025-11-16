@@ -5,9 +5,10 @@ import dotenv from "dotenv";
 import { analyzeFile } from "../utils/AST.js";
 import RepoFileMetrics from "../database/models/repoFileMetrics.js";
 import { Project } from "../database/models/project.js";
-
+import { Queue } from 'bullmq';
 import { io } from "../server.js";
 import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
+import { triggerBackgroundAnalysis } from "../controller/analysisController.js";
 
 dotenv.config();
 
@@ -353,15 +354,17 @@ export const issuesAnalysisWorker = new Worker("issuesAnalysis", async job => {
       },
     };
 
-    await job.updateProgress({ stage: "dispatch", to: "/internal/analysis/issue" });
+    await job.updateProgress({ stage: "dispatch", to: "v1/internal/analysis/issue" });
 
-    const url = process.env.ANALYSIS_INTERNAL_URL + "/internal/analysis/issue";
+    const url = process.env.ANALYSIS_INTERNAL_URL + "v1/internal/analysis/issue";
     const resp = await axios.post(url, runPayload, {
       timeout: Math.min(DEADLINE_MS - 1000, 20_000),
       signal: controller.signal,
     });
 
     await job.updateProgress({ stage: "completed", status: resp.status });
+
+    console.log(resp.data);
 
     return {
       ok: true,
@@ -610,6 +613,8 @@ export const ASTworker = new Worker(
   }
 );
 
+const ASTQueue = new Queue('repoFiles', { connection });
+
 ASTworker.on("ready", () => console.log("[ast] worker ready"));
 ASTworker.on("error", err => console.error("[ast] worker error", err));
 ASTworker.on("failed", async (job, err) => {
@@ -636,15 +641,46 @@ ASTworker.on("completed", async (job) => {
   if (job?.data && io) {
     const { repoId, repoName, fullName, userId } = job.data;
 
-    io.to(`user:${userId}`).emit('analysis_complete', {
-      success: true,
-      repoId,
-      repoName,
-      fullName,
-      stage: 'ast_analysis',
-      message: 'Files analysis completed successfully',
-      timestamp: new Date().toISOString()
-    });
+    // Check if this is the last job for this repo
+    const remainingJobs = await ASTQueue.getWaitingCount() + await ASTQueue.getActiveCount();
+    
+    if (remainingJobs === 0) {
+      // All files processed, trigger background analysis once
+      console.log(`[ast] All files processed for repo ${repoId}, triggering background analysis`);
+      
+      try {
+        await triggerBackgroundAnalysis(repoId);
+        
+        io.to(`user:${userId}`).emit('analysis_complete', {
+          success: true,
+          repoId,
+          repoName,
+          fullName,
+          stage: 'repository_analysis',
+          message: 'Repository analysis completed successfully',
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error(`[ast] Background analysis failed for repo ${repoId}:`, error);
+        
+        io.to(`user:${userId}`).emit('analysis_complete', {
+          success: false,
+          repoId,
+          repoName,
+          fullName,
+          stage: 'repository_analysis',
+          error: error.message,
+          timestamp: new Date().toISOString()
+        });
+      }
+    } else {
+      // Still processing files, just notify file completion
+      io.to(`user:${userId}`).emit('file_analyzed', {
+        repoId,
+        path: job.data.path,
+        timestamp: new Date().toISOString()
+      });
+    }
   }
 });
 

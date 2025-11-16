@@ -22,3 +22,7 @@ async def analyze(payload: PullAnalyzeRequest) -> PullAnalyzeResponse:
 @router.post("/internal/analysis/full-repo")
 async def analyze(payload: FullRepoAnalysisRequest):
     await full_repo_analysis(payload)
+
+# @router.post("/internal/analysis/issue")
+# async def analyze():
+#     result = await 

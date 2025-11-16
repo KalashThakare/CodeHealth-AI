@@ -96,21 +96,32 @@ export const analyze_repo = async (req, res) => {
       });
 
       console.log("New analysis created:", analysis.id);
+
+      // Trigger background analysis
+      triggerBackgroundAnalysis(repoId).catch((err) => {
+        console.error("Background analysis error:", err);
+      });
+
+      return res.status(202).json({
+        message: "Analysis in progress",
+        repoId,
+        status: "processing",
+        analysis: analysis.toJSON()
+      });
     }
 
-    triggerBackgroundAnalysis(repoId).catch((err) => {
-      console.error("Background analysis error:", err);
-    });
-
-    const analysisData = analysis.toJSON();
-    await connection.set(
-      cacheKey,
-      JSON.stringify(analysisData),
-      "EX",
-      60 * 60 * 24
-    );
-
-    console.log("Cached analysis in Redis");
+    const hasRealData = analysis.totalFiles > 0 || analysis.totalCommits > 0;
+    
+    if (hasRealData) {
+      const analysisData = analysis.toJSON();
+      await connection.set(
+        cacheKey,
+        JSON.stringify(analysisData),
+        "EX",
+        60 * 60 * 24
+      );
+      console.log("Cached analysis in Redis");
+    }
 
     console.log("Returning analysis data...");
     console.log("=== END DEBUG ===");
@@ -118,8 +129,9 @@ export const analyze_repo = async (req, res) => {
     return res.status(200).json({
       message: "Success",
       repoId,
-      analysis: analysisData,
+      analysis: analysis.toJSON(),
     });
+    
   } catch (error) {
     console.error("=== ANALYZE REPO ERROR ===");
     console.error("Error:", error);
@@ -133,7 +145,7 @@ export const analyze_repo = async (req, res) => {
   }
 };
 
-async function triggerBackgroundAnalysis(repoId) {
+export async function triggerBackgroundAnalysis(repoId) {
   try {
     console.log(`[Background] Starting analysis for repo ${repoId}`);
 
@@ -166,8 +178,9 @@ async function triggerBackgroundAnalysis(repoId) {
     const distributions = await calculateDistributions(parsedRepoId);
     const healthScore = await calculateRepoHealthScore(parsedRepoId);
 
-    await RepositoryAnalysis.update(
+    await RepositoryAnalysis.upsert(
       {
+        repoId: parsedRepoId,
         // Repo metrics
         avgCyclomaticComplexity: repoMetrics.avgCyclomaticComplexity,
         avgMaintainabilityIndex: repoMetrics.avgMaintainabilityIndex,
@@ -211,12 +224,19 @@ async function triggerBackgroundAnalysis(repoId) {
         complexityDistribution: distributions.complexityDistribution,
       },
       {
-        where: { repoId: parsedRepoId },
+        conflictFields: ['repoId'],
+        returning:true
       }
     );
 
     const cacheKey = `metrics:repo:${parsedRepoId}`;
-    await connection.del(cacheKey);
+    const analysisData = updatedAnalysis.toJSON();
+    await connection.set(
+      cacheKey,
+      JSON.stringify(analysisData),
+      "EX",
+      60 * 60 * 24
+    );
 
     console.log(`[Background] Analysis completed for repo ${parsedRepoId}`);
   } catch (error) {
