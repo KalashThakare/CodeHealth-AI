@@ -133,10 +133,10 @@ export const FeedbackDropdown: React.FC<FeedbackDropdownProps> = ({
           <button
             type="submit"
             disabled={isSubmitting || !feedbackText.trim()}
-            className="px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+            className="!px-4 !py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
             style={{
-              backgroundColor: "var(--color-accent)",
-              color: "white",
+              backgroundColor: "var(--color-btn-bg)",
+              color: "var(--color-btn-fg)",
             }}
           >
             {isSubmitting ? (
@@ -145,10 +145,7 @@ export const FeedbackDropdown: React.FC<FeedbackDropdownProps> = ({
                 Sending...
               </>
             ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Submit
-              </>
+              <>Submit</>
             )}
           </button>
         </div>
