@@ -12,6 +12,7 @@ import axios from "axios";
 import RepoFileMetrics from "../database/models/repoFileMetrics.js";
 import Commit from "../database/models/commitsMetadata.js";
 import { connection } from "../lib/redis.js";
+import { io } from "../server.js";
 dotenv.config();
 
 
@@ -237,6 +238,21 @@ export async function triggerBackgroundAnalysis(repoId) {
       "EX",
       60 * 60 * 24
     );
+
+    const repo = await Project.findOne({
+      where:{
+        repoId:repoId
+      }
+    })
+
+    io.to(`user:${repo.userId}`).emit('notification',{
+      type:"analysis",
+      success:true,
+      repoId,
+      repoName:repo.fullName,
+      message: `Repository analysis completed successfully for repo: ${repo.fullName}`,
+      timestamp: new Date().toISOString()
+    })
 
     console.log(`[Background] Analysis completed for repo ${parsedRepoId}`);
   } catch (error) {

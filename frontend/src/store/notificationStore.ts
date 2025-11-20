@@ -8,7 +8,7 @@ export interface Notification {
     | "pull_request"
     | "issue"
     | "full_repo"
-    | "ast"
+    | "analysis"
     | "notification";
   title: string;
   message: string;
