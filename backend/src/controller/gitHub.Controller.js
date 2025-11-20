@@ -13,6 +13,8 @@ import { Analyse_repo } from "./scanController.js";
 import OAuthConnection from "../database/models/OauthConnections.js";
 
 import { io } from "../server.js";
+import { type } from "os";
+import { time } from "console";
 
 function eventToJobName(event) {
   switch (event) {
@@ -227,7 +229,7 @@ export const githubWebhookController = async (req, res) => {
               repoId: repo.id,
               repoName: repo.name,
               fullName: repo.full_name,
-              private:repo.private,
+              private: repo.private,
               repoUrl,
               installationId,
             },
@@ -247,7 +249,7 @@ export const githubWebhookController = async (req, res) => {
               repoId: repo.id,
               repoName: repo.name,
               fullName: repo.full_name,
-              private:repo.private,
+              private: repo.private,
               repoUrl,
               installationId,
             },
@@ -261,12 +263,54 @@ export const githubWebhookController = async (req, res) => {
       if (event === "installation_repositories" && action === "removed") {
         const repos = payload.repositories_removed || [];
         for (const repo of repos) {
+
+          const userId = repo.userId
+
           await Project.destroy({ where: { repoId: repo.id } });
+
+
+          io.to(`user:${userId}`).emit("notification", {
+            type: "remove",
+            success: true,
+            repoName,
+            repoId,
+            message: `Repository: ${repoName} removed successfully`,
+            time: Date.now()
+          })
+
+
         }
       }
 
       if (event === "installation" && action === "deleted") {
-        await Project.destroy({ where: { installationId } });
+        const repo = await Project.findOne({
+          where: { installationId }
+        })
+
+        const userId = repo.userId
+
+        const res = await Project.destroy({ where: { installationId } });
+
+        if (res) {
+          io.to(`user:${userId}`).emit("notification", {
+            type: "delete",
+            success: true,
+            repoName,
+            repoId,
+            message: `Repository: ${repoName} deleted successfully`,
+            time: Date.now()
+          })
+        } else {
+          io.to(`user:${userId}`).emit("notification", {
+            type: "delete",
+            success: false,
+            repoName,
+            repoId,
+            message: `Repository: ${repoName} deletion failed`,
+            time: Date.now()
+          })
+        }
+
       }
     }
 

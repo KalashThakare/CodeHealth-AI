@@ -257,6 +257,16 @@ export async function triggerBackgroundAnalysis(repoId) {
     console.log(`[Background] Analysis completed for repo ${parsedRepoId}`);
   } catch (error) {
     console.error(`[Background] Analysis failed for repo ${repoId}:`, error);
+
+    io.to(`user:${repo.userId}`).emit('notification',{
+      type:"analysis",
+      success:false,
+      repoId,
+      repoName:repo.fullName,
+      message: `Repository analysis failed for repo: ${repo.fullName}`,
+      timestamp: new Date().toISOString()
+    })
+
     throw error;
   }
 }

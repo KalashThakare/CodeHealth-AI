@@ -9,6 +9,8 @@ export interface Notification {
     | "issue"
     | "full_repo"
     | "analysis"
+    | "delete"
+    | "remove"
     | "notification";
   title: string;
   message: string;
