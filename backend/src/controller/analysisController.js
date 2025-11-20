@@ -178,7 +178,7 @@ export async function triggerBackgroundAnalysis(repoId) {
     const distributions = await calculateDistributions(parsedRepoId);
     const healthScore = await calculateRepoHealthScore(parsedRepoId);
 
-    await RepositoryAnalysis.upsert(
+    const [updatedAnalysis] = await RepositoryAnalysis.upsert(
       {
         repoId: parsedRepoId,
         // Repo metrics

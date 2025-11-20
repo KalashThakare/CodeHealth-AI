@@ -16,6 +16,7 @@ export const Project = sequelize.define(
     fullName: { type: DataTypes.STRING, allowNull: false },
     repoName: { type: DataTypes.STRING, allowNull: false },
     repoUrl: { type: DataTypes.STRING, allowNull: false },
+    private:{type: DataTypes.BOOLEAN, allowNull:true}
   },
   {
     tableName: "projects",
