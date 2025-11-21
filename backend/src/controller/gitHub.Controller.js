@@ -264,51 +264,56 @@ export const githubWebhookController = async (req, res) => {
         const repos = payload.repositories_removed || [];
         for (const repo of repos) {
 
-          const userId = repo.userId
-
-          await Project.destroy({ where: { repoId: repo.id } });
-
-
-          io.to(`user:${userId}`).emit("notification", {
-            type: "remove",
-            success: true,
-            repoName,
-            repoId,
-            message: `Repository: ${repoName} removed successfully`,
-            time: Date.now()
+          const repository = await Project.findOne({
+            where: {
+              repoId: repo.id
+            }
           })
 
+          if (repository) {
+            const userId = repository.userId;
+            const repoName = repository.repoName;
+            const repoId = repository.repoId;
+
+            await Project.destroy({ where: { repoId: repo.id } });
+
+            io.to(`user:${userId}`).emit("notification", {
+              type: "remove",
+              success: true,
+              repoName,
+              repoId,
+              message: `Repository: ${repoName} removed successfully`,
+              time: Date.now()
+            });
+          }
 
         }
       }
 
       if (event === "installation" && action === "deleted") {
-        const repo = await Project.findOne({
+        const projects = await Project.findAll({
           where: { installationId }
-        })
+        });
 
-        const userId = repo.userId
+        if (projects && projects.length > 0) {
 
-        const res = await Project.destroy({ where: { installationId } });
+          const userId = projects[0].userId;
 
-        if (res) {
-          io.to(`user:${userId}`).emit("notification", {
-            type: "delete",
-            success: true,
-            repoName,
-            repoId,
-            message: `Repository: ${repoName} deleted successfully`,
-            time: Date.now()
-          })
-        } else {
-          io.to(`user:${userId}`).emit("notification", {
-            type: "delete",
-            success: false,
-            repoName,
-            repoId,
-            message: `Repository: ${repoName} deletion failed`,
-            time: Date.now()
-          })
+          const deleteCount = await Project.destroy({ where: { installationId } });
+
+          // Emit notification 
+          for (const project of projects) {
+            io.to(`user:${userId}`).emit("notification", {
+              type: "delete",
+              success: deleteCount > 0,
+              repoName: project.repoName,
+              repoId: project.repoId,
+              message: deleteCount > 0
+                ? `Repository: ${project.repoName} deleted successfully`
+                : `Repository: ${project.repoName} deletion failed`,
+              time: Date.now()
+            });
+          }
         }
 
       }
