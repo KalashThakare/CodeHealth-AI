@@ -239,6 +239,8 @@ export const githubWebhookController = async (req, res) => {
 
       if (event === "installation_repositories" && action === "added") {
         const repos = payload.repositories_added || [];
+        // console.log("Repositories added are:========================================",repos)
+        const results = []
         for (const repo of repos) {
           const repoUrl =
             repo.html_url || `https://github.com/${repo.full_name}`;
@@ -256,8 +258,12 @@ export const githubWebhookController = async (req, res) => {
           });
 
           const result = await Analyse_repo(repo.id);
-          return res.status(200).json(result);
+          results.push(result)
         }
+
+        // console.log("Repositories results are:========================================",results)
+
+        return res.status(200).json(results);
       }
 
       if (event === "installation_repositories" && action === "removed") {
