@@ -11,8 +11,10 @@ import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
 
 
 
-export const Analyse_repo = async (repoId) => {
+export const Analyse_repo = async (req,res) => {
   try {
+
+    const{ repoId } = req.params
 
     if (!repoId) {
       throw new Error("repo for analysis not selected");
@@ -41,19 +43,22 @@ export const Analyse_repo = async (repoId) => {
 
     const result = await handleAnalyse(payload);
     console.log(result);
-    return {
-      message: "Repository analysis has been queued successfully",
+    return res.status(200).json({
+      message: "Initialization successful. Analysis in progress.",
       data: {
         jobId: result.jobId,
         status: 'queued',
         repoId: repo.repoId,
-        estimatedWaitTime: result.estimatedWaitTime || '2-5 minutes'
+        estimatedWaitTime: '2-5 minutes'
       }
-    };
+    });
 
   } catch (error) {
     console.log(error);
-    throw error;
+    return res.status(500).json({ 
+      error: "Failed to queue repository analysis",
+      details: error.message 
+    });
   }
 }
 
