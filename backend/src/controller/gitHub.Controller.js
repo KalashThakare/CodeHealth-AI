@@ -254,6 +254,7 @@ export const githubWebhookController = async (req, res) => {
               private: repo.private,
               repoUrl,
               installationId,
+              initialised:"false"
             },
           });
 

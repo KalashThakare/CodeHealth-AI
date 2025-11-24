@@ -10,7 +10,8 @@ export const getUsage = async(req,res)=>{
 
         const repoCount = await Project.count({
             where:{
-                userId:userId
+                userId:userId,
+                initialised:true
             }
         })
 

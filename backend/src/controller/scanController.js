@@ -25,6 +25,8 @@ export const Analyse_repo = async (req,res) => {
       throw new Error("Repo selected for analysis not found");
     }
 
+    await repo.update({ initialised: true });
+
     const fullName = repo.fullName
     const [owner, repoName] = fullName.split("/");
 
