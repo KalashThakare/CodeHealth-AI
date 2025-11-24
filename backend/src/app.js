@@ -13,6 +13,7 @@ import { receiveFeedbackController } from "./controller/feedback&review.Controll
 import accountRoutes from "../src/routes/account.Routes.js"
 import scanningRoutes from "./routes/scanning.Routes.js";
 import analysisRoutes from "./routes/analysisRoutes.js";
+import dashboardRoutes from "./routes/dashboard.Routes.js"
 import "./database/models/index.js"
 import "./workers/analysis.worker.js"
 import "./workers/scanning.worker.js"
@@ -59,5 +60,7 @@ app.use("/account",accountRoutes);
 app.use("/scanning",scanningRoutes);
 
 app.use("/analyze",analysisRoutes);
+
+app.use("/dashboard",dashboardRoutes)
 
 export default app;
