@@ -8,6 +8,7 @@ import {
   FiAlertCircle,
   FiTrendingUp,
 } from "react-icons/fi";
+import { Lightbulb } from "lucide-react";
 
 interface BusinessMetricsProps {
   analysis: FullRepoAnalysis;
@@ -229,7 +230,7 @@ export default function BusinessMetrics({
           className="analytics-text-sm font-semibold analytics-mb-2 flex items-center gap-1"
           style={{ color: "var(--analytics-text-primary)" }}
         >
-          💡 Investment Analysis
+          <Lightbulb className="w-4 h-4" /> Investment Analysis
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 analytics-text-sm">
           <div>

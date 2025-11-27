@@ -10,6 +10,7 @@ import React, {
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
 import { useTeamStore } from "@/store/teamStore";
+import { Users, FolderOpen, Calendar } from "lucide-react";
 
 export default function TeamsPage() {
   const authUser = useAuthStore((s) => s.authUser);
@@ -372,19 +373,19 @@ export default function TeamsPage() {
 
                     <div className="flex flex-wrap gap-3 text-[11px] font-medium mt-1 mb-5">
                       <Badge
-                        icon="👥"
+                        icon={<Users className="w-3 h-3" />}
                         label={`${membersCount} member${
                           membersCount !== 1 ? "s" : ""
                         }`}
                       />
                       <Badge
-                        icon="📁"
+                        icon={<FolderOpen className="w-3 h-3" />}
                         label={`${projectsCount} project${
                           projectsCount !== 1 ? "s" : ""
                         }`}
                       />
                       <Badge
-                        icon="🗓"
+                        icon={<Calendar className="w-3 h-3" />}
                         label={new Date(team.createdAt).toLocaleDateString()}
                       />
                     </div>
@@ -483,7 +484,7 @@ const StatCard = ({
   </div>
 );
 
-const Badge = ({ icon, label }: { icon: string; label: string }) => (
+const Badge = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
   <span
     className="px-2 py-1 rounded-md flex items-center gap-1"
     style={{
@@ -491,7 +492,7 @@ const Badge = ({ icon, label }: { icon: string; label: string }) => (
       border: "1px solid var(--color-border)",
     }}
   >
-    <span className="text-[11px]">{icon}</span>
+    <span className="text-[11px] flex items-center">{icon}</span>
     {label}
   </span>
 );

@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { PartyPopper } from "lucide-react";
 
 interface RiskFile {
   path: string;
@@ -69,10 +70,11 @@ export default function RiskFilesTable({ files }: RiskFilesTableProps) {
   if (files.length === 0) {
     return (
       <div
-        className="text-center py-12"
+        className="text-center py-12 flex items-center justify-center gap-2"
         style={{ color: "var(--analytics-text-secondary)" }}
       >
-        No high-risk files identified. Great job! 🎉
+        No high-risk files identified. Great job!{" "}
+        <PartyPopper className="w-5 h-5 text-[var(--color-primary)]" />
       </div>
     );
   }
