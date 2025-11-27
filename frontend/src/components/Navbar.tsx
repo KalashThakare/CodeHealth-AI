@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { Sun, Moon } from "lucide-react";
 import "@/app/glass.css";
 
 export default function Navbar() {
@@ -91,10 +92,15 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-3 lg:space-x-4">
             <button
               onClick={toggleTheme}
-              className="glass-btn p-2 rounded-lg"
+              className="text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors text-sm lg:text-base px-3 py-2 rounded-lg"
               aria-label="Toggle theme"
+              style={{ color: "var(--color-bg)" }}
             >
-              {theme === "dark" ? "🌞" : "🌙"}
+              {theme === "dark" ? (
+                <Sun className="w-5 h-5" />
+              ) : (
+                <Moon className="w-5 h-5" />
+              )}
             </button>
 
             <button
@@ -120,10 +126,15 @@ export default function Navbar() {
           <div className="md:hidden flex items-center space-x-2">
             <button
               onClick={toggleTheme}
-              className="glass-btn p-2 rounded-lg"
+              className="glass-btn p-2 rounded-lg transition-all duration-200"
               aria-label="Toggle theme"
+              style={{ color: "var(--color-fg-secondary)" }}
             >
-              {theme === "dark" ? "🌞" : "🌙"}
+              {theme === "dark" ? (
+                <Sun className="w-5 h-5" />
+              ) : (
+                <Moon className="w-5 h-5" />
+              )}
             </button>
 
             <button

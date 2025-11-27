@@ -146,17 +146,17 @@ const fragment = /* glsl */ `
 `;
 
 const Particles: React.FC<ParticlesProps> = ({
-  particleCount = 200,
-  particleSpread = 10,
+  particleCount = 250,
+  particleSpread = 20,
   speed = 0.1,
   particleColors,
-  moveParticlesOnHover = false,
-  particleHoverFactor = 1,
+  moveParticlesOnHover = true,
+  particleHoverFactor = 1.2,
   alphaParticles = false,
   particleBaseSize = 100,
-  sizeRandomness = 1,
+  sizeRandomness = 0,
   cameraDistance = 20,
-  disableRotation = false,
+  disableRotation = true,
   className,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -320,8 +320,7 @@ const Particles: React.FC<ParticlesProps> = ({
     disableRotation,
     className,
     themeKey,
-    // particleColors intentionally not included because we resolve CSS vars at runtime;
-    // if you pass a new particleColors prop you'll need to also change key or include it here.
+    particleColors, // Include particleColors to re-render when theme changes
   ]);
 
   return (

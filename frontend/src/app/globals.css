@@ -25,6 +25,7 @@
   --color-primary-hover: #8b6fc6;
   --color-accent: #cdb4f6;
   --color-border: #d1c4e9;
+  --color-border2: #b39ddb;
   --color-card: #fff;
   --color-input-bg: #f3eaff;
   --color-input-border: #cdb4f6;
@@ -74,6 +75,7 @@
 
   /* Borders - Subtle Vercel Gray */
   --color-border: #333333;
+  --color-border2: #222222;
 
   /* Cards - Slightly Elevated */
   --color-card: #111111;

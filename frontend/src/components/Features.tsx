@@ -1,7 +1,13 @@
 import React from "react";
 import Particles from "./ui/Particles";
 import "@/app/glass.css";
+import { Brain, Zap, Shield, ArrowRight } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
+
 function Features() {
+  const { theme } = useTheme();
+  const particleColor = theme === "dark" ? "#888888" : "#6d4e9c";
+
   return (
     <div>
       {/* Features Section */}
@@ -17,11 +23,12 @@ function Features() {
             }}
           >
             <Particles
-              particleColors={[`var(--color-fg)`, `var(--color-fg)`]}
-              particleCount={180}
-              particleSpread={8}
+              particleColors={[particleColor, particleColor]}
+              particleCount={400}
+              particleSpread={15}
               speed={0.2}
               particleBaseSize={80}
+              sizeRandomness={0}
               moveParticlesOnHover={true}
               alphaParticles={false}
               disableRotation={true}
@@ -54,7 +61,7 @@ function Features() {
                 <div className="w-16 h-16 glass-primary rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-all duration-300 relative overflow-hidden">
                   {/* Inner shimmer */}
                   <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <span className="text-2xl relative z-10">🧠</span>
+                  <Brain className="w-7 h-7 text-[var(--color-primary)] relative z-10" />
                 </div>
                 {/* Enhanced glow ring */}
                 <div className="absolute inset-0 w-16 h-16 bg-[var(--color-primary)]/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
@@ -87,7 +94,7 @@ function Features() {
                   <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   {/* Lightning trail effect */}
                   <div className="absolute inset-0 bg-gradient-to-tr from-yellow-400/20 to-transparent opacity-0 group-hover:opacity-70 transition-all duration-500"></div>
-                  <span className="text-2xl relative z-10">⚡</span>
+                  <Zap className="w-7 h-7 text-yellow-400 relative z-10" />
                 </div>
                 {/* Multi-colored glow ring */}
                 <div className="absolute inset-0 w-16 h-16 bg-gradient-to-br from-[var(--color-accent)]/20 via-yellow-400/15 to-transparent rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
@@ -119,7 +126,7 @@ function Features() {
                   <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   {/* Security pulse effect */}
                   <div className="absolute inset-0 bg-gradient-to-tr from-green-400/15 to-transparent opacity-0 group-hover:opacity-70 transition-all duration-500"></div>
-                  <span className="text-2xl relative z-10">🔒</span>
+                  <Shield className="w-7 h-7 text-green-400 relative z-10" />
                 </div>
                 {/* Security glow ring */}
                 <div className="absolute inset-0 w-16 h-16 bg-gradient-to-br from-[var(--color-primary)]/20 to-green-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
@@ -149,7 +156,7 @@ function Features() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             {/* Stat Cards with Glass Effect */}
             <div className="glass-subtle glass-theme p-6 rounded-2xl group transition-all duration-300 hover:scale-105">
-              <div className="text-4xl font-bold text-[var(--color-primary)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
+              <div className="text-4xl font-bold text-[var(--color-fg)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
                 <span
                   className="stat-number neon-glow-subtle"
                   data-value="1000"
@@ -164,7 +171,7 @@ function Features() {
             </div>
 
             <div className="glass-subtle glass-theme p-6 rounded-2xl group transition-all duration-300 hover:scale-105">
-              <div className="text-4xl font-bold text-[var(--color-primary)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
+              <div className="text-4xl font-bold text-[var(--color-fg)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
                 <span
                   className="stat-number neon-glow-subtle"
                   data-value="5000"
@@ -179,7 +186,7 @@ function Features() {
             </div>
 
             <div className="glass-subtle glass-theme p-6 rounded-2xl group transition-all duration-300 hover:scale-105">
-              <div className="text-4xl font-bold text-[var(--color-primary)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
+              <div className="text-4xl font-bold text-[var(--color-fg)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
                 <span className="stat-number neon-glow-subtle" data-value="90">
                   90
                 </span>
@@ -191,7 +198,7 @@ function Features() {
             </div>
 
             <div className="glass-subtle glass-theme p-6 rounded-2xl group transition-all duration-300 hover:scale-105">
-              <div className="text-4xl font-bold text-[var(--color-primary)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
+              <div className="text-4xl font-bold text-[var(--color-fg)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
                 <span className="stat-number neon-glow-subtle" data-value="24">
                   24
                 </span>
@@ -210,12 +217,13 @@ function Features() {
         {/* Background particles for CTA */}
         <div className="absolute inset-0 pointer-events-none opacity-30">
           <Particles
-            particleColors={[`var(--color-primary)`, `var(--color-accent)`]}
-            particleCount={180}
+            particleColors={[particleColor, particleColor]}
+            particleCount={400}
             particleSpread={15}
             speed={0.2}
-            particleBaseSize={120}
-            moveParticlesOnHover={false}
+            particleBaseSize={80}
+            sizeRandomness={0}
+            moveParticlesOnHover={true}
             alphaParticles={true}
             disableRotation={true}
           />
@@ -238,12 +246,12 @@ function Features() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                className="glass-btn-primary text-lg px-8 py-4 rounded-xl font-semibold transition-all duration-300 hover:scale-105"
+                className="glass-btn-primary text-lg px-8 py-4 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
                 onClick={() =>
                   (window.location.href = process.env.NEXT_PUBLIC_SIGNUP_URL!)
                 }
               >
-                Start Free Trial →
+                Start Free Trial <ArrowRight className="w-5 h-5" />
               </button>
               <button
                 className="glass-btn text-lg px-8 py-4 rounded-xl font-semibold transition-all duration-300 hover:scale-105"

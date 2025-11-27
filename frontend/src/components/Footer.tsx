@@ -1,3 +1,5 @@
+import { Twitter, Github, Linkedin } from "lucide-react";
+
 export default function Footer() {
   return (
     <footer className="bg-[var(--color-bg-secondary)] border-t border-[var(--color-border)]">
@@ -15,24 +17,24 @@ export default function Footer() {
             <div className="flex space-x-4">
               <a
                 href="#"
-                className="text-[var(--color-fg-secondary)] hover:text-[var(--color-primary)] transition-colors text-lg"
+                className="text-[var(--color-fg-secondary)] hover:text-[var(--color-primary)] transition-colors"
               >
                 <span className="sr-only">Twitter</span>
-                🐦
+                <Twitter className="w-5 h-5" />
               </a>
               <a
                 href="#"
-                className="text-[var(--color-fg-secondary)] hover:text-[var(--color-primary)] transition-colors text-lg"
+                className="text-[var(--color-fg-secondary)] hover:text-[var(--color-primary)] transition-colors"
               >
                 <span className="sr-only">GitHub</span>
-                🐙
+                <Github className="w-5 h-5" />
               </a>
               <a
                 href="#"
-                className="text-[var(--color-fg-secondary)] hover:text-[var(--color-primary)] transition-colors text-lg"
+                className="text-[var(--color-fg-secondary)] hover:text-[var(--color-primary)] transition-colors"
               >
                 <span className="sr-only">LinkedIn</span>
-                💼
+                <Linkedin className="w-5 h-5" />
               </a>
             </div>
           </div>
