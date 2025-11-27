@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import { useNotificationStore } from "@/store/notificationStore";
+import { useSocket } from "@/hooks/useSocket";
 import {
   Bell,
   GitPullRequest,
@@ -11,6 +12,7 @@ import {
   FileCode,
   X,
   Trash2,
+  Activity,
 } from "lucide-react";
 
 interface NotificationsDropdownProps {
@@ -51,6 +53,10 @@ const getNotificationIcon = (type: string, success?: boolean) => {
       return <CheckCircle2 className="w-5 h-5 text-green-500" />;
     case "ast":
       return <FileCode className="w-5 h-5 text-cyan-500" />;
+    case "analysis":
+      return <Activity className="w-5 h-5 text-emerald-500" />;
+    case "background":
+      return <Activity className="w-5 h-5 text-teal-500" />;
     default:
       return <Bell className="w-5 h-5 text-gray-500" />;
   }
@@ -76,6 +82,12 @@ const getNotificationTitle = (notification: any) => {
       return notification.success
         ? "File Analysis Complete"
         : "File Analysis Failed";
+    case "analysis":
+      return notification.success ? "Analysis Retrieved" : "Analysis Failed";
+    case "background":
+      return notification.success
+        ? "Background Analysis Complete"
+        : "Background Analysis Failed";
     case "notification":
       return notification.title || "Notification";
     default:
@@ -95,10 +107,86 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
     markAllAsRead,
     clearNotification,
     clearAllNotifications,
+    addNotification,
   } = useNotificationStore();
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Socket connection for real-time notifications
+  const { socket } = useSocket({ autoConnect: true });
+
+  // Listen for analysis notifications from socket
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleAnalysisFetched = (data: any) => {
+      console.log("Analysis fetched notification:", data);
+
+      const repoName = data.repoName || "Repository";
+
+      if (data.success) {
+        const healthScore = data.overallHealthScore?.toFixed(1) || "N/A";
+
+        addNotification({
+          type: "analysis" as any,
+          title: "Analysis Retrieved",
+          message: `${repoName}: Health Score ${healthScore}`,
+          repoId: String(data.repoId),
+          repoName: data.repoName,
+          score: data.overallHealthScore
+            ? Math.round(data.overallHealthScore)
+            : undefined,
+          timestamp: data.timestamp || new Date().toISOString(),
+          success: true,
+        });
+      } else {
+        // Handle failed analysis fetch
+        addNotification({
+          type: "analysis" as any,
+          title: "Analysis Failed",
+          message: data.message || `${repoName}: Failed to fetch analysis`,
+          repoId: String(data.repoId),
+          repoName: data.repoName,
+          timestamp: data.timestamp || new Date().toISOString(),
+          success: false,
+          error: data.error,
+        });
+      }
+    };
+
+    const handleAnalysisComplete = (data: any) => {
+      console.log("Analysis complete notification:", data);
+
+      const repoName = data.repoName || "Repository";
+
+      addNotification({
+        type: "background" as any,
+        title: data.success ? "Analysis Complete" : "Analysis Failed",
+        message:
+          data.message ||
+          (data.success
+            ? `${repoName}: Analysis completed successfully`
+            : `${repoName}: Analysis failed`),
+        repoId: String(data.repoId),
+        repoName: data.repoName,
+        score: data.overallHealthScore
+          ? Math.round(data.overallHealthScore)
+          : undefined,
+        timestamp: data.timestamp || new Date().toISOString(),
+        success: data.success,
+        error: data.error,
+      });
+    };
+
+    socket.on("analysis_fetched", handleAnalysisFetched);
+    socket.on("analysis_complete", handleAnalysisComplete);
+
+    return () => {
+      socket.off("analysis_fetched", handleAnalysisFetched);
+      socket.off("analysis_complete", handleAnalysisComplete);
+    };
+  }, [socket, addNotification]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -263,7 +351,7 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
                 {/* Unread Indicator */}
                 {!notification.read && (
                   <div
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full"
                     style={{ backgroundColor: "var(--color-accent)" }}
                   />
                 )}

@@ -11,7 +11,9 @@ export interface Notification {
     | "analysis"
     | "delete"
     | "remove"
-    | "notification";
+    | "notification"
+    | "analysis"
+    | "background";
   title: string;
   message: string;
   repoId?: string;
