@@ -9,7 +9,6 @@ import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import Footer from "@/components/Footer";
 import "@/app/globals.css";
-// import Particles from "@/components/ui/Particles";
 import Features from "@/components/Features";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);

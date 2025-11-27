@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Socket } from "socket.io-client";
 import { socketService } from "@/lib/socket";
 import { useAuthStore } from "@/store/authStore";
@@ -25,26 +25,6 @@ interface UseSocketOptions {
 
 /**
  * React hook for Socket.IO connection management
- *
- * @example
- * ```tsx
- * const { socket, isConnected, connect, disconnect } = useSocket({
- *   autoConnect: true,
- *   heartbeatInterval: 30000,
- * });
- *
- * useEffect(() => {
- *   if (!socket) return;
- *
- *   socket.on("customEvent", (data) => {
- *     console.log("Received:", data);
- *   });
- *
- *   return () => {
- *     socket.off("customEvent");
- *   };
- * }, [socket]);
- * ```
  */
 export function useSocket(options: UseSocketOptions = {}) {
   const {
@@ -54,11 +34,24 @@ export function useSocket(options: UseSocketOptions = {}) {
   } = options;
 
   const { authUser } = useAuthStore();
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(() =>
+    socketService.getSocket()
+  );
+  const [isConnected, setIsConnected] = useState(() =>
+    socketService.isConnected()
+  );
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasInitializedRef = useRef(false);
 
-  const connect = () => {
+  // Sync connection state with socketService
+  const syncConnectionState = useCallback(() => {
+    const currentSocket = socketService.getSocket();
+    const connected = socketService.isConnected();
+    setSocket(currentSocket);
+    setIsConnected(connected);
+  }, []);
+
+  const connect = useCallback(() => {
     const token = localStorage.getItem("authToken");
 
     if (!token) {
@@ -68,25 +61,43 @@ export function useSocket(options: UseSocketOptions = {}) {
       return;
     }
 
+    // Don't reconnect if already connected
+    if (socketService.isConnected()) {
+      syncConnectionState();
+      return;
+    }
+
     try {
       const socketInstance = socketService.connect(token);
-      setSocket(socketInstance);
 
-      // Update connection status
-      socketInstance.on("connect", () => {
+      // Set up listeners only once per socket instance
+      const onConnect = () => {
+        console.log("useSocket: connected");
         setIsConnected(true);
-      });
+        setSocket(socketInstance);
+      };
 
-      socketInstance.on("disconnect", () => {
+      const onDisconnect = () => {
+        console.log("useSocket: disconnected");
         setIsConnected(false);
-      });
+      };
 
-      socketInstance.on("connect_error", (error) => {
-        console.error("Socket connection error:", error);
-      });
+      // Remove old listeners first to prevent duplicates
+      socketInstance.off("connect", onConnect);
+      socketInstance.off("disconnect", onDisconnect);
+
+      // Add new listeners
+      socketInstance.on("connect", onConnect);
+      socketInstance.on("disconnect", onDisconnect);
+
+      // If already connected, update state immediately
+      if (socketInstance.connected) {
+        setIsConnected(true);
+        setSocket(socketInstance);
+      }
 
       // Start heartbeat
-      if (heartbeatInterval > 0) {
+      if (heartbeatInterval > 0 && !heartbeatIntervalRef.current) {
         heartbeatIntervalRef.current = setInterval(() => {
           if (socketService.isConnected()) {
             socketService.ping();
@@ -96,9 +107,9 @@ export function useSocket(options: UseSocketOptions = {}) {
     } catch (error) {
       console.error("Failed to connect socket:", error);
     }
-  };
+  }, [heartbeatInterval, syncConnectionState]);
 
-  const disconnect = () => {
+  const disconnect = useCallback(() => {
     // Clear heartbeat
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
@@ -108,22 +119,61 @@ export function useSocket(options: UseSocketOptions = {}) {
     socketService.disconnect();
     setSocket(null);
     setIsConnected(false);
-  };
+  }, []);
 
-  // Auto-connect on mount
+  // Initialize connection once
   useEffect(() => {
-    if (autoConnect && authUser) {
+    if (hasInitializedRef.current) return;
+
+    const token = localStorage.getItem("authToken");
+
+    if (autoConnect && token) {
+      hasInitializedRef.current = true;
+      connect();
+    }
+  }, [autoConnect, connect]);
+
+  // Handle auth changes (login/logout)
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+
+    // User logged in and we should auto-connect
+    if (authUser && token && autoConnect && !socketService.isConnected()) {
       connect();
     }
 
-    // Auto-disconnect on unmount
+    // User logged out
+    if (!authUser && !token) {
+      disconnect();
+      hasInitializedRef.current = false;
+    }
+  }, [authUser, autoConnect, connect, disconnect]);
+
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+
       if (autoDisconnect) {
-        disconnect();
+        socketService.disconnect();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authUser, autoConnect, autoDisconnect]);
+  }, [autoDisconnect]);
+
+  // Periodically sync state (fallback for edge cases)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const actualConnected = socketService.isConnected();
+      if (actualConnected !== isConnected) {
+        syncConnectionState();
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [isConnected, syncConnectionState]);
 
   return {
     socket,

@@ -16,7 +16,7 @@
 /* Layout */
 .dashboard-container {
   display: flex;
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh + 50px);
   max-width: 100%;
   gap: 24px;
   padding-inline: 90px;
