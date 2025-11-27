@@ -5,10 +5,8 @@ import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { DashboardNavbar } from "../_components/DashboardNavbar";
-import { AuthGuard } from "@/services/AuthGuard";
 
-const InvitesPage = () => {
+export default function InvitesPage() {
   const router = useRouter();
   const { authUser } = useAuthStore();
 
@@ -137,8 +135,6 @@ const InvitesPage = () => {
 
   return (
     <div className="min-h-screen glass-bg">
-      <DashboardNavbar currentTeam={null} />
-
       <div className="max-w-4xl mx-auto p-6">
         {/* Page Header */}
         <div className="mb-8">
@@ -447,14 +443,5 @@ const InvitesPage = () => {
         </div>
       </div>
     </div>
-  );
-};
-
-// Wrap with AuthGuard
-export default function InvitesPageWithAuth() {
-  return (
-    <AuthGuard>
-      <InvitesPage />
-    </AuthGuard>
   );
 }

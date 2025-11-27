@@ -8,12 +8,10 @@ import React, {
   useCallback,
 } from "react";
 import Link from "next/link";
-import { DashboardNavbar } from "../_components/DashboardNavbar";
-import { AuthGuard } from "@/services/AuthGuard";
 import { useAuthStore } from "@/store/authStore";
 import { useTeamStore } from "@/store/teamStore";
 
-const TeamsPageInner = () => {
+export default function TeamsPage() {
   const authUser = useAuthStore((s) => s.authUser);
 
   const {
@@ -154,8 +152,6 @@ const TeamsPageInner = () => {
 
   return (
     <div className="min-h-screen glass-bg">
-      <DashboardNavbar currentTeam={null} />
-
       <div className="max-w-7xl mx-auto px-5 py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
@@ -444,7 +440,7 @@ const TeamsPageInner = () => {
       </div>
     </div>
   );
-};
+}
 
 /* ---------- UI Helpers ---------- */
 
@@ -538,11 +534,3 @@ const EmptyState = ({
     {actions}
   </div>
 );
-
-export default function TeamsPage() {
-  return (
-    <AuthGuard>
-      <TeamsPageInner />
-    </AuthGuard>
-  );
-}

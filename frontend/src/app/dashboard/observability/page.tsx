@@ -1,9 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
-import { DashboardNavbar } from "../_components/DashboardNavbar";
+import { useState } from "react";
 import {
   Calendar,
   ChevronDown,
@@ -60,23 +57,11 @@ const SidebarItem = ({
 );
 
 export default function ObservabilityPage() {
-  const router = useRouter();
-  const authUser = useAuthStore((s) => s.authUser);
-  const checkAuth = useAuthStore((s) => s.checkAuth);
-  const [isLoading, setIsLoading] = useState(true);
   const [environment, setEnvironment] = useState("Production");
   const [timeRange, setTimeRange] = useState("Last 12 hours");
   const [searchTerm, setSearchTerm] = useState("");
   const [showEnvDropdown, setShowEnvDropdown] = useState(false);
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
-
-  useEffect(() => {
-    const init = async () => {
-      await checkAuth(router as any);
-      setIsLoading(false);
-    };
-    init();
-  }, [checkAuth, router]);
 
   const metricCards: MetricCard[] = [
     {
@@ -109,21 +94,8 @@ export default function ObservabilityPage() {
     },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="vercel-dashboard">
-        <DashboardNavbar />
-        <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="vercel-dashboard">
-      <DashboardNavbar />
-
+    <>
       {/* Top Banner */}
       <div
         className="border-b px-6 py-3 flex items-center justify-between"
@@ -494,6 +466,6 @@ export default function ObservabilityPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

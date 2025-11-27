@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { AuthGuard } from "@/services/AuthGuard";
-import { DashboardNavbar } from "../_components/DashboardNavbar";
 import { useAccountSettingsStore } from "@/store/accountSettingsStore";
 
-const SettingsPage = () => {
+export default function SettingsPage() {
   const {
     accountSettings,
     loading,
@@ -36,9 +34,9 @@ const SettingsPage = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const sections = [
-    { id: "profile", label: "Profile Information",},
-    { id: "security", label: "Contact Information",},
-    { id: "danger", label: "Account Management",},
+    { id: "profile", label: "Profile Information" },
+    { id: "security", label: "Contact Information" },
+    { id: "danger", label: "Account Management" },
   ];
 
   // Load account settings on mount
@@ -235,8 +233,6 @@ const SettingsPage = () => {
 
   return (
     <div className="min-h-screen glass-bg">
-      <DashboardNavbar currentTeam={null} />
-
       <div className="max-w-6xl mx-auto px-5 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -479,13 +475,5 @@ const SettingsPage = () => {
         </div>
       </div>
     </div>
-  );
-};
-
-export default function SettingsPageWithAuth() {
-  return (
-    <AuthGuard>
-      <SettingsPage />
-    </AuthGuard>
   );
 }
