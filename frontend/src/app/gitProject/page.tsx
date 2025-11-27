@@ -93,7 +93,7 @@ export default function GitHubImportPage() {
   const displayAnalysis = fullAnalysis;
 
   const handleAddNewRepo = () => {
-    window.open(`${process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI}`);
+    router.push(`${process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI}`);
   };
 
   return (
