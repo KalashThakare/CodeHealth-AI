@@ -1,8 +1,8 @@
 import { NavLink } from "../types";
-import { Activity, Eye, HelpCircle, Settings } from "lucide-react";
+import { Activity, Eye, HelpCircle, Settings, FolderGit2 } from "lucide-react";
 
 export const navLinks: NavLink[] = [
-  { name: "Projects", href: "/dashboard", icon: Activity },
+  { name: "Projects", href: "/dashboard/projects", icon: FolderGit2 },
   { name: "Activity", href: "/dashboard/activity", icon: Activity },
   { name: "Observability", href: "/dashboard/observability", icon: Eye },
   { name: "Support", href: "/dashboard/support", icon: HelpCircle },
@@ -10,8 +10,8 @@ export const navLinks: NavLink[] = [
 ];
 
 export const isActive = (path: string, pathname: string): boolean => {
-  if (path === "/dashboard") {
-    return pathname === path;
+  if (path === "/dashboard/projects") {
+    return pathname === path || pathname === "/dashboard";
   }
   return pathname.startsWith(path);
 };

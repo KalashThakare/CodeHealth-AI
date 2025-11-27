@@ -22,8 +22,8 @@ export const DesktopNavLinks: React.FC<DesktopNavLinksProps> = ({
   const { highlightStyle, setHoveredIndex } = highlightState;
 
   const isActive = (path: string) => {
-    if (path === "/dashboard") {
-      return pathname === path;
+    if (path === "/dashboard/projects") {
+      return pathname === path || pathname === "/dashboard";
     }
     return pathname.startsWith(path);
   };
