@@ -15,18 +15,18 @@ export const getUsage = async(req,res)=>{
             }
         })
 
-        const teamCount = await Team.count({
-            where:{
-                userId:{
-                    userId
-                }
-            }
-        })
+        // const teamCount = await Team.count({
+        //     where:{
+        //         userId:{
+        //             userId
+        //         }
+        //     }
+        // })
 
         res.status(200).json({
             message:"Success",
             repoCount,
-            teamCount
+            // teamCount
         });
 
     } catch (error) {
