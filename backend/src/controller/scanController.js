@@ -1,4 +1,4 @@
-import { Project } from "../database/models/project.js"
+import { Project } from "../database/models/project.js";
 import { handleAnalyse } from "../services/handlers/analyse.handler.js";
 import { filesQueue } from "../lib/redis.js";
 import PushAnalysisMetrics from "../database/models/pushAnalysisMetrics.js";
@@ -9,29 +9,53 @@ import RepoMetadata from "../database/models/repoMedata.js";
 import { triggerBackgroundAnalysis } from "./analysisController.js";
 import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
 
-
-
-export const Analyse_repo = async (req,res) => {
+export const Analyse_repo = async (req, res) => {
   try {
-
-    const{ repoId } = req.params
+    const { repoId } = req.params;
+    const userId = req.user?.id;
 
     if (!repoId) {
-      throw new Error("repo for analysis not selected");
+      return res.status(400).json({ error: "Repository ID is required" });
     }
-    const repo = await Project.findOne({ where: { repoId: repoId } })
+
+    const repo = await Project.findOne({ where: { repoId: repoId } });
 
     if (!repo) {
-      throw new Error("Repo selected for analysis not found");
+      return res.status(404).json({ error: "Repository not found" });
+    }
+
+    // Previously initialized
+    if (repo.initialised) {
+      return res.status(200).json({
+        message: "Repository is already initialized",
+        repoId: repo.repoId,
+        alreadyInitialized: true,
+      });
+    }
+
+    // max 2 repos limit
+    const initializedCount = await Project.count({
+      where: { userId, initialised: true },
+    });
+
+    if (initializedCount >= 2) {
+      return res.status(400).json({
+        error:
+          "Maximum 2 repositories can be initialized at a time. Please uninitialize another repository first.",
+        maxReached: true,
+        currentCount: initializedCount,
+      });
     }
 
     await repo.update({ initialised: true });
 
-    const fullName = repo.fullName
+    const fullName = repo.fullName;
     const [owner, repoName] = fullName.split("/");
 
     if (!owner || !repoName) {
-      throw new Error("Invalid repository full name format");
+      return res
+        .status(400)
+        .json({ error: "Invalid repository full name format" });
     }
 
     const payload = {
@@ -40,7 +64,7 @@ export const Analyse_repo = async (req,res) => {
       owner: owner,
       repoName: repoName,
       defaultBranch: repo.defaultBranch || "main",
-      requestedBy: null
+      requestedBy: null,
     };
 
     const result = await handleAnalyse(payload);
@@ -49,20 +73,19 @@ export const Analyse_repo = async (req,res) => {
       message: "Initialization successful. Analysis in progress.",
       data: {
         jobId: result.jobId,
-        status: 'queued',
+        status: "queued",
         repoId: repo.repoId,
-        estimatedWaitTime: '2-5 minutes'
-      }
+        estimatedWaitTime: "2-5 minutes",
+      },
     });
-
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: "Failed to queue repository analysis",
-      details: error.message 
+      details: error.message,
     });
   }
-}
+};
 
 export const enqueueBatch = async (req, res) => {
   const { files, repoId, branch } = req.body;
@@ -70,20 +93,19 @@ export const enqueueBatch = async (req, res) => {
     return res.status(400).json({ message: "Invalid response" });
   }
 
-  const jobs = files.map(file => ({
+  const jobs = files.map((file) => ({
     name: file.path,
     data: {
       ...file,
       repoId: repoId,
-      branch: branch
-    }
-
+      branch: branch,
+    },
   }));
 
   await filesQueue.addBulk(jobs);
 
   res.send({ added: jobs.length });
-}
+};
 
 export const collectPushMetrics = async (req, res) => {
   try {
@@ -91,34 +113,36 @@ export const collectPushMetrics = async (req, res) => {
 
     if (!message || !impact || !prio) {
       return res.status(400).json({
-        message: "Required fields are missing (message, impact, prio)"
+        message: "Required fields are missing (message, impact, prio)",
       });
     }
 
     if (!repoId) {
       return res.status(400).json({
-        message: "repoId is missing"
+        message: "repoId is missing",
       });
     }
 
     const repo = await Project.findOne({
       where: {
-        repoId: repoId
-      }
+        repoId: repoId,
+      },
     });
 
     if (!repo) {
       return res.status(404).json({
-        message: "No project found associated with this repoId"
+        message: "No project found associated with this repoId",
       });
     }
 
-    const messageMatch = message.match(/Analyzed (.+?) on (.+?)\. Impact=([\d.]+), threshold=([\d.]+)/);
+    const messageMatch = message.match(
+      /Analyzed (.+?) on (.+?)\. Impact=([\d.]+), threshold=([\d.]+)/
+    );
 
     let repository = repo.name;
-    let branch = 'main';
+    let branch = "main";
     let impactValue = impact.score;
-    let thresholdValue = 0.50;
+    let thresholdValue = 0.5;
 
     if (messageMatch) {
       repository = messageMatch[1];
@@ -142,9 +166,9 @@ export const collectPushMetrics = async (req, res) => {
       files: files,
       riskAnalysis: {
         impactedFiles: impact.impactedFiles || [],
-        candidates: prio.candidates || []
+        candidates: prio.candidates || [],
       },
-      analyzedAt: new Date()
+      analyzedAt: new Date(),
     });
 
     return res.status(201).json({
@@ -157,15 +181,14 @@ export const collectPushMetrics = async (req, res) => {
         score: metric.score,
         ok: metric.ok,
         filesCount: files.length,
-        analyzedAt: metric.analyzedAt
-      }
+        analyzedAt: metric.analyzedAt,
+      },
     });
-
   } catch (error) {
     console.error("Error collecting push metrics:", error);
     return res.status(500).json({
       message: "Internal server error",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -176,7 +199,9 @@ export const collectePythonMetrics = async (req, res) => {
 
     if (!repoId) return res.status(400).json({ message: "repoId is missing" });
     if (!Metrics || !Array.isArray(Metrics)) {
-      return res.status(400).json({ message: "Metrics array is missing or invalid" });
+      return res
+        .status(400)
+        .json({ message: "Metrics array is missing or invalid" });
     }
 
     const repo = await Project.findOne({
@@ -193,9 +218,11 @@ export const collectePythonMetrics = async (req, res) => {
       const avgComplexity =
         metric.cyclomatic && metric.cyclomatic.length > 0
           ? Math.round(
-            metric.cyclomatic.reduce((sum, item) => sum + (item.complexity || 0), 0) /
-            metric.cyclomatic.length
-          )
+              metric.cyclomatic.reduce(
+                (sum, item) => sum + (item.complexity || 0),
+                0
+              ) / metric.cyclomatic.length
+            )
           : null;
 
       return {
@@ -226,7 +253,6 @@ export const collectePythonMetrics = async (req, res) => {
       };
     });
 
-
     const savedRecords = await RepoFileMetrics.bulkCreate(records, {
       updateOnDuplicate: [
         "cyclomaticComplexity",
@@ -247,14 +273,16 @@ export const collectePythonMetrics = async (req, res) => {
       ],
     });
 
-    console.log(`Successfully saved ${savedRecords.length} file metrics to database`);
+    console.log(
+      `Successfully saved ${savedRecords.length} file metrics to database`
+    );
 
     const backgroundAnalysis = await triggerBackgroundAnalysis(repoId);
 
     if (!backgroundAnalysis) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         message: "Failed to complete repository analysis",
-        filesProcessed: savedRecords.length 
+        filesProcessed: savedRecords.length,
       });
     }
 
@@ -274,78 +302,71 @@ export const collectePythonMetrics = async (req, res) => {
 };
 
 export const getFileMetrics = async (req, res) => {
-
   try {
-
     const { repoId } = req.params;
 
     if (!repoId) return res.status(400).json({ message: "repoId is missing" });
 
     const repo = await Project.findOne({
       where: {
-        repoId: repoId
-      }
+        repoId: repoId,
+      },
     });
 
     if (!repo) return res.status(400).json({ message: "No repo found" });
 
     const metric = await RepoFileMetrics.findAll({
       where: {
-        repoId: repoId
-      }
-    })
+        repoId: repoId,
+      },
+    });
 
-    if (!metric) return res.status(400).json({ message: "No metrics found for perticular repository" });
+    if (!metric)
+      return res
+        .status(400)
+        .json({ message: "No metrics found for perticular repository" });
 
     return res.status(200).json({ message: "Success", metric });
-
   } catch (error) {
-
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
-
   }
-
-}
+};
 
 export const getPushMetrics = async (req, res) => {
-
   try {
-
     const { repoId } = req.params;
 
     if (!repoId) return res.status(400).json({ message: "repoId is missing" });
 
     const repo = await Project.findOne({
       where: {
-        repoId: repoId
-      }
+        repoId: repoId,
+      },
     });
 
     if (!repo) return res.status(400).json({ message: "No repo found" });
 
     const metric = await PushAnalysisMetrics.findAll({
       where: {
-        repoId: repoId
-      }
-    })
+        repoId: repoId,
+      },
+    });
 
-    if (!metric) return res.status(400).json({ message: "No metrics found for perticular repository" });
+    if (!metric)
+      return res
+        .status(400)
+        .json({ message: "No metrics found for perticular repository" });
 
     return res.status(200).json({ message: "Success", metric });
-
   } catch (error) {
-
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
-
   }
-
-}
+};
 
 export const getCommitAnalysis = async (req, res) => {
   try {
-
     const { commits_analysis, repoId, branch } = req.body;
 
     if (!commits_analysis || !repoId || !branch) {
@@ -354,9 +375,9 @@ export const getCommitAnalysis = async (req, res) => {
 
     const repo = await Project.findOne({
       where: {
-        repoId: repoId
-      }
-    })
+        repoId: repoId,
+      },
+    });
 
     if (!repo) return res.status(400).json({ message: "No repository found" });
 
@@ -369,12 +390,11 @@ export const getCommitAnalysis = async (req, res) => {
     });
 
     return res.status(201).json({ message: "Success" });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
   }
-}
+};
 
 export const getCommitMetadata = async (req, res) => {
   try {
@@ -386,35 +406,36 @@ export const getCommitMetadata = async (req, res) => {
 
     const repo = await Project.findOne({
       where: {
-        repoId: repoId
-      }
-    })
+        repoId: repoId,
+      },
+    });
 
     if (!repo) return res.status(400).json({ message: "No repository found" });
 
-    const incomingShas = commits.map(commit => commit.sha);
+    const incomingShas = commits.map((commit) => commit.sha);
 
     const existingCommits = await Commit.findAll({
       where: {
-        sha: incomingShas
+        sha: incomingShas,
       },
-      attributes: ['sha']
+      attributes: ["sha"],
     });
 
-    const existingShas = new Set(existingCommits.map(commit => commit.sha));
+    const existingShas = new Set(existingCommits.map((commit) => commit.sha));
 
-    const newCommits = commits.filter(commit => !existingShas.has(commit.sha));
+    const newCommits = commits.filter(
+      (commit) => !existingShas.has(commit.sha)
+    );
 
     if (newCommits.length === 0) {
       return res.status(200).json({
-        message: 'All commits already exist in database',
+        message: "All commits already exist in database",
         skipped: commits.length,
-        added: 0
+        added: 0,
       });
     }
 
-
-    const commitsData = newCommits.map(commit => ({
+    const commitsData = newCommits.map((commit) => ({
       repoId: repoId,
       branch: branch,
       sha: commit.sha,
@@ -432,12 +453,11 @@ export const getCommitMetadata = async (req, res) => {
     });
 
     return res.status(201).json({ message: "Success", added: result.length });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
   }
-}
+};
 
 export const getRepoMetadata = async (req, res) => {
   try {
@@ -449,14 +469,14 @@ export const getRepoMetadata = async (req, res) => {
 
     const repo = await Project.findOne({
       where: {
-        repoId: repoId
-      }
-    })
+        repoId: repoId,
+      },
+    });
 
     if (!repo) return res.status(400).json({ message: "No repository found" });
 
     const existingMeta = await RepoMetadata.findOne({
-      where: { repoId }
+      where: { repoId },
     });
 
     if (existingMeta) {
@@ -466,7 +486,7 @@ export const getRepoMetadata = async (req, res) => {
         watchers: metadata.watchers,
         license: metadata.license,
         defaultBranch: metadata.default_branch,
-        visibility: metadata.visibility
+        visibility: metadata.visibility,
       });
     } else {
       await RepoMetadata.create({
@@ -477,17 +497,16 @@ export const getRepoMetadata = async (req, res) => {
         watchers: metadata.watchers,
         license: metadata.license,
         defaultBranch: metadata.default_branch,
-        visibility: metadata.visibility
+        visibility: metadata.visibility,
       });
     }
 
     return res.status(200).json({ message: "Success" });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
   }
-}
+};
 
 export const fetchCommits = async (req, res) => {
   try {
@@ -497,8 +516,8 @@ export const fetchCommits = async (req, res) => {
 
     const repo = await Project.findOne({
       where: {
-        repoId: repoId
-      }
+        repoId: repoId,
+      },
     });
 
     if (!repo) {
@@ -509,105 +528,107 @@ export const fetchCommits = async (req, res) => {
       where: {
         repoId: repoId,
       },
-      order: [['createdAt', 'DESC']]
-    })
+      order: [["createdAt", "DESC"]],
+    });
 
-    return res.status(200).json({ message: "success", commits })
+    return res.status(200).json({ message: "success", commits });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
   }
-}
+};
 
-export const fetchCommitAnalysis = async(req,res)=>{
+export const fetchCommitAnalysis = async (req, res) => {
   try {
-    const {repoId} = req.params;
-    if(!repoId) return res.status(404).json({message:"repoId is missing"});
+    const { repoId } = req.params;
+    if (!repoId) return res.status(404).json({ message: "repoId is missing" });
 
     const repo = await Project.findOne({
-      where:{
-        repoId:repoId
-      }
-    })
+      where: {
+        repoId: repoId,
+      },
+    });
 
-    if(!repo) return res.status(404).json({message:"repo not found"});
+    if (!repo) return res.status(404).json({ message: "repo not found" });
 
     const analysis = await CommitsAnalysis.findAll({
-      where:{
-        repoId:repoId
+      where: {
+        repoId: repoId,
       },
-      order:[['createdAt','DESC']]
-    })
+      order: [["createdAt", "DESC"]],
+    });
 
-    return res.status(200).json({message:"Success", analysis});
+    return res.status(200).json({ message: "Success", analysis });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({message:"Internal server error"});
+    return res.status(500).json({ message: "Internal server error" });
   }
-}
+};
 
-export const getContributers = async(req,res)=>{
+export const getContributers = async (req, res) => {
   try {
-    const {repoId, contributors} = req.body;
-    if(!repoId) return res.status(404).json({message:"repoId is missing"});
-    if(!contributors) return res.status(404).json({message:"contributers are missing"});
+    const { repoId, contributors } = req.body;
+    if (!repoId) return res.status(404).json({ message: "repoId is missing" });
+    if (!contributors)
+      return res.status(404).json({ message: "contributers are missing" });
 
     const repo = await Project.findOne({
-      where:{
-        repoId:repoId
-      }
-    })
+      where: {
+        repoId: repoId,
+      },
+    });
 
-    if(!repo) return res.status(404).json({message:"No repository found"});
+    if (!repo) return res.status(404).json({ message: "No repository found" });
 
     console.log(contributors);
 
-    return res.status(200).json({message:"Success"});
+    return res.status(200).json({ message: "Success" });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({message:"Internal server error"});
+    return res.status(500).json({ message: "Internal server error" });
   }
-}
+};
 
-export const getPrAnalysis=async(req,res)=>{
+export const getPrAnalysis = async (req, res) => {
   try {
-    const {repoId} = req.params;
+    const { repoId } = req.params;
 
-    if(!repoId){
-      return res.status(404).json({message:"RepoId not found"});
+    if (!repoId) {
+      return res.status(404).json({ message: "RepoId not found" });
     }
 
     const repo = await Project.findOne({
-      where:{
-        repoId:repoId
-      }
+      where: {
+        repoId: repoId,
+      },
     });
 
-    if(!repo){
-      return res.status(400).json({message:"No project exist with this repoId"});
+    if (!repo) {
+      return res
+        .status(400)
+        .json({ message: "No project exist with this repoId" });
     }
 
     const prAnanlysis = await PullRequestAnalysis.findAll({
-      where:{
-        repoId:repoId
-      }
+      where: {
+        repoId: repoId,
+      },
     });
 
-    if(!prAnanlysis){
-      return res.status(400).json({message:"prAnanlysis not found"});
+    if (!prAnanlysis) {
+      return res.status(400).json({ message: "prAnanlysis not found" });
     }
 
     return res.status(200).json({
-      success:true,
-      message:"pr-Ananlysis returned successfully",
-      prAnanlysis
+      success: true,
+      message: "pr-Ananlysis returned successfully",
+      prAnanlysis,
     });
-
   } catch (error) {
     console.error("Internal server error", error);
     return res.status(500).json({
-      success:false,
-      message:"Internal server error"
+      success: false,
+      message: "Internal server error",
     });
   }
-}
+};

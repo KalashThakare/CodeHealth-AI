@@ -70,6 +70,7 @@ export const ListRepos = async (req, res) => {
             "repoUrl",
             "private",
             "installationId",
+            "initialised",
             "createdAt",
             "updatedAt",
           ],
@@ -254,7 +255,7 @@ export const githubWebhookController = async (req, res) => {
               private: repo.private,
               repoUrl,
               installationId,
-              initialised:"false"
+              initialised: "false",
             },
           });
 
@@ -264,18 +265,17 @@ export const githubWebhookController = async (req, res) => {
 
         // console.log("Repositories results are:========================================",results)
 
-        return res.status(200).json({message:"Repos imported successfully"});
+        return res.status(200).json({ message: "Repos imported successfully" });
       }
 
       if (event === "installation_repositories" && action === "removed") {
         const repos = payload.repositories_removed || [];
         for (const repo of repos) {
-
           const repository = await Project.findOne({
             where: {
-              repoId: repo.id
-            }
-          })
+              repoId: repo.id,
+            },
+          });
 
           if (repository) {
             const userId = repository.userId;
@@ -290,39 +290,39 @@ export const githubWebhookController = async (req, res) => {
               repoName,
               repoId,
               message: `Repository: ${repoName} removed successfully`,
-              time: Date.now()
+              time: Date.now(),
             });
           }
-
         }
       }
 
       if (event === "installation" && action === "deleted") {
         const projects = await Project.findAll({
-          where: { installationId }
+          where: { installationId },
         });
 
         if (projects && projects.length > 0) {
-
           const userId = projects[0].userId;
 
-          const deleteCount = await Project.destroy({ where: { installationId } });
+          const deleteCount = await Project.destroy({
+            where: { installationId },
+          });
 
-          // Emit notification 
+          // Emit notification
           for (const project of projects) {
             io.to(`user:${userId}`).emit("notification", {
               type: "delete",
               success: deleteCount > 0,
               repoName: project.repoName,
               repoId: project.repoId,
-              message: deleteCount > 0
-                ? `Repository: ${project.repoName} deleted successfully`
-                : `Repository: ${project.repoName} deletion failed`,
-              time: Date.now()
+              message:
+                deleteCount > 0
+                  ? `Repository: ${project.repoName} deleted successfully`
+                  : `Repository: ${project.repoName} deletion failed`,
+              time: Date.now(),
             });
           }
         }
-
       }
     }
 
@@ -353,8 +353,7 @@ export const githubWebhookController = async (req, res) => {
       return res.status(200).json(result);
     }
     if (event === "pull_request") {
-
-      const action = payload.action
+      const action = payload.action;
 
       if (!project) {
         if (repoId) project = await Project.findOne({ where: { repoId } });
