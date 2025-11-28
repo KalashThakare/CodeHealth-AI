@@ -40,6 +40,10 @@ export default function GitHubImportPage() {
     fetchGitHubRepos,
     clearError: clearGithubError,
     selectRepository,
+    initializeRepository,
+    uninitializeRepository,
+    getInitializedCount,
+    initializingRepoId,
   } = useGitHubStore();
 
   const {
@@ -54,6 +58,9 @@ export default function GitHubImportPage() {
   const [analytics, setAnalytics] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<any>(null);
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
+
+  // Only get count after mount to avoid hydration mismatch
+  const initializedCount = mounted ? getInitializedCount() : 0;
 
   useEffect(() => {
     fetchGitHubRepos();
@@ -137,10 +144,15 @@ export default function GitHubImportPage() {
           <div className="lg:col-span-1">
             <div className="apple-card">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-[var(--gp-fg)] flex items-center gap-2">
-                  <FiGithub size={18} />
-                  Repositories
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-semibold text-[var(--gp-fg)] flex items-center gap-2">
+                    <FiGithub size={18} />
+                    Repositories
+                  </h2>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--gp-bg-secondary)] text-[var(--gp-fg-secondary)]">
+                    {initializedCount}/2 active
+                  </span>
+                </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleAddNewRepo}
@@ -192,32 +204,71 @@ export default function GitHubImportPage() {
                     </p>
                   </div>
                 ) : (
-                  filteredRepos.map((repo) => (
-                    <button
-                      key={repo.repoId}
-                      onClick={() => handleSelectRepo(repo)}
-                      className={`repo-item ${
-                        selectedRepo?.repoId === repo.repoId ? "active" : ""
-                      }`}
-                    >
-                      <div className="font-medium truncate mb-0.5 text-sm">
-                        {repo.repoName}
+                  filteredRepos.map((repo) => {
+                    const isInitialized = repo.initialised;
+                    const isLoading = initializingRepoId === repo.repoId;
+
+                    return (
+                      <div
+                        key={repo.repoId}
+                        onClick={() => handleSelectRepo(repo)}
+                        className={`repo-item flex justify-between items-center ${
+                          selectedRepo?.repoId === repo.repoId ? "active" : ""
+                        }`}
+                      >
+                        <div className="flex flex-col gap-1 flex-1 min-w-0">
+                          <div className="font-medium truncate mb-0.5 text-sm">
+                            {repo.repoName}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs opacity-70">
+                            {repo.visibility === "private" ? (
+                              <span className="flex items-center gap-1">
+                                <FiLock size={10} />
+                                Private
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1">
+                                <FiUnlock size={10} />
+                                Public
+                              </span>
+                            )}
+                            {isInitialized && (
+                              <span className="text-[var(--terminal-success)] flex items-center gap-1">
+                                • Initialized
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isInitialized) {
+                              uninitializeRepository(repo.repoId);
+                            } else {
+                              initializeRepository(repo.repoId);
+                            }
+                          }}
+                          disabled={isLoading}
+                          className={`glassmorphism-button px-2 py-1 text-xs whitespace-nowrap flex items-center gap-1 ${
+                            isInitialized ? "!text-[var(--terminal-error)]" : ""
+                          }`}
+                        >
+                          {isLoading ? (
+                            <>
+                              <FiLoader size={12} className="animate-spin" />
+                              {isInitialized
+                                ? "Removing..."
+                                : "Initializing..."}
+                            </>
+                          ) : isInitialized ? (
+                            "Remove"
+                          ) : (
+                            "Initialize"
+                          )}
+                        </button>
                       </div>
-                      <div className="flex items-center gap-2 text-xs opacity-70">
-                        {repo.visibility === "private" ? (
-                          <span className="flex items-center gap-1">
-                            <FiLock size={10} />
-                            Private
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1">
-                            <FiUnlock size={10} />
-                            Public
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

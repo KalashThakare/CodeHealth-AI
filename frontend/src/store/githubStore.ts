@@ -13,6 +13,7 @@ interface GitHubRepo {
   installationId?: string | null;
   createdAt: string;
   updatedAt: string;
+  initialised?: boolean;
 }
 
 interface GitHubUser {
@@ -44,6 +45,7 @@ interface GitHubStore {
   analysisHistory: RepositoryAnalysis[];
   isLoading: boolean;
   error: string | null;
+  initializingRepoId: number | null;
 
   // Actions
   setGitHubToken: (token: string) => void;
@@ -51,6 +53,9 @@ interface GitHubStore {
   fetchGitHubRepos: () => Promise<void>;
   selectRepository: (repo: GitHubRepo) => void;
   analyzeRepository: (repoUrl: string) => Promise<RepositoryAnalysis | null>;
+  initializeRepository: (repoId: number) => Promise<boolean>;
+  uninitializeRepository: (repoId: number) => Promise<boolean>;
+  getInitializedCount: () => number;
   clearError: () => void;
   resetStore: () => void;
   getRepositoryById: (id: number) => GitHubRepo | undefined;
@@ -85,6 +90,7 @@ export const useGitHubStore = create<GitHubStore>()(
       analysisHistory: [],
       isLoading: false,
       error: null,
+      initializingRepoId: null,
 
       // Actions
       setGitHubToken: (token: string) => {
@@ -200,6 +206,70 @@ export const useGitHubStore = create<GitHubStore>()(
       getRepositoryById: (id: number): GitHubRepo | undefined => {
         const repositories = get().repositories;
         return repositories.find((repo) => repo.id === id);
+      },
+
+      getInitializedCount: (): number => {
+        return get().repositories.filter((repo) => repo.initialised).length;
+      },
+
+      initializeRepository: async (repoId: number): Promise<boolean> => {
+        const repositories = get().repositories;
+        const initializedCount = repositories.filter(
+          (r) => r.initialised
+        ).length;
+        const repo = repositories.find((r) => r.repoId === repoId);
+
+        // Check if already at max
+        if (initializedCount >= 2 && !repo?.initialised) {
+          toast.error(
+            "Maximum 2 repositories can be initialized. Please remove initialization from another repository first."
+          );
+          return false;
+        }
+
+        set({ initializingRepoId: repoId });
+        try {
+          await axiosInstance.get(`/analyze/${repoId}/initialize`);
+
+          set({
+            repositories: get().repositories.map((r) =>
+              r.repoId === repoId ? { ...r, initialised: true } : r
+            ),
+          });
+
+          toast.success("Repository initialized successfully");
+          return true;
+        } catch (error: any) {
+          const errorMessage =
+            error?.response?.data?.error || "Failed to initialize repository";
+          toast.error(errorMessage);
+          return false;
+        } finally {
+          set({ initializingRepoId: null });
+        }
+      },
+
+      uninitializeRepository: async (repoId: number): Promise<boolean> => {
+        set({ initializingRepoId: repoId });
+        try {
+          await axiosInstance.post(`/analyze/${repoId}/uninitialize`);
+
+          set({
+            repositories: get().repositories.map((r) =>
+              r.repoId === repoId ? { ...r, initialised: false } : r
+            ),
+          });
+
+          toast.success("Repository uninitialized successfully");
+          return true;
+        } catch (error: any) {
+          const errorMessage =
+            error?.response?.data?.error || "Failed to uninitialize repository";
+          toast.error(errorMessage);
+          return false;
+        } finally {
+          set({ initializingRepoId: null });
+        }
       },
 
       checkGitHubTokenStatus: async () => {
