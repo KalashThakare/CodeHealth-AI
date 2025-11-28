@@ -13,6 +13,9 @@ import RepoFileMetrics from "../database/models/repoFileMetrics.js";
 import Commit from "../database/models/commitsMetadata.js";
 import { connection } from "../lib/redis.js";
 import { io } from "../server.js";
+import CommitsAnalysis from "../database/models/commit_analysis.js";
+import PushAnalysisMetrics from "../database/models/pushAnalysisMetrics.js";
+import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
 dotenv.config();
 
 
@@ -411,3 +414,56 @@ export const fetchAiInsights = async (req, res) => {
     });
   }
 };
+
+export const uninitializeRepo = async(req, res)=>{
+  try {
+    const {repoId} = req.params;
+    if(!repoId){
+      return res.status(400).json({message:"repoId is missing"});
+    }
+
+    const repo = await Project.findOne({
+      where:{
+        repoId:repoId,
+        initialised:"true",
+      }
+    })
+
+    if(!repo){
+      return res.status(400).json({message:"repo is not initialised"});
+    }
+
+    await Promise.all([
+      RepoFileMetrics.destroy({
+        where: { repoId: repoId }
+      }),
+      PushAnalysisMetrics.destroy({
+        where: { repoId: repoId }
+      }),
+      CommitsAnalysis.destroy({
+        where: { repoId: repoId }
+      }),
+      Commit.destroy({
+        where: { repoId: repoId }
+      }),
+      RepoMetadata.destroy({
+        where: { repoId: repoId }
+      }),
+      RepositoryAnalysis.destroy({
+        where: { repoId: repoId }
+      }),
+      PullRequestAnalysis.destroy({
+        where: { repoId: repoId }
+      })
+    ]);
+
+    await repo.update({initialised:"false"})
+
+    return res.status(200).json({success:true,
+      message:"Repo Uninitialized"
+    })
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({success:false, message:"Internal server error"}, error)
+  }
+}

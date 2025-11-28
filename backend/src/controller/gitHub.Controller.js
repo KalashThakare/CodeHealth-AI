@@ -177,9 +177,9 @@ export const githubWebhookController = async (req, res) => {
 
     let project = null;
     if (isRepoScoped(event)) {
-      if (repoId) project = await Project.findOne({ where: { repoId } });
+      if (repoId) project = await Project.findOne({ where: { repoId, initialised:"true" } });
       if (!project && repoName)
-        project = await Project.findOne({ where: { repoName } });
+        project = await Project.findOne({ where: { repoName, initialised:"true" } });
       if (!project) return res.status(404).send("Repository not registered");
 
       await WebhookEvent.create({
@@ -328,9 +328,12 @@ export const githubWebhookController = async (req, res) => {
 
     if (event === "push") {
       if (!project) {
-        if (repoId) project = await Project.findOne({ where: { repoId } });
+        if (repoId) project = await Project.findOne({ where: { 
+          repoId:repoId,
+          initialised:"true" 
+        } });
         if (!project && repoName)
-          project = await Project.findOne({ where: { repoName } });
+          project = await Project.findOne({ where: { repoName, initialised:"true" } });
       }
 
       if (repoId) {
@@ -356,9 +359,9 @@ export const githubWebhookController = async (req, res) => {
       const action = payload.action;
 
       if (!project) {
-        if (repoId) project = await Project.findOne({ where: { repoId } });
+        if (repoId) project = await Project.findOne({ where: { repoId, initialised:"true" } });
         if (!project && repoName)
-          project = await Project.findOne({ where: { repoName } });
+          project = await Project.findOne({ where: { repoName, initialised:"true" } });
       }
 
       if (action === "closed" && payload.pull_request?.merged) {

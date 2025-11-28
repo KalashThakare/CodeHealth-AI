@@ -1,6 +1,6 @@
 import express from "express"
 import { protectRoute } from "../middleware/auth.middleware.js";
-import { analyze_repo, fetchAiInsights, getAiInsights } from "../controller/analysisController.js";
+import { analyze_repo, fetchAiInsights, getAiInsights, uninitializeRepo } from "../controller/analysisController.js";
 import { Analyse_repo, getPrAnalysis } from "../controller/scanController.js";
 
 const router = express.Router();
@@ -11,5 +11,6 @@ router.get("/:repoId/fetchInsights", fetchAiInsights);
 router.get("/:repoId/pr",protectRoute ,getPrAnalysis)
 
 router.get("/:repoId/initialize",protectRoute, Analyse_repo)
+router.post("/:repoId/uninitialize",protectRoute, uninitializeRepo)
 
 export default router;
