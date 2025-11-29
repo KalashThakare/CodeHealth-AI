@@ -64,3 +64,23 @@ export const deleteCase = async(req,res)=>{
         return res.status(500).json({message:"Internal server error", success:false, error})
     }
 }
+
+export const getCases = async(req, res)=>{
+    try {
+        const userId = req.user?.id;
+        if(!userId){
+            return res.status(400).json({message:"Unauthorised"});
+        }
+
+        await support.findAll({
+            where:{
+                userId:userId
+            }
+        });
+
+        return res.status(200).json({message:"Success", success:true});
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({message:"Internal server error", error, success:false})
+    }
+}
