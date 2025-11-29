@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTeamStore } from "@/store/teamStore";
 import { useGitHubStore } from "@/store/githubStore";
+import { useUsageStore } from "@/store/usageStore";
 import {
   FiPlus,
   FiGithub,
@@ -12,8 +13,170 @@ import {
   FiLock,
   FiUnlock,
   FiActivity,
+  FiUsers,
+  FiDatabase,
 } from "react-icons/fi";
 import "../dashboard.css";
+
+function MiniSemiCircle({
+  value,
+  max,
+  color = "#10b981",
+  size = 40,
+}: {
+  value: number;
+  max: number;
+  color?: string;
+  size?: number;
+}) {
+  const percentage = Math.min((value / max) * 100, 100);
+  const strokeWidth = 4;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="relative" style={{ width: size, height: size / 2 + 2 }}>
+      <svg
+        width={size}
+        height={size / 2 + 2}
+        viewBox={`0 0 ${size} ${size / 2 + 2}`}
+        style={{ overflow: "visible" }}
+      >
+        <path
+          d={`M ${strokeWidth / 2} ${size / 2} A ${radius} ${radius} 0 0 1 ${
+            size - strokeWidth / 2
+          } ${size / 2}`}
+          fill="none"
+          stroke="var(--color-border)"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+        />
+        <path
+          d={`M ${strokeWidth / 2} ${size / 2} A ${radius} ${radius} 0 0 1 ${
+            size - strokeWidth / 2
+          } ${size / 2}`}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          style={{
+            transition: "stroke-dashoffset 0.5s ease-in-out",
+          }}
+        />
+      </svg>
+    </div>
+  );
+}
+
+function UsageStats({
+  repoCount,
+  teamCount,
+  isLoading,
+}: {
+  repoCount: number;
+  teamCount: number;
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="loading-spinner" style={{ width: 24, height: 24 }} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FiDatabase
+              size={14}
+              style={{ color: "var(--color-fg-secondary)" }}
+            />
+            <span className="text-sm" style={{ color: "var(--color-fg)" }}>
+              Active Repos
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MiniSemiCircle
+              value={repoCount}
+              max={2}
+              color={repoCount >= 2 ? "#f59e0b" : "#10b981"}
+              size={36}
+            />
+            <span
+              className="text-sm font-medium"
+              style={{ color: "var(--color-fg)", minWidth: "32px" }}
+            >
+              {repoCount} / 2
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FiUsers size={14} style={{ color: "var(--color-fg-secondary)" }} />
+            <span className="text-sm" style={{ color: "var(--color-fg)" }}>
+              Teams
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MiniSemiCircle
+              value={teamCount}
+              max={Math.max(teamCount, 5)}
+              color="#3b82f6"
+              size={36}
+            />
+            <span
+              className="text-sm font-medium"
+              style={{ color: "var(--color-fg)", minWidth: "32px" }}
+            >
+              {teamCount}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="w-full h-px"
+        style={{ backgroundColor: "var(--color-border)" }}
+      />
+
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <span
+            className="text-xs"
+            style={{ color: "var(--color-fg-secondary)" }}
+          >
+            Repo initialization Limit
+          </span>
+          <span
+            className="text-xs"
+            style={{ color: "var(--color-fg-secondary)" }}
+          >
+            {Math.round((repoCount / 2) * 100)}%
+          </span>
+        </div>
+        <div
+          className="w-full h-2 rounded-full overflow-hidden"
+          style={{ backgroundColor: "var(--color-bg-secondary)" }}
+        >
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${(repoCount / 2) * 100}%`,
+              backgroundColor: repoCount >= 2 ? "#f59e0b" : "#10b981",
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -27,6 +190,10 @@ export default function ProjectsPage() {
   const githubLoading = useGitHubStore((s) => s.isLoading);
   const selectRepository = useGitHubStore((s) => s.selectRepository);
 
+  const usageData = useUsageStore((s) => s.usageData);
+  const usageLoading = useUsageStore((s) => s.isLoading);
+  const fetchUsage = useUsageStore((s) => s.fetchUsage);
+
   const [searchTerm, setSearchTerm] = useState("");
   const dataFetchRef = useRef(false);
 
@@ -37,22 +204,19 @@ export default function ProjectsPage() {
     const fetchData = async () => {
       try {
         const promises = [];
-
         if (!myInvitesLoaded) {
           promises.push(fetchMyInvites());
         }
-
-        // Fetch GitHub repositories
         promises.push(fetchGitHubRepos());
-
+        promises.push(fetchUsage());
         await Promise.all(promises);
       } catch (error) {
-        console.error("❌ Error fetching projects data:", error);
+        console.error("Error fetching projects data:", error);
       }
     };
 
     fetchData();
-  }, [fetchMyInvites, fetchGitHubRepos, myInvitesLoaded]);
+  }, [fetchMyInvites, fetchGitHubRepos, myInvitesLoaded, fetchUsage]);
 
   const filteredRepositories = repositories.filter(
     (repo) =>
@@ -92,11 +256,11 @@ export default function ProjectsPage() {
       <aside className="dashboard-sidebar">
         <div className="sidebar-section-title">Usage</div>
         <div className="sidebar-section">
-          <div className="sidebar-header">
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span className="usage-period">Last 30 days</span>
-            </div>
-          </div>
+          <UsageStats
+            repoCount={usageData.repoCount}
+            teamCount={usageData.teamCount}
+            isLoading={usageLoading}
+          />
         </div>
 
         <div className="sidebar-section-title">Alerts</div>
@@ -238,9 +402,19 @@ export default function ProjectsPage() {
                 </div>
 
                 <div className="project-status">
-                  <div className="status-indicator">
-                    <div className="status-dot" />
-                    <span className="status-text">Ready</span>
+                  <div
+                    className={`status-indicator ${
+                      repo.initialised ? "" : "not-ready"
+                    }`}
+                  >
+                    <div
+                      className={`status-dot ${
+                        repo.initialised ? "" : "not-ready"
+                      }`}
+                    />
+                    <span className="status-text">
+                      {repo.initialised ? "Ready" : "Not Initialized"}
+                    </span>
                   </div>
                   <div className="activity-info">
                     <FiActivity size={12} />
