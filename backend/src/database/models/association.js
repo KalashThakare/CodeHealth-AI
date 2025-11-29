@@ -1,6 +1,7 @@
 import RepositoryAnalysis from "./analysis.js";
 import CommitsAnalysis from "./commit_analysis.js";
 import Commit from "./commitsMetadata.js";
+import notification from "./notification.js";
 import OAuthConnection from "./OauthConnections.js";
 import PullRequestAnalysis from "./pr_analysis_metrics.js";
 import { Project } from "./project.js";
@@ -34,6 +35,9 @@ Project.belongsTo(User, { foreignKey: "userId" });
 
 User.hasMany(support, { foreignKey: "userId" });
 support.belongsTo(User, { foreignKey: "userId" });
+
+User.hasMany(notification, { foreignKey: "userId" });
+notification.belongsTo(User, { foreignKey: "userId" });
 
 Project.hasMany(WebhookEvent, { foreignKey: 'projectId' });
 WebhookEvent.belongsTo(Project, { foreignKey: 'projectId' });

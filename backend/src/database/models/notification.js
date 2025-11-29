@@ -1,7 +1,7 @@
 import sequelize from "../db.js";
 import { DataTypes } from "sequelize";
 
-const support = sequelize.define("support", {
+const notification = sequelize.define("notification", {
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
@@ -11,23 +11,23 @@ const support = sequelize.define("support", {
         type: DataTypes.UUID,
         allowNull: false
     },
-    caseId: {
+    title: {
         type: DataTypes.STRING,
-        unique: true,
         allowNull: false
     },
-    status: {
+    message: {
         type: DataTypes.STRING,
+        allowNull: false
+    },
+    is_read: {
+        type: DataTypes.BOOLEAN,
         allowNull: false,
-    },
-    problem: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
+        defaultValue: false
+    }
 },
     {
-        timestamps: true,
+        timestamps: true
     }
 )
 
-export default support
+export default notification;
