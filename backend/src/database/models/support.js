@@ -24,6 +24,10 @@ const support = sequelize.define("support", {
         type: DataTypes.STRING,
         allowNull: false
     },
+    resolution:{
+        type:DataTypes.STRING,
+        allowNull:true
+    }
 },
     {
         timestamps: true,

@@ -72,13 +72,13 @@ export const getCases = async(req, res)=>{
             return res.status(400).json({message:"Unauthorised"});
         }
 
-        await support.findAll({
+        const cases = await support.findAll({
             where:{
                 userId:userId
             }
         });
 
-        return res.status(200).json({message:"Success", success:true});
+        return res.status(200).json({message:"Success", success:true, cases});
     } catch (error) {
         console.error(error);
         return res.status(500).json({message:"Internal server error", error, success:false})
