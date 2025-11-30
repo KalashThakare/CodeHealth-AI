@@ -341,7 +341,8 @@ export const githubWebhookController = async (req, res) => {
           await notification.create({
             userId:userId,
             title:"Github app uninstalled",
-            message:`Github app uninstalled`
+            message:`Github app uninstalled`,
+            alert:true
           })
 
           await activity.create({

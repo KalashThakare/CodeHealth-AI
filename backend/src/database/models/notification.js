@@ -23,6 +23,11 @@ const notification = sequelize.define("notification", {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false
+    },
+    alert:{
+        type:DataTypes.BOOLEAN,
+        allowNull:false,
+        defaultValue:false
     }
 },
     {

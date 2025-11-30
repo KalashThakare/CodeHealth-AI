@@ -18,6 +18,7 @@ import PushAnalysisMetrics from "../database/models/pushAnalysisMetrics.js";
 import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
 import notification from "../database/models/notification.js";
 import activity from "../database/models/activity.js";
+import { createAlertNotification } from "../utils/alertNotificationHelper.js";
 dotenv.config();
 
 
@@ -156,6 +157,19 @@ export const analyze_repo = async (req, res) => {
     console.error("Error:", error);
     console.error("Stack:", error.stack);
     console.error("=== END ERROR ===");
+
+    try {
+      const userId = req.user?.id;
+      if (userId) {
+        await createAlertNotification(
+          userId,
+          "Repository Analysis Error",
+          `An error occurred while analyzing repository. Please try again later.`
+        );
+      }
+    } catch (error) {
+
+    }
 
     return res.status(500).json({
       message: "Failed to fetch repository analysis",
@@ -381,7 +395,30 @@ export const getAiInsights = async (req, res) => {
     };
 
     const url = process.env.ANALYSIS_INTERNAL_URL + "/v2/api/analyze";
-    const response = await axios.post(url, aiRequestData);
+    let response;
+    try {
+      response = await axios.post(url, aiRequestData);
+    } catch (axiosError) {
+      console.error("AI Service Error:", axiosError);
+
+      await createAlertNotification(
+        repo.userId,
+        "AI-Insights Generation Failed",
+        `Failed to generate AI insights for ${owner}/${repoName}.`
+      );
+
+      if (axiosError.response) {
+        return res.status(axiosError.response.status).json({
+          message: "AI service error",
+          error: axiosError.response.data,
+        });
+      }
+
+      return res.status(500).json({
+        message: "Failed to connect to AI service",
+        error: errorMessage
+      });
+    }
 
     await connection.set(cacheKey, JSON.stringify(response.data), "EX", 60 * 60 * 24);
 
