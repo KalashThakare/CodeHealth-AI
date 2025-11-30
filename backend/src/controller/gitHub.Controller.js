@@ -285,7 +285,17 @@ export const githubWebhookController = async (req, res) => {
             const repoName = repository.repoName;
             const repoId = repository.repoId;
 
+
             await Project.destroy({ where: { repoId: repo.id } });
+
+            io.to(`user:${userId}`).emit("notification", {
+              type: "remove",
+              success: true,
+              repoName,
+              repoId,
+              message: `Repository: ${repoName} removed successfully`,
+              time: Date.now(),
+            });
 
             await notification.create({
                 userId:userId,
@@ -297,15 +307,6 @@ export const githubWebhookController = async (req, res) => {
               userId:userId,
               activity:`You removed ${repoName}`
             })
-
-            io.to(`user:${userId}`).emit("notification", {
-              type: "remove",
-              success: true,
-              repoName,
-              repoId,
-              message: `Repository: ${repoName} removed successfully`,
-              time: Date.now(),
-            });
           }
         }
       }
@@ -375,6 +376,12 @@ export const githubWebhookController = async (req, res) => {
           message: `New push on ${fullName}`,
           time: Date.now(),
         });
+
+        await notification.create({
+          userId:project.userId,
+          title:"New Push",
+          message:`New push on ${fullName}`
+        })
       }
 
       const result = await handlePush(payload);
@@ -404,6 +411,12 @@ export const githubWebhookController = async (req, res) => {
             message: `New pull request closed and merged on ${fullName}`,
             time: Date.now(),
           });
+
+          await notification.create({
+          userId:project.userId,
+          title:"PR",
+          message:`New pull request closed and merged on ${fullName}`
+        })
         }
       }
 
@@ -417,6 +430,12 @@ export const githubWebhookController = async (req, res) => {
             message: `New pull request #${payload.pull_request.number} opened on ${fullName}`,
             time: Date.now(),
           });
+          await notification.create({
+          userId:project.userId,
+          title:"PR",
+          message:`New pull request #${payload.pull_request.number} opened on ${fullName}`
+        })
+          
         }
       }
 
@@ -430,6 +449,11 @@ export const githubWebhookController = async (req, res) => {
             message: `New pull request #${payload.pull_request.number} synchronized on ${fullName}`,
             time: Date.now(),
           });
+          await notification.create({
+          userId:project.userId,
+          title:"PR",
+          message:`New pull request #${payload.pull_request.number} synchronized on ${fullName}`
+        })
         }
       }
 

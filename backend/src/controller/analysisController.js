@@ -17,7 +17,6 @@ import CommitsAnalysis from "../database/models/commit_analysis.js";
 import PushAnalysisMetrics from "../database/models/pushAnalysisMetrics.js";
 import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
 import notification from "../database/models/notification.js";
-import { where } from "sequelize";
 import activity from "../database/models/activity.js";
 dotenv.config();
 
@@ -260,7 +259,8 @@ export async function triggerBackgroundAnalysis(repoId) {
 
     const repo = await Project.findOne({
       where:{
-        repoId:repoId
+        repoId:repoId,
+        initialised:true
       }
     })
 
@@ -271,6 +271,12 @@ export async function triggerBackgroundAnalysis(repoId) {
       repoName:repo.fullName,
       message: `Repository analysis completed successfully for repo: ${repo.fullName}`,
       timestamp: new Date().toISOString()
+    })
+
+    await notification.create({
+      userId:repo.userId,
+      title:"Analysis",
+      message:`Repository analysis completed successfully for repo: ${repo.fullName}`
     })
 
     console.log(`[Background] Analysis completed for repo ${parsedRepoId}`);
@@ -286,6 +292,12 @@ export async function triggerBackgroundAnalysis(repoId) {
       timestamp: new Date().toISOString()
     })
 
+    // await notification.create({
+    //   userId:repo.userId,
+    //   title:"Ananlysis failed",
+    //   message:`Repository analysis failed for repo: ${repo.fullName}`
+    // })
+
     throw error;
   }
 }
@@ -293,7 +305,6 @@ export async function triggerBackgroundAnalysis(repoId) {
 export const getAiInsights = async (req, res) => {
   try {
     const { repoId } = req.params;
-    const userId = req.user?.id;
     if (!repoId) return res.status(404).json({ message: "repoId not found" });
 
     const cacheKey = `ai:repo:${repoId}`;
@@ -308,8 +319,11 @@ export const getAiInsights = async (req, res) => {
       });
     }
 
-    const repo = await Project.findOne({ where: { repoId } });
+    const repo = await Project.findOne({ where: { repoId, initialised:true } });
     if (!repo) return res.status(404).json({ message: "No repository found" });
+
+    const fullName = repo.fullName;
+    const [owner, repoName] = fullName.split("/");
 
     const analysis = await RepositoryAnalysis.findOne({ where: { repoId } });
     if (!analysis)
@@ -374,7 +388,19 @@ export const getAiInsights = async (req, res) => {
     console.log("Cached new AI insights in Redis");
 
     await notification.create({
-      
+      userId:repo.userId,
+      title:"AI-Insights",
+      message:`Your AI-analysis has been completed for ${repoName}. You can carry new AI-insights after 24 hours.`
+    })
+
+    const triggeredAt = new Date().toLocaleString("en-IN", {
+  timeZone: "Asia/Kolkata",
+  hour12: true,
+});
+
+    await activity.create({
+      userId:repo.userId,
+      activity:`${owner} triggered AI-Insights for ${repoName} on ${triggeredAt}`
     })
 
     return res.status(200).json({
@@ -488,10 +514,9 @@ export const uninitializeRepo = async(req, res)=>{
     const fullName = repo.fullName;
     const [owner, repoName] = fullName.split("/");
 
-    await notification.create({
+    await activity.create({
         userId:userId,
-        title:"repo initialisation",
-        message:`${owner} uninitialized a repo ${repoName}`
+        activity:`${owner} uninitialized a repo ${repoName}`
     })
 
     return res.status(200).json({success:true,
