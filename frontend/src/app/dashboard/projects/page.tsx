@@ -359,20 +359,25 @@ export default function ProjectsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <FiActivity
-                      size={32}
-                      style={{
-                        backgroundColor: "var(--color-bg-tertiary)",
-                        color: "var(--color-fg)",
-                        borderColor: "var(--color-border)",
-                      }}
-                      className="border-4 rounded-full p-1"
-                    />
-                    <FiMoreHorizontal
-                      size={20}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="tooltip-wrapper"
                       onClick={(e) => e.stopPropagation()}
-                    />
+                    >
+                      <button className="activity-btn">
+                        <FiActivity size={18} />
+                      </button>
+                      <div className="tooltip-content">
+                        Get detailed performance metrics with Code Health
+                        Insights.
+                      </div>
+                    </div>
+                    <button
+                      className="more-options-btn"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <FiMoreHorizontal size={18} />
+                    </button>
                   </div>
                 </div>
 
