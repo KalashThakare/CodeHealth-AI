@@ -14,9 +14,12 @@ import accountRoutes from "../src/routes/account.Routes.js"
 import scanningRoutes from "./routes/scanning.Routes.js";
 import analysisRoutes from "./routes/analysisRoutes.js";
 import dashboardRoutes from "./routes/dashboard.Routes.js"
+import supportRoutes from "./routes/supportRoutes.js"
+import notificationsRoutes from "./routes/notificationRoutes.js"
 import "./database/models/index.js"
 import "./workers/analysis.worker.js"
 import "./workers/scanning.worker.js"
+
 
 
 dotenv.config();
@@ -62,5 +65,9 @@ app.use("/scanning",scanningRoutes);
 app.use("/analyze",analysisRoutes);
 
 app.use("/dashboard",dashboardRoutes)
+
+app.use("/support",supportRoutes)
+
+app.use("/notifications", notificationsRoutes);
 
 export default app;

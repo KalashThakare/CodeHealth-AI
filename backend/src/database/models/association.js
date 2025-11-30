@@ -1,12 +1,14 @@
 import RepositoryAnalysis from "./analysis.js";
 import CommitsAnalysis from "./commit_analysis.js";
 import Commit from "./commitsMetadata.js";
+import notification from "./notification.js";
 import OAuthConnection from "./OauthConnections.js";
 import PullRequestAnalysis from "./pr_analysis_metrics.js";
 import { Project } from "./project.js";
 import PushAnalysisMetrics from "./pushAnalysisMetrics.js";
 import  RepoFileMetrics  from "./repoFileMetrics.js";
 import RepoMetadata from "./repoMedata.js";
+import support from "./support.js";
 import Team from "./team.js";
 import TeamInvite from "./teamInvite.js";
 import TeamMember from "./teamMember.js";
@@ -30,6 +32,12 @@ TeamInvite.belongsTo(User, { foreignKey: "invitedBy", as: "InvitedByUser"});
 
 User.hasMany(Project, { foreignKey: "userId" });
 Project.belongsTo(User, { foreignKey: "userId" });
+
+User.hasMany(support, { foreignKey: "userId" });
+support.belongsTo(User, { foreignKey: "userId" });
+
+User.hasMany(notification, { foreignKey: "userId" });
+notification.belongsTo(User, { foreignKey: "userId" });
 
 Project.hasMany(WebhookEvent, { foreignKey: 'projectId' });
 WebhookEvent.belongsTo(Project, { foreignKey: 'projectId' });
