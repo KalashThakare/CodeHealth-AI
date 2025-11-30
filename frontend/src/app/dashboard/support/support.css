@@ -1,5 +1,5 @@
 .support-page {
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh + 32px);
   background: var(--color-bg);
   color: var(--color-fg);
 }
