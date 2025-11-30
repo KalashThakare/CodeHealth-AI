@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Search, Plus, Check, Github } from "lucide-react";
 import { useGitHubStore } from "@/store/githubStore";
+import { useAuthStore } from "@/store/authStore";
 import "./profile.css";
 
 interface Team {
@@ -26,7 +27,8 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
   const [projectSearchQuery, setProjectSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // GitHub Store
+  const { authUser } = useAuthStore();
+
   const {
     repositories,
     githubUser,
@@ -36,11 +38,11 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
     selectedRepo,
   } = useGitHubStore();
 
-  // Mock teams data
+  const userName = authUser?.name?.split(" ")?.[0] || "Your";
   const teams: Team[] = [
     {
       id: "1",
-      name: "Jayesh Rajbhar's projects",
+      name: `${userName}'s projects`,
       type: "Hobby",
       isActive: true,
     },
@@ -60,12 +62,10 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
     repo.repoName.toLowerCase().includes(projectSearchQuery.toLowerCase())
   );
 
-  // Generate avatar letter from team name
   const getAvatarLetter = (name: string) => {
     return name.charAt(0).toUpperCase();
   };
 
-  // Generate gradient colors based on team name
   const getAvatarGradient = (name: string) => {
     const colors = [
       "from-blue-500 to-purple-600",
@@ -78,7 +78,6 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
     return colors[index];
   };
 
-  // Format date helper
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
@@ -87,7 +86,6 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
     });
   };
 
-  // Handle outside clicks to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -105,14 +103,12 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
     }
   }, [isOpen, setIsOpen]);
 
-  // Fetch repos when component mounts
   useEffect(() => {
     if (repositories.length === 0) {
       fetchGitHubRepos();
     }
   }, []);
 
-  // Prevent event bubbling on dropdown content
   const handleDropdownClick = (e: React.MouseEvent) => {
     e.stopPropagation();
   };
@@ -121,10 +117,7 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
 
   return (
     <>
-      {/* Backdrop */}
       <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-
-      {/* Centered Modal */}
       <div className="fixed inset-0 z-50 p-4">
         <div
           ref={dropdownRef}
@@ -137,14 +130,11 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
           }}
           onClick={handleDropdownClick}
         >
-          {/* Responsive Grid Layout */}
           <div className="grid grid-cols-1 md:grid-cols-2 ">
-            {/* Left Panel - Teams */}
             <div
               className="flex flex-col border-r md:border-r border-b md:border-b-0"
               style={{ borderColor: "var(--color-border)" }}
             >
-              {/* Search Teams */}
               <div
                 className="px-4 py-3 border-b flex-shrink-0"
                 style={{ borderColor: "var(--color-border)" }}
@@ -165,7 +155,6 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                 </div>
               </div>
 
-              {/* Teams Section */}
               <div className="flex-1 p-4 overflow-y-auto">
                 <h4
                   className="text-xs font-semibold uppercase tracking-wider mb-4"
@@ -174,7 +163,6 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                   Teams
                 </h4>
 
-                {/* Team List */}
                 <div className="space-y-2 mb-4">
                   {filteredTeams.map((team) => (
                     <div
@@ -223,7 +211,6 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                   ))}
                 </div>
 
-                {/* Create Team Button */}
                 <button
                   className="flex items-center space-x-3 px-3 py-2 w-full rounded-md transition-colors duration-200"
                   style={{
@@ -245,12 +232,10 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
               </div>
             </div>
 
-            {/* Right Panel - Projects (Hidden below md) */}
             <div
               className="hidden md:flex flex-col"
               style={{ backgroundColor: "var(--color-bg)" }}
             >
-              {/* Search Projects */}
               <div
                 className="px-4 py-3 border-b flex-shrink-0"
                 style={{ borderColor: "var(--color-border)" }}
@@ -271,7 +256,6 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                 </div>
               </div>
 
-              {/* Projects Section */}
               <div className="flex-1 p-4 overflow-y-auto">
                 <h4
                   className="text-xs font-semibold uppercase tracking-wider mb-4"
@@ -280,7 +264,6 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                   Projects ({repositories.length})
                 </h4>
 
-                {/* Loading State */}
                 {isLoading && (
                   <div className="flex items-center justify-center h-32">
                     <div
@@ -290,7 +273,6 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                   </div>
                 )}
 
-                {/* Projects List */}
                 {!isLoading && filteredProjects.length > 0 && (
                   <div className="space-y-2">
                     {filteredProjects.map((repo) => (
@@ -350,7 +332,6 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                   </div>
                 )}
 
-                {/* No Projects State */}
                 {!isLoading &&
                   filteredProjects.length === 0 &&
                   repositories.length === 0 && (
@@ -389,7 +370,6 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                     </div>
                   )}
 
-                {/* No Search Results */}
                 {!isLoading &&
                   filteredProjects.length === 0 &&
                   repositories.length > 0 &&
