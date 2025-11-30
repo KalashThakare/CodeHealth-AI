@@ -7,6 +7,7 @@ interface GitHubRepo {
   id: number;
   repoName: string;
   fullName: string;
+  private?: boolean;
   visibility: "public" | "private";
   repoId: number;
   repoUrl: string;
@@ -141,9 +142,16 @@ export const useGitHubStore = create<GitHubStore>()(
             headers: { Authorization: `Bearer ${token}` },
             withCredentials: true,
           });
+          
+          const repositories = res.data.map((repo) => ({
+            ...repo,
+            visibility: repo.private
+              ? "private"
+              : ("public" as "public" | "private"),
+          }));
 
           set({
-            repositories: res.data,
+            repositories,
             isLoading: false,
           });
           toast.success(`Fetched ${res.data.length} repositories`);
