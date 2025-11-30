@@ -10,37 +10,58 @@ import {
   Book,
   Users,
   Activity,
+  Loader2,
+  Trash2,
+  Plus,
+  X,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
+import { useSupportStore, SupportCase } from "@/store/supportStore";
 import "./support.css";
 
-type TabType = "All" | "Open" | "Transferred" | "Closed";
-type SortType = "Last Updated" | "Created Date" | "Priority";
-
-interface SupportCase {
-  id: string;
-  title: string;
-  status: "open" | "closed" | "transferred";
-  createdAt: string;
-  updatedAt: string;
-  priority: "low" | "medium" | "high";
-}
-
-// Mock data - replace with real API calls
-const mockCases: SupportCase[] = [];
+type TabType = "All" | "Open" | "Closed";
+type SortType = "Last Updated" | "Created Date";
 
 export default function SupportPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<TabType>("All");
   const [sortBy, setSortBy] = useState<SortType>("Last Updated");
   const [showSortDropdown, setShowSortDropdown] = useState(false);
-  const [cases, setCases] = useState<SupportCase[]>(mockCases);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedCase, setSelectedCase] = useState<SupportCase | null>(null);
+  const [newCaseProblem, setNewCaseProblem] = useState("");
   const sortRef = useRef<HTMLDivElement>(null);
+  const createModalRef = useRef<HTMLDivElement>(null);
+  const detailModalRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
+  const { cases, isLoading, fetchCases, createCase, deleteCase } =
+    useSupportStore();
+
+  useEffect(() => {
+    fetchCases();
+  }, [fetchCases]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
         setShowSortDropdown(false);
+      }
+      if (
+        createModalRef.current &&
+        !createModalRef.current.contains(event.target as Node)
+      ) {
+        setShowCreateModal(false);
+      }
+      if (
+        detailModalRef.current &&
+        !detailModalRef.current.contains(event.target as Node)
+      ) {
+        setShowDetailModal(false);
+        setSelectedCase(null);
       }
     };
 
@@ -48,19 +69,17 @@ export default function SupportPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const tabs: TabType[] = ["All", "Open", "Transferred", "Closed"];
+  const tabs: TabType[] = ["All", "Open", "Closed"];
 
-  // Filter cases based on active tab and search
   const filteredCases = cases.filter((c) => {
     const matchesTab =
       activeTab === "All" || c.status.toLowerCase() === activeTab.toLowerCase();
-    const matchesSearch = c.title
+    const matchesSearch = c.problem
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
-  // Sort cases
   const sortedCases = [...filteredCases].sort((a, b) => {
     switch (sortBy) {
       case "Last Updated":
@@ -71,17 +90,58 @@ export default function SupportPage() {
         return (
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
-      case "Priority":
-        const priorityOrder = { high: 0, medium: 1, low: 2 };
-        return priorityOrder[a.priority] - priorityOrder[b.priority];
       default:
         return 0;
     }
   });
 
+  const handleCreateCase = async () => {
+    if (!newCaseProblem.trim()) return;
+
+    const caseId = await createCase(newCaseProblem.trim());
+    if (caseId) {
+      setNewCaseProblem("");
+      setShowCreateModal(false);
+    }
+  };
+
+  const handleDeleteCase = async (caseId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm("Are you sure you want to delete this support case?")) {
+      await deleteCase(caseId);
+    }
+  };
+
+  const handleCaseClick = (supportCase: SupportCase) => {
+    setSelectedCase(supportCase);
+    setShowDetailModal(true);
+  };
+
   const handleContactSupport = () => {
-    // Open support form or redirect to support portal
-    window.open("mailto:support@codehealth.ai", "_blank");
+    setShowCreateModal(true);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const truncateText = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + "...";
   };
 
   return (
@@ -107,12 +167,11 @@ export default function SupportPage() {
             className="contact-support-btn"
             onClick={handleContactSupport}
           >
-            <MessageCircle className="btn-icon" />
-            Contact Support
+            <Plus className="btn-icon" />
+            Create Case
           </button>
         </div>
 
-        {/* Search and Filters */}
         <div className="support-filters">
           {/* Search */}
           <div className="support-search">
@@ -125,7 +184,6 @@ export default function SupportPage() {
             />
           </div>
 
-          {/* Tabs */}
           <div className="support-tabs">
             {tabs.map((tab) => (
               <button
@@ -138,7 +196,6 @@ export default function SupportPage() {
             ))}
           </div>
 
-          {/* Sort Dropdown */}
           <div className="support-sort" ref={sortRef}>
             <button
               className="support-sort-btn"
@@ -149,31 +206,34 @@ export default function SupportPage() {
             </button>
             {showSortDropdown && (
               <div className="support-dropdown">
-                {(
-                  ["Last Updated", "Created Date", "Priority"] as SortType[]
-                ).map((option) => (
-                  <button
-                    key={option}
-                    className={`support-dropdown-item ${
-                      sortBy === option ? "active" : ""
-                    }`}
-                    onClick={() => {
-                      setSortBy(option);
-                      setShowSortDropdown(false);
-                    }}
-                  >
-                    {option}
-                  </button>
-                ))}
+                {(["Last Updated", "Created Date"] as SortType[]).map(
+                  (option) => (
+                    <button
+                      key={option}
+                      className={`support-dropdown-item ${
+                        sortBy === option ? "active" : ""
+                      }`}
+                      onClick={() => {
+                        setSortBy(option);
+                        setShowSortDropdown(false);
+                      }}
+                    >
+                      {option}
+                    </button>
+                  )
+                )}
               </div>
             )}
           </div>
         </div>
 
-        {/* Cases List */}
         <div className="support-cases">
-          {sortedCases.length === 0 ? (
-            /* Empty State */
+          {isLoading ? (
+            <div className="support-loading">
+              <Loader2 className="loading-spinner" />
+              <p>Loading cases...</p>
+            </div>
+          ) : sortedCases.length === 0 ? (
             <div className="support-empty">
               <div className="support-empty-icon">
                 <HelpCircle />
@@ -189,28 +249,204 @@ export default function SupportPage() {
               </button>
             </div>
           ) : (
-            /* Cases List */
             sortedCases.map((supportCase) => (
-              <div key={supportCase.id} className="support-case-item">
+              <div
+                key={supportCase.id}
+                className="support-case-item"
+                onClick={() => handleCaseClick(supportCase)}
+              >
                 <div className="support-case-info">
                   <span className="support-case-title">
-                    {supportCase.title}
+                    Case #{supportCase.caseId}
+                  </span>
+                  <span className="support-case-description">
+                    {truncateText(supportCase.problem, 80)}
                   </span>
                   <span className="support-case-meta">
-                    Updated{" "}
-                    {new Date(supportCase.updatedAt).toLocaleDateString()}
+                    Created {formatDate(supportCase.createdAt)}
                   </span>
                 </div>
-                <span className={`support-case-status ${supportCase.status}`}>
-                  {supportCase.status.charAt(0).toUpperCase() +
-                    supportCase.status.slice(1)}
-                </span>
+                <div className="support-case-actions">
+                  <span className={`support-case-status ${supportCase.status}`}>
+                    {supportCase.status.charAt(0).toUpperCase() +
+                      supportCase.status.slice(1)}
+                  </span>
+                  <button
+                    className="support-case-delete"
+                    onClick={(e) => handleDeleteCase(supportCase.caseId, e)}
+                    title="Delete case"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             ))
           )}
         </div>
 
-        {/* Help Resources */}
+        {showCreateModal && (
+          <div className="support-modal-overlay">
+            <div className="support-modal" ref={createModalRef}>
+              <h3>Create Support Case</h3>
+              <p>
+                Describe your issue and we'll get back to you as soon as
+                possible.
+              </p>
+              <textarea
+                className="support-modal-textarea"
+                placeholder="Describe your problem..."
+                value={newCaseProblem}
+                onChange={(e) => setNewCaseProblem(e.target.value)}
+                rows={5}
+              />
+              <div className="support-modal-actions">
+                <button
+                  className="support-modal-cancel"
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setNewCaseProblem("");
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="support-modal-submit"
+                  onClick={handleCreateCase}
+                  disabled={!newCaseProblem.trim() || isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="loading-spinner" size={16} />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Case"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showDetailModal && selectedCase && (
+          <div className="support-modal-overlay">
+            <div className="support-detail-modal" ref={detailModalRef}>
+              <div className="detail-modal-header">
+                <div className="detail-modal-title">
+                  <h3>Case #{selectedCase.caseId}</h3>
+                  <span
+                    className={`support-case-status ${selectedCase.status}`}
+                  >
+                    {selectedCase.status.charAt(0).toUpperCase() +
+                      selectedCase.status.slice(1)}
+                  </span>
+                </div>
+                <button
+                  className="detail-modal-close"
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    setSelectedCase(null);
+                  }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="detail-modal-content">
+                <div className="detail-section">
+                  <div className="detail-label">
+                    <AlertCircle size={16} />
+                    Problem Description
+                  </div>
+                  <div className="detail-value detail-description">
+                    {selectedCase.problem}
+                  </div>
+                </div>
+
+                <div className="detail-grid">
+                  <div className="detail-section">
+                    <div className="detail-label">
+                      <Calendar size={16} />
+                      Date Created
+                    </div>
+                    <div className="detail-value">
+                      {formatDateTime(selectedCase.createdAt)}
+                    </div>
+                  </div>
+
+                  <div className="detail-section">
+                    <div className="detail-label">
+                      <Clock size={16} />
+                      Last Updated
+                    </div>
+                    <div className="detail-value">
+                      {formatDateTime(selectedCase.updatedAt)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="detail-section">
+                  <div className="detail-label">
+                    {selectedCase.status === "open" ? (
+                      <AlertCircle size={16} />
+                    ) : (
+                      <CheckCircle2 size={16} />
+                    )}
+                    Current Status
+                  </div>
+                  <div className="detail-value">
+                    {selectedCase.status === "open" ? (
+                      <span className="status-text open">
+                        This case is currently open and under review.
+                      </span>
+                    ) : (
+                      <span className="status-text closed">
+                        This case has been resolved and closed.
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {selectedCase.status === "closed" && (
+                  <div className="detail-section">
+                    <div className="detail-label">
+                      <CheckCircle2 size={16} />
+                      Resolution
+                    </div>
+                    <div className="detail-value detail-resolution">
+                      {selectedCase.resolution ||
+                        "The issue has been resolved. If you have any further questions, please create a new support case."}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="detail-modal-footer">
+                <button
+                  className="support-modal-cancel"
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    setSelectedCase(null);
+                  }}
+                >
+                  Close
+                </button>
+                <button
+                  className="detail-delete-btn"
+                  onClick={(e) => {
+                    handleDeleteCase(selectedCase.caseId, e);
+                    setShowDetailModal(false);
+                    setSelectedCase(null);
+                  }}
+                >
+                  <Trash2 size={16} />
+                  Delete Case
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="support-resources">
           <h3 className="resources-title">Resources</h3>
           <div className="resources-grid">
