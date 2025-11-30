@@ -13,8 +13,18 @@ export const createCase = async(req, res)=>{
             return res.status(400).json({message:"problem send by user not found"});
         }
 
-        const count = await support.count();
-        const caseId = `${String(count + 1).padStart(9, '0')}`;
+        const lastCase = await support.findOne({
+            order: [['createdAt', 'DESC']],
+            attributes: ['caseId']
+        });
+
+        let nextNumber = 1;
+        if(lastCase && lastCase.caseId){
+            const lastNumber = parseInt(lastCase.caseId.replace('#', ''));
+            nextNumber = lastNumber + 1;
+        }
+
+        const caseId = `${String(nextNumber).padStart(9, '0')}`;
 
         const newCase = await support.create({
             caseId:caseId,
