@@ -26,15 +26,15 @@ export const analyze_repo = async (req, res) => {
     const { repoId } = req.params;
     const userId = req.user?.id;
 
-    if(!userId){
-      return res.status(400).json({message:"Unauthorised"});
+    if (!userId) {
+      return res.status(400).json({ message: "Unauthorised" });
     }
 
     console.log("RepoId:", repoId);
     console.log("User:", req.user?.id);
 
     const repo = await Project.findOne({
-      where: { repoId: parseInt(repoId), initialised:true },
+      where: { repoId: parseInt(repoId), initialised: true },
     });
 
 
@@ -117,8 +117,8 @@ export const analyze_repo = async (req, res) => {
       });
 
       await activity.create({
-        userId:userId,
-        activity:`${owner} triggered analysis on repo ${repoName}`
+        userId: userId,
+        activity: `${owner} triggered analysis on repo ${repoName}`
       })
 
       return res.status(202).json({
@@ -130,7 +130,7 @@ export const analyze_repo = async (req, res) => {
     }
 
     const hasRealData = analysis.totalFiles > 0 || analysis.totalCommits > 0;
-    
+
     if (hasRealData) {
       const analysisData = analysis.toJSON();
       await connection.set(
@@ -150,7 +150,7 @@ export const analyze_repo = async (req, res) => {
       repoId,
       analysis: analysis.toJSON(),
     });
-    
+
   } catch (error) {
     console.error("=== ANALYZE REPO ERROR ===");
     console.error("Error:", error);
@@ -244,7 +244,7 @@ export async function triggerBackgroundAnalysis(repoId) {
       },
       {
         conflictFields: ['repoId'],
-        returning:true
+        returning: true
       }
     );
 
@@ -258,36 +258,36 @@ export async function triggerBackgroundAnalysis(repoId) {
     );
 
     const repo = await Project.findOne({
-      where:{
-        repoId:repoId,
-        initialised:true
+      where: {
+        repoId: repoId,
+        initialised: true
       }
     })
 
-    io.to(`user:${repo.userId}`).emit('notification',{
-      type:"analysis",
-      success:true,
+    io.to(`user:${repo.userId}`).emit('notification', {
+      type: "analysis",
+      success: true,
       repoId,
-      repoName:repo.fullName,
+      repoName: repo.fullName,
       message: `Repository analysis completed successfully for repo: ${repo.fullName}`,
       timestamp: new Date().toISOString()
     })
 
     await notification.create({
-      userId:repo.userId,
-      title:"Analysis",
-      message:`Repository analysis completed successfully for repo: ${repo.fullName}`
+      userId: repo.userId,
+      title: "Analysis",
+      message: `Repository analysis completed successfully for repo: ${repo.fullName}`
     })
 
     console.log(`[Background] Analysis completed for repo ${parsedRepoId}`);
   } catch (error) {
     console.error(`[Background] Analysis failed for repo ${repoId}:`, error);
 
-    io.to(`user:${repo.userId}`).emit('notification',{
-      type:"analysis",
-      success:false,
+    io.to(`user:${repo.userId}`).emit('notification', {
+      type: "analysis",
+      success: false,
       repoId,
-      repoName:repo.fullName,
+      repoName: repo.fullName,
       message: `Repository analysis failed for repo: ${repo.fullName}`,
       timestamp: new Date().toISOString()
     })
@@ -319,7 +319,7 @@ export const getAiInsights = async (req, res) => {
       });
     }
 
-    const repo = await Project.findOne({ where: { repoId, initialised:true } });
+    const repo = await Project.findOne({ where: { repoId, initialised: true } });
     if (!repo) return res.status(404).json({ message: "No repository found" });
 
     const fullName = repo.fullName;
@@ -388,19 +388,19 @@ export const getAiInsights = async (req, res) => {
     console.log("Cached new AI insights in Redis");
 
     await notification.create({
-      userId:repo.userId,
-      title:"AI-Insights",
-      message:`Your AI-analysis has been completed for ${repoName}. You can carry new AI-insights after 24 hours.`
+      userId: repo.userId,
+      title: "AI-Insights",
+      message: `Your AI-analysis has been completed for ${repoName}. You can carry new AI-insights after 24 hours.`
     })
 
     const triggeredAt = new Date().toLocaleString("en-IN", {
-  timeZone: "Asia/Kolkata",
-  hour12: true,
-});
+      timeZone: "Asia/Kolkata",
+      hour12: true,
+    });
 
     await activity.create({
-      userId:repo.userId,
-      activity:`${owner} triggered AI-Insights for ${repoName} on ${triggeredAt}`
+      userId: repo.userId,
+      activity: `${owner} triggered AI-Insights for ${repoName} on ${triggeredAt}`
     })
 
     return res.status(200).json({
@@ -462,27 +462,27 @@ export const fetchAiInsights = async (req, res) => {
   }
 };
 
-export const uninitializeRepo = async(req, res)=>{
+export const uninitializeRepo = async (req, res) => {
   try {
-    const {repoId} = req.params;
+    const { repoId } = req.params;
     const userId = req.user?.id;
 
-    if(!userId){
-      return res.status(400).json({message:"Unauthorised"})
+    if (!userId) {
+      return res.status(400).json({ message: "Unauthorised" })
     }
-    if(!repoId){
-      return res.status(400).json({message:"repoId is missing"});
+    if (!repoId) {
+      return res.status(400).json({ message: "repoId is missing" });
     }
 
     const repo = await Project.findOne({
-      where:{
-        repoId:repoId,
-        initialised:"true",
+      where: {
+        repoId: repoId,
+        initialised: "true",
       }
     })
 
-    if(!repo){
-      return res.status(400).json({message:"repo is not initialised"});
+    if (!repo) {
+      return res.status(400).json({ message: "repo is not initialised" });
     }
 
     await Promise.all([
@@ -509,21 +509,22 @@ export const uninitializeRepo = async(req, res)=>{
       })
     ]);
 
-    await repo.update({initialised:"false"})
+    await repo.update({ initialised: "false" })
 
     const fullName = repo.fullName;
     const [owner, repoName] = fullName.split("/");
 
     await activity.create({
-        userId:userId,
-        activity:`${owner} uninitialized a repo ${repoName}`
+      userId: userId,
+      activity: `${owner} uninitialized a repo ${repoName}`
     })
 
-    return res.status(200).json({success:true,
-      message:"Repo Uninitialized"
+    return res.status(200).json({
+      success: true,
+      message: "Repo Uninitialized"
     })
   } catch (error) {
     console.log(error);
-    return res.status(500).json({success:false, message:"Internal server error"}, error)
+    return res.status(500).json({ success: false, message: "Internal server error" }, error)
   }
 }
