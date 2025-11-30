@@ -8,6 +8,7 @@ import Commit from "../database/models/commitsMetadata.js";
 import RepoMetadata from "../database/models/repoMedata.js";
 import { triggerBackgroundAnalysis } from "./analysisController.js";
 import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
+import activity from "../database/models/activity.js";
 
 export const Analyse_repo = async (req, res) => {
   try {
@@ -57,6 +58,11 @@ export const Analyse_repo = async (req, res) => {
         .status(400)
         .json({ error: "Invalid repository full name format" });
     }
+
+    await activity.create({
+        userId:userId,
+        activity:`${owner} initialised a repo ${repoName}`
+    })
 
     const payload = {
       repoId: repo.repoId,

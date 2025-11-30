@@ -15,6 +15,9 @@ import OAuthConnection from "../database/models/OauthConnections.js";
 import { io } from "../server.js";
 import { type } from "os";
 import { time } from "console";
+import notification from "../database/models/notification.js";
+import { where } from "sequelize";
+import activity from "../database/models/activity.js";
 
 function eventToJobName(event) {
   switch (event) {
@@ -284,6 +287,17 @@ export const githubWebhookController = async (req, res) => {
 
             await Project.destroy({ where: { repoId: repo.id } });
 
+            await notification.create({
+                userId:userId,
+                title:"Repo removed",
+                message:`You removed ${repoName}`
+            })
+
+            await activity.create({
+              userId:userId,
+              activity:`You removed ${repoName}`
+            })
+
             io.to(`user:${userId}`).emit("notification", {
               type: "remove",
               success: true,
@@ -322,6 +336,17 @@ export const githubWebhookController = async (req, res) => {
               time: Date.now(),
             });
           }
+
+          await notification.create({
+            userId:userId,
+            title:"Github app uninstalled",
+            message:`Github app uninstalled`
+          })
+
+          await activity.create({
+            userId:userId,
+            activity:"Github app uninstalled"
+          })
         }
       }
     }

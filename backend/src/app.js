@@ -15,6 +15,7 @@ import scanningRoutes from "./routes/scanning.Routes.js";
 import analysisRoutes from "./routes/analysisRoutes.js";
 import dashboardRoutes from "./routes/dashboard.Routes.js"
 import supportRoutes from "./routes/supportRoutes.js"
+import activityRoutes from "./routes/activity.Routes.js"
 import notificationsRoutes from "./routes/notificationRoutes.js"
 import "./database/models/index.js"
 import "./workers/analysis.worker.js"
@@ -69,5 +70,7 @@ app.use("/dashboard",dashboardRoutes)
 app.use("/support",supportRoutes)
 
 app.use("/notifications", notificationsRoutes);
+
+app.use("/activity", activityRoutes)
 
 export default app;

@@ -16,18 +16,26 @@ import { io } from "../server.js";
 import CommitsAnalysis from "../database/models/commit_analysis.js";
 import PushAnalysisMetrics from "../database/models/pushAnalysisMetrics.js";
 import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
+import notification from "../database/models/notification.js";
+import { where } from "sequelize";
+import activity from "../database/models/activity.js";
 dotenv.config();
 
 
 export const analyze_repo = async (req, res) => {
   try {
     const { repoId } = req.params;
+    const userId = req.user?.id;
+
+    if(!userId){
+      return res.status(400).json({message:"Unauthorised"});
+    }
 
     console.log("RepoId:", repoId);
     console.log("User:", req.user?.id);
 
-    const repo = await RepoMetadata.findOne({
-      where: { repoId: parseInt(repoId) },
+    const repo = await Project.findOne({
+      where: { repoId: parseInt(repoId), initialised:true },
     });
 
 
@@ -37,6 +45,9 @@ export const analyze_repo = async (req, res) => {
         repoId,
       });
     }
+
+    const fullName = repo.fullName;
+    const [owner, repoName] = fullName.split("/");
 
     const cacheKey = `metrics:repo:${repoId}`
     const cachedData = await connection.get(cacheKey);
@@ -105,6 +116,11 @@ export const analyze_repo = async (req, res) => {
       triggerBackgroundAnalysis(repoId).catch((err) => {
         console.error("Background analysis error:", err);
       });
+
+      await activity.create({
+        userId:userId,
+        activity:`${owner} triggered analysis on repo ${repoName}`
+      })
 
       return res.status(202).json({
         message: "Analysis in progress",
@@ -277,6 +293,7 @@ export async function triggerBackgroundAnalysis(repoId) {
 export const getAiInsights = async (req, res) => {
   try {
     const { repoId } = req.params;
+    const userId = req.user?.id;
     if (!repoId) return res.status(404).json({ message: "repoId not found" });
 
     const cacheKey = `ai:repo:${repoId}`;
@@ -356,6 +373,10 @@ export const getAiInsights = async (req, res) => {
 
     console.log("Cached new AI insights in Redis");
 
+    await notification.create({
+      
+    })
+
     return res.status(200).json({
       message: "Success",
       repoId,
@@ -418,6 +439,11 @@ export const fetchAiInsights = async (req, res) => {
 export const uninitializeRepo = async(req, res)=>{
   try {
     const {repoId} = req.params;
+    const userId = req.user?.id;
+
+    if(!userId){
+      return res.status(400).json({message:"Unauthorised"})
+    }
     if(!repoId){
       return res.status(400).json({message:"repoId is missing"});
     }
@@ -458,6 +484,15 @@ export const uninitializeRepo = async(req, res)=>{
     ]);
 
     await repo.update({initialised:"false"})
+
+    const fullName = repo.fullName;
+    const [owner, repoName] = fullName.split("/");
+
+    await notification.create({
+        userId:userId,
+        title:"repo initialisation",
+        message:`${owner} uninitialized a repo ${repoName}`
+    })
 
     return res.status(200).json({success:true,
       message:"Repo Uninitialized"
