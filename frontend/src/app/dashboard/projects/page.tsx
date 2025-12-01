@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTeamStore } from "@/store/teamStore";
 import { useGitHubStore } from "@/store/githubStore";
 import { useUsageStore } from "@/store/usageStore";
+import { useNotificationStore, Notification } from "@/store/notificationStore";
 import {
   FiPlus,
   FiGithub,
@@ -15,6 +16,11 @@ import {
   FiActivity,
   FiUsers,
   FiDatabase,
+  FiAlertTriangle,
+  FiX,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiInfo,
 } from "react-icons/fi";
 import "../dashboard.css";
 
@@ -178,6 +184,216 @@ function UsageStats({
   );
 }
 
+// Get alert severity based on title keywords
+function getAlertSeverity(
+  title: string
+): "error" | "warning" | "info" | "success" {
+  const lowerTitle = title.toLowerCase();
+  if (
+    lowerTitle.includes("error") ||
+    lowerTitle.includes("failed") ||
+    lowerTitle.includes("failure")
+  ) {
+    return "error";
+  }
+  if (
+    lowerTitle.includes("warning") ||
+    lowerTitle.includes("limit") ||
+    lowerTitle.includes("exceeded")
+  ) {
+    return "warning";
+  }
+  if (lowerTitle.includes("complete") || lowerTitle.includes("success")) {
+    return "success";
+  }
+  return "info";
+}
+
+// Get icon and colors based on severity
+function getAlertStyles(severity: "error" | "warning" | "info" | "success") {
+  switch (severity) {
+    case "error":
+      return {
+        icon: FiAlertCircle,
+        bgColor: "rgba(239, 68, 68, 0.1)",
+        borderColor: "rgba(239, 68, 68, 0.3)",
+        iconColor: "#ef4444",
+        textColor: "#fca5a5",
+      };
+    case "warning":
+      return {
+        icon: FiAlertTriangle,
+        bgColor: "rgba(245, 158, 11, 0.1)",
+        borderColor: "rgba(245, 158, 11, 0.3)",
+        iconColor: "#f59e0b",
+        textColor: "#fcd34d",
+      };
+    case "success":
+      return {
+        icon: FiCheckCircle,
+        bgColor: "rgba(34, 197, 94, 0.1)",
+        borderColor: "rgba(34, 197, 94, 0.3)",
+        iconColor: "#22c55e",
+        textColor: "#86efac",
+      };
+    default:
+      return {
+        icon: FiInfo,
+        bgColor: "rgba(59, 130, 246, 0.1)",
+        borderColor: "rgba(59, 130, 246, 0.3)",
+        iconColor: "#3b82f6",
+        textColor: "#93c5fd",
+      };
+  }
+}
+
+function formatAlertTime(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+  if (diffInMinutes < 1) return "Just now";
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  if (diffInDays === 1) return "Yesterday";
+  if (diffInDays < 7) return `${diffInDays}d ago`;
+  return date.toLocaleDateString();
+}
+
+function AlertsSection({
+  alerts,
+  isLoading,
+  onDismiss,
+  onDismissAll,
+}: {
+  alerts: Notification[];
+  isLoading: boolean;
+  onDismiss: (id: string) => void;
+  onDismissAll: () => void;
+}) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-6">
+        <div className="loading-spinner" style={{ width: 20, height: 20 }} />
+      </div>
+    );
+  }
+
+  if (alerts.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-6 text-center">
+        <FiCheckCircle
+          size={24}
+          style={{ color: "var(--color-fg-tertiary)", marginBottom: 8 }}
+        />
+        <p className="text-xs" style={{ color: "var(--color-fg-secondary)" }}>
+          No active alerts
+        </p>
+        <p
+          className="text-xs mt-1"
+          style={{ color: "var(--color-fg-tertiary)" }}
+        >
+          System is running smoothly
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {/* Header with dismiss all */}
+      {alerts.length > 1 && (
+        <div className="flex items-center justify-between mb-1">
+          <span
+            className="text-xs font-medium"
+            style={{ color: "var(--color-fg-secondary)" }}
+          >
+            {alerts.length} active alert{alerts.length > 1 ? "s" : ""}
+          </span>
+          <button
+            onClick={onDismissAll}
+            className="text-xs hover:underline transition-all"
+            style={{ color: "var(--color-accent)" }}
+          >
+            Dismiss all
+          </button>
+        </div>
+      )}
+
+      {/* Alert items */}
+      <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1">
+        {alerts.slice(0, 5).map((alert) => {
+          const severity = getAlertSeverity(alert.title);
+          const styles = getAlertStyles(severity);
+          const IconComponent = styles.icon;
+
+          return (
+            <div
+              key={alert.id}
+              className="relative rounded-lg p-3 transition-all hover:opacity-90"
+              style={{
+                backgroundColor: styles.bgColor,
+                border: `1px solid ${styles.borderColor}`,
+              }}
+            >
+              {/* Dismiss button */}
+              <button
+                onClick={() => onDismiss(alert.id)}
+                className="absolute top-2 right-2 p-1 rounded hover:bg-black/10 transition-colors"
+                title="Dismiss"
+              >
+                <FiX size={12} style={{ color: "var(--color-fg-secondary)" }} />
+              </button>
+
+              <div className="flex gap-2.5 pr-5">
+                <div className="flex-shrink-0 mt-0.5">
+                  <IconComponent
+                    size={14}
+                    style={{ color: styles.iconColor }}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4
+                    className="text-xs font-medium leading-tight"
+                    style={{ color: "var(--color-fg)" }}
+                  >
+                    {alert.title}
+                  </h4>
+                  <p
+                    className="text-xs mt-1 leading-relaxed"
+                    style={{ color: "var(--color-fg-secondary)" }}
+                  >
+                    {alert.message}
+                  </p>
+                  <span
+                    className="text-[10px] mt-1.5 block"
+                    style={{ color: "var(--color-fg-tertiary)" }}
+                  >
+                    {formatAlertTime(alert.timestamp)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Show more indicator */}
+      {alerts.length > 5 && (
+        <p
+          className="text-xs text-center pt-1"
+          style={{ color: "var(--color-fg-tertiary)" }}
+        >
+          +{alerts.length - 5} more alert{alerts.length - 5 > 1 ? "s" : ""}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function ProjectsPage() {
   const router = useRouter();
 
@@ -194,6 +410,13 @@ export default function ProjectsPage() {
   const usageLoading = useUsageStore((s) => s.isLoading);
   const fetchUsage = useUsageStore((s) => s.fetchUsage);
 
+  const alerts = useNotificationStore((s) => s.alerts);
+  const alertsLoading = useNotificationStore((s) => s.alertsLoading);
+  const alertsCount = useNotificationStore((s) => s.alertsCount);
+  const dismissAlert = useNotificationStore((s) => s.dismissAlert);
+  const dismissAllAlerts = useNotificationStore((s) => s.dismissAllAlerts);
+  const fetchAlerts = useNotificationStore((s) => s.fetchAlerts);
+
   const [searchTerm, setSearchTerm] = useState("");
   const dataFetchRef = useRef(false);
 
@@ -209,6 +432,7 @@ export default function ProjectsPage() {
         }
         promises.push(fetchGitHubRepos());
         promises.push(fetchUsage());
+        promises.push(fetchAlerts());
         await Promise.all(promises);
       } catch (error) {
         console.error("Error fetching projects data:", error);
@@ -216,7 +440,13 @@ export default function ProjectsPage() {
     };
 
     fetchData();
-  }, [fetchMyInvites, fetchGitHubRepos, myInvitesLoaded, fetchUsage]);
+  }, [
+    fetchMyInvites,
+    fetchGitHubRepos,
+    myInvitesLoaded,
+    fetchUsage,
+    fetchAlerts,
+  ]);
 
   const filteredRepositories = repositories.filter(
     (repo) =>
@@ -263,11 +493,27 @@ export default function ProjectsPage() {
           />
         </div>
 
-        <div className="sidebar-section-title">Alerts</div>
+        <div className="sidebar-section-title">
+          <span>Alerts</span>
+          {alertsCount > 0 && (
+            <span
+              className="ml-2 px-1.5 py-0.5 text-[10px] font-medium rounded-full"
+              style={{
+                backgroundColor: "rgba(239, 68, 68, 0.2)",
+                color: "#ef4444",
+              }}
+            >
+              {alertsCount}
+            </span>
+          )}
+        </div>
         <div className="sidebar-section">
-          <div>
-            <h3>Get alerted for anomalies</h3>
-          </div>
+          <AlertsSection
+            alerts={alerts}
+            isLoading={alertsLoading}
+            onDismiss={dismissAlert}
+            onDismissAll={dismissAllAlerts}
+          />
         </div>
 
         <div className="sidebar-section-title">Recent Previews</div>
