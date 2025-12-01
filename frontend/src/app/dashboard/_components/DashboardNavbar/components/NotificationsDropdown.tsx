@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useSocket } from "@/hooks/useSocket";
+import { toast } from "sonner";
 import {
   Bell,
   GitPullRequest,
@@ -163,6 +164,10 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
           timestamp: data.timestamp || new Date().toISOString(),
           success: true,
         });
+
+        toast.success("Analysis Retrieved", {
+          description: `${repoName}: Health Score ${healthScore}`,
+        });
       } else {
         addNotification({
           type: "analysis" as any,
@@ -173,6 +178,10 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
           timestamp: data.timestamp || new Date().toISOString(),
           success: false,
           error: data.error,
+        });
+
+        toast.error("Analysis Failed", {
+          description: data.error || repoName,
         });
       }
     };
@@ -199,6 +208,16 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
         success: data.success,
         error: data.error,
       });
+
+      if (data.success) {
+        toast.success(data.message || "Analysis Complete", {
+          description: repoName,
+        });
+      } else {
+        toast.error(data.message || "Analysis Failed", {
+          description: data.error || repoName,
+        });
+      }
     };
 
     const handleNotification = (data: any) => {
@@ -215,6 +234,10 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
           ? new Date(data.time).toISOString()
           : new Date().toISOString(),
         success: data.success !== undefined ? data.success : true,
+      });
+
+      toast.info(data.message || "New notification", {
+        description: data.repoName || "Repository update",
       });
     };
 

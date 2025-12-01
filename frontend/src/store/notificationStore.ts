@@ -96,7 +96,7 @@ export const useNotificationStore = create<NotificationStore>()((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await axiosInstance.get("/notifications/notifications");
+      const response = await axiosInstance.get("/notifications/get");
 
       if (response.data.success && response.data.notifications) {
         const backendNotifications: BackendNotification[] =
@@ -190,7 +190,7 @@ export const useNotificationStore = create<NotificationStore>()((set, get) => ({
 
     if (notification.isFromBackend && currentUserId) {
       try {
-        await axiosInstance.patch(`/notifications/notifications/${id}/read`);
+        await axiosInstance.patch(`/notifications/${id}/read`);
       } catch (error) {
         console.error("Failed to mark notification as read:", error);
         set((state) => ({
@@ -217,7 +217,7 @@ export const useNotificationStore = create<NotificationStore>()((set, get) => ({
 
     if (currentUserId) {
       try {
-        await axiosInstance.patch("/notifications/notifications/read-all");
+        await axiosInstance.patch("/notifications/read-all");
       } catch (error) {
         console.error("Failed to mark all notifications as read:", error);
         set({
@@ -298,15 +298,13 @@ export const useNotificationStore = create<NotificationStore>()((set, get) => ({
     }));
 
     if (alert.isFromBackend && currentUserId) {
-      axiosInstance
-        .patch(`/notifications/notifications/${id}/read`)
-        .catch((error) => {
-          console.error("Failed to dismiss alert:", error);
-          set((state) => ({
-            alerts: [alert, ...state.alerts],
-            alertsCount: state.alertsCount + 1,
-          }));
-        });
+      axiosInstance.patch(`/notifications/${id}/read`).catch((error) => {
+        console.error("Failed to dismiss alert:", error);
+        set((state) => ({
+          alerts: [alert, ...state.alerts],
+          alertsCount: state.alertsCount + 1,
+        }));
+      });
     }
   },
 
@@ -325,7 +323,7 @@ export const useNotificationStore = create<NotificationStore>()((set, get) => ({
         .map((a) => a.id);
       Promise.all(
         backendAlertIds.map((id) =>
-          axiosInstance.patch(`/notifications/notifications/${id}/read`)
+          axiosInstance.patch(`/notifications/${id}/read`)
         )
       ).catch((error) => {
         console.error("Failed to dismiss all alerts:", error);
