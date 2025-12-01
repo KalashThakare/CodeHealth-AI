@@ -1,3 +1,4 @@
+import activity from "./activity.js";
 import RepositoryAnalysis from "./analysis.js";
 import CommitsAnalysis from "./commit_analysis.js";
 import Commit from "./commitsMetadata.js";
@@ -38,6 +39,9 @@ support.belongsTo(User, { foreignKey: "userId" });
 
 User.hasMany(notification, { foreignKey: "userId" });
 notification.belongsTo(User, { foreignKey: "userId" });
+
+User.hasMany(activity, { foreignKey: "userId" });
+activity.belongsTo(User, { foreignKey: "userId" });
 
 Project.hasMany(WebhookEvent, { foreignKey: 'projectId' });
 WebhookEvent.belongsTo(Project, { foreignKey: 'projectId' });

@@ -10,7 +10,8 @@ export const getNotifications = async(req, res)=>{
         const notifications = await notification.findAll({
             where:{
                 userId:userId,
-                is_read:false
+                is_read:false,
+                alert:false
             },
             order: [['createdAt', 'DESC']]
         })
@@ -102,5 +103,28 @@ export const markAllRead = async(req, res) => {
             error, 
             success: false
         });
+    }
+}
+
+export const getAlert = async(req, res)=>{
+    try {
+        const userId = req.user?.id;
+        if(!userId){
+            return res.status(400).json({message:"Unauthorised"});
+        }
+
+        const alerts = await notification.findAll({
+            where:{
+                userId:userId,
+                alert:true
+            }
+        })
+        if(!alerts){
+            return res.status(400).json({message:"No alerts found"});
+        }
+        return res.status(200).json({message:"Success", length:alerts.length, alerts});
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({message:"Internal server error", success:false, error});
     }
 }

@@ -15,6 +15,9 @@ import OAuthConnection from "../database/models/OauthConnections.js";
 import { io } from "../server.js";
 import { type } from "os";
 import { time } from "console";
+import notification from "../database/models/notification.js";
+import { where } from "sequelize";
+import activity from "../database/models/activity.js";
 
 function eventToJobName(event) {
   switch (event) {
@@ -282,6 +285,7 @@ export const githubWebhookController = async (req, res) => {
             const repoName = repository.repoName;
             const repoId = repository.repoId;
 
+
             await Project.destroy({ where: { repoId: repo.id } });
 
             io.to(`user:${userId}`).emit("notification", {
@@ -292,6 +296,17 @@ export const githubWebhookController = async (req, res) => {
               message: `Repository: ${repoName} removed successfully`,
               time: Date.now(),
             });
+
+            await notification.create({
+                userId:userId,
+                title:"Repo removed",
+                message:`You removed ${repoName}`
+            })
+
+            await activity.create({
+              userId:userId,
+              activity:`You removed ${repoName}`
+            })
           }
         }
       }
@@ -322,6 +337,18 @@ export const githubWebhookController = async (req, res) => {
               time: Date.now(),
             });
           }
+
+          await notification.create({
+            userId:userId,
+            title:"Github app uninstalled",
+            message:`Github app uninstalled`,
+            alert:true
+          })
+
+          await activity.create({
+            userId:userId,
+            activity:"Github app uninstalled"
+          })
         }
       }
     }
@@ -350,6 +377,12 @@ export const githubWebhookController = async (req, res) => {
           message: `New push on ${fullName}`,
           time: Date.now(),
         });
+
+        await notification.create({
+          userId:project.userId,
+          title:"New Push",
+          message:`New push on ${fullName}`
+        })
       }
 
       const result = await handlePush(payload);
@@ -379,6 +412,12 @@ export const githubWebhookController = async (req, res) => {
             message: `New pull request closed and merged on ${fullName}`,
             time: Date.now(),
           });
+
+          await notification.create({
+          userId:project.userId,
+          title:"PR",
+          message:`New pull request closed and merged on ${fullName}`
+        })
         }
       }
 
@@ -392,6 +431,12 @@ export const githubWebhookController = async (req, res) => {
             message: `New pull request #${payload.pull_request.number} opened on ${fullName}`,
             time: Date.now(),
           });
+          await notification.create({
+          userId:project.userId,
+          title:"PR",
+          message:`New pull request #${payload.pull_request.number} opened on ${fullName}`
+        })
+          
         }
       }
 
@@ -405,6 +450,11 @@ export const githubWebhookController = async (req, res) => {
             message: `New pull request #${payload.pull_request.number} synchronized on ${fullName}`,
             time: Date.now(),
           });
+          await notification.create({
+          userId:project.userId,
+          title:"PR",
+          message:`New pull request #${payload.pull_request.number} synchronized on ${fullName}`
+        })
         }
       }
 
