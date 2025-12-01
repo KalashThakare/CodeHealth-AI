@@ -17,6 +17,7 @@ export default function DashboardLayout({
   const authUser = useAuthStore((s) => s.authUser);
   const isLoggingIn = useAuthStore((s) => s.isloggingin);
   const checkAuth = useAuthStore((s) => s.checkAuth);
+  const justLoggedOut = useAuthStore((s) => s.justLoggedOut);
 
   const teams = useTeamStore((s) => s.teams);
   const fetchTeams = useTeamStore((s) => s.fetchTeams);
@@ -25,41 +26,52 @@ export default function DashboardLayout({
   const [isInitializing, setIsInitializing] = useState(true);
   const initRef = useRef(false);
 
-  // One-time initialization
   useEffect(() => {
     if (initRef.current) return;
     initRef.current = true;
 
     const initialize = async () => {
+      const { justLoggedOut } = useAuthStore.getState();
+      if (justLoggedOut) {
+        useAuthStore.setState({ isloggingin: false });
+        setIsInitializing(false);
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const tokenFromUrl = params.get("token");
+      if (tokenFromUrl) {
+        localStorage.setItem("authToken", tokenFromUrl);
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        useAuthStore.setState({ isloggingin: false, authUser: null });
+        setIsInitializing(false);
+        return;
+      }
+
       try {
-        const params = new URLSearchParams(window.location.search);
-        const tokenFromUrl = params.get("token");
-        if (tokenFromUrl) {
-          localStorage.setItem("authToken", tokenFromUrl);
-          window.history.replaceState({}, "", window.location.pathname);
-        }
-        await checkAuth(router as any);
+        await checkAuth();
       } catch (e) {
-        router.replace("/login");
       } finally {
         setIsInitializing(false);
       }
     };
     initialize();
-  }, [checkAuth, router]);
+  }, [checkAuth]);
 
-  // Fetch teams once authenticated
   useEffect(() => {
     if (!authUser || isInitializing || teamsLoaded) return;
     fetchTeams();
   }, [authUser, isInitializing, fetchTeams, teamsLoaded]);
 
-  // Redirect if not authenticated after init
   useEffect(() => {
-    if (!isInitializing && !isLoggingIn && !authUser) {
+    if (!isInitializing && !isLoggingIn && !authUser && !justLoggedOut) {
       router.replace("/login");
     }
-  }, [isInitializing, isLoggingIn, authUser, router]);
+  }, [isInitializing, isLoggingIn, authUser, router, justLoggedOut]);
 
   if (isInitializing || isLoggingIn) {
     return (
