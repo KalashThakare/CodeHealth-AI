@@ -4,9 +4,9 @@ import { getAlert, getNotifications, markAllRead, markRead } from "../controller
 
 const router = express.Router()
 
-router.get('/notifications', protectRoute, getNotifications);
-router.patch('/notifications/:notificationId/read', protectRoute, markRead);
-router.patch('/notifications/read-all', protectRoute, markAllRead);
+router.get('/get', protectRoute, getNotifications);
+router.patch('/:notificationId/read', protectRoute, markRead);
+router.patch('/read-all', protectRoute, markAllRead);
 
 router.get("/alerts", protectRoute, getAlert);
 
