@@ -2,7 +2,7 @@ import notification from "../database/models/notification.js";
 
 export const getNotifications = async(req, res)=>{
     try {
-        const userId = req.user?.userId
+        const userId = req.user?.id
         if(!userId){
             return res.status(400).json({message:"Unauthorised"});
         }
@@ -15,6 +15,10 @@ export const getNotifications = async(req, res)=>{
             },
             order: [['createdAt', 'DESC']]
         })
+
+        if(!notifications){
+            return res.status(400).json({message:"failed to fetched notifications"})
+        }
 
         return res.status(200).json({
             message:"Success", 
@@ -31,7 +35,7 @@ export const getNotifications = async(req, res)=>{
 
 export const markRead = async(req, res)=>{
     try {
-        const userId = req.user?.userId
+        const userId = req.user?.id
         const { notificationId } = req.params;
 
         if(!userId){
