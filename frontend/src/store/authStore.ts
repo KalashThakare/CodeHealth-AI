@@ -1,8 +1,8 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { NextRouter } from 'next/router';
-import { axiosInstance } from '@/lib/axios';
-import { toast } from 'sonner';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { NextRouter } from "next/router";
+import { axiosInstance } from "@/lib/axios";
+import { toast } from "sonner";
 
 interface User {
   id: string;
@@ -32,24 +32,27 @@ interface AuthStore {
   authUser: User | null;
   isloggingin: boolean;
   isHydrated: boolean;
+  justLoggedOut: boolean;
   setHydrated: () => void;
   checkAuth: (router?: any) => Promise<void>;
   login: (data: LoginData) => Promise<AuthResponse | null>;
   logout: () => Promise<void>;
   signup: (data: SignupData) => Promise<number>;
+  clearLogoutFlag: () => void;
 }
 
-// Auth Store
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       authUser: null,
       isloggingin: true,
       isHydrated: false,
+      justLoggedOut: false,
 
       setHydrated: () => set({ isHydrated: true }),
 
-      // Check Auth
+      clearLogoutFlag: () => set({ justLoggedOut: false }),
+
       checkAuth: async (router?: any): Promise<void> => {
         set({ isloggingin: true });
         try {
@@ -57,7 +60,6 @@ export const useAuthStore = create<AuthStore>()(
 
           if (!token) {
             set({ authUser: null, isloggingin: false });
-            // Don't auto-redirect here - let components handle it
             return;
           }
 
@@ -68,7 +70,6 @@ export const useAuthStore = create<AuthStore>()(
           if (res.data) {
             set({ authUser: res.data, isloggingin: false });
           } else {
-            // Token invalid but don't redirect automatically
             localStorage.removeItem("authToken");
             set({ authUser: null, isloggingin: false });
           }
@@ -77,14 +78,11 @@ export const useAuthStore = create<AuthStore>()(
 
           const status = error?.response?.status;
 
-          // FIXED: Only handle actual auth errors, not network issues
           if (status === 401 || status === 403) {
-            // Only show toast and remove token, don't auto-redirect
             console.log("Authentication failed - token invalid");
             localStorage.removeItem("authToken");
             set({ authUser: null, isloggingin: false });
 
-            // Only redirect if router is provided and we're not already on auth page
             if (
               router &&
               typeof window !== "undefined" &&
@@ -94,17 +92,14 @@ export const useAuthStore = create<AuthStore>()(
               router.push("/login");
             }
           } else {
-            // Network error or other issue - don't log out
             console.log(
               "Network error during auth check, maintaining current state"
             );
             set({ isloggingin: false });
-            // Keep existing authUser state if it exists
           }
         }
       },
 
-      // Login
       login: async (data: LoginData): Promise<AuthResponse | null> => {
         set({ isloggingin: true });
         try {
@@ -132,7 +127,6 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      // Logout
       logout: async (): Promise<void> => {
         set({ isloggingin: true });
         try {
@@ -147,11 +141,14 @@ export const useAuthStore = create<AuthStore>()(
           }
         } finally {
           localStorage.removeItem("authToken");
-          set({ authUser: null, isloggingin: false });
+          const currentUserId = get().authUser?.id;
+          if (currentUserId) {
+            localStorage.removeItem(`notification-storage-${currentUserId}`);
+          }
+          set({ authUser: null, isloggingin: false, justLoggedOut: true });
         }
       },
 
-      // Signup
       signup: async (data: SignupData): Promise<number> => {
         set({ isloggingin: true });
         try {
@@ -183,7 +180,6 @@ export const useAuthStore = create<AuthStore>()(
         authUser: state.authUser,
       }),
       onRehydrateStorage: () => (state) => {
-        // Set hydrated flag when store is rehydrated
         state?.setHydrated();
       },
     }

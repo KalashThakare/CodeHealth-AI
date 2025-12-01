@@ -35,7 +35,6 @@ export const useSupportStore = create<SupportStore>()((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await axiosInstance.get("/support/cases");
-
       if (res.data?.cases) {
         set({
           cases: res.data.cases,
@@ -59,13 +58,9 @@ export const useSupportStore = create<SupportStore>()((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await axiosInstance.post("/support/cases", { problem });
-
       if (res.data?.success && res.data?.caseId) {
         toast.success(`Support case #${res.data.caseId} created successfully`);
-
-        // Refetch cases from backend to get the complete data
         await get().fetchCases();
-
         return res.data.caseId;
       }
 
@@ -87,11 +82,8 @@ export const useSupportStore = create<SupportStore>()((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await axiosInstance.delete(`/support/cases/${caseId}`);
-
       if (res.data?.success) {
-        // Refetch cases from backend to ensure sync
         await get().fetchCases();
-
         toast.success("Support case deleted successfully");
         return true;
       }

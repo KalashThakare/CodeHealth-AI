@@ -15,29 +15,47 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 export default function Home() {
   const router = useRouter();
-  const { authUser, isloggingin, checkAuth } = useAuthStore();
+  const { authUser, isloggingin, checkAuth, justLoggedOut, clearLogoutFlag } =
+    useAuthStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const [animationsReady, setAnimationsReady] = useState(false);
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
+    if (hasInitialized.current) return;
+
     const initAuth = async () => {
-      await checkAuth(router as any);
+      if (justLoggedOut) {
+        hasInitialized.current = true;
+        clearLogoutFlag();
+        setAnimationsReady(true);
+        return;
+      }
+
       if (authUser) {
+        hasInitialized.current = true;
+        router.push("/dashboard");
+        return;
+      }
+
+      hasInitialized.current = true;
+      await checkAuth();
+
+      const currentAuthUser = useAuthStore.getState().authUser;
+      if (currentAuthUser) {
         router.push("/dashboard");
       } else {
         setAnimationsReady(true);
       }
     };
     initAuth();
-  }, [checkAuth, authUser, router]);
+  }, [justLoggedOut]); 
 
   useGSAP(
     () => {
       if (animationsReady && !isloggingin && !authUser) {
-        // Smooth scrolling setup
         gsap.registerPlugin(ScrollTrigger);
 
-        // Hero animations
         gsap.fromTo(
           ".hero-title",
           { opacity: 0, y: 50 },
@@ -56,7 +74,6 @@ export default function Home() {
           { opacity: 1, y: 0, duration: 1, delay: 0.6, ease: "power3.out" }
         );
 
-        // Floating animation for neon elements
         gsap.to(".neon-element", {
           y: "-10px",
           duration: 2,
@@ -65,7 +82,6 @@ export default function Home() {
           repeat: -1,
         });
 
-        // Features section scroll animation
         gsap.fromTo(
           ".feature-card",
           {
@@ -86,7 +102,6 @@ export default function Home() {
           }
         );
 
-        // Stats counter animation - FIXED
         gsap.fromTo(
           ".stat-number",
           {

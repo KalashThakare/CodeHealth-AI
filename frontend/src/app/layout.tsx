@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import "@/app/glass.css";
 import { LenisProvider } from "@/components/ui/LenisProvider";
 import { SocketProvider } from "@/components/SocketProvider";
+import { NotificationSync } from "@/components/NotificationSync";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,6 +52,7 @@ export default function RootLayout({
       >
         <SocketProvider>
           <LenisProvider>
+            <NotificationSync />
             <Toaster />
             {children}
           </LenisProvider>
