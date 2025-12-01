@@ -57,6 +57,10 @@ const getNotificationIcon = (type: string, success?: boolean) => {
       return <Activity className="w-5 h-5 text-emerald-500" />;
     case "background":
       return <Activity className="w-5 h-5 text-teal-500" />;
+    case "alert":
+      return <AlertCircle className="w-5 h-5 text-yellow-500" />;
+    case "notification":
+      return <Bell className="w-5 h-5 text-blue-400" />;
     default:
       return <Bell className="w-5 h-5 text-gray-500" />;
   }
@@ -90,8 +94,29 @@ const getNotificationTitle = (notification: any) => {
         : "Background Analysis Failed";
     case "notification":
       return notification.title || "Notification";
+    case "remove":
+      return "Repository Removed";
+    case "delete":
+      return "Repository Deleted";
     default:
       return notification.title || "Update";
+  }
+};
+
+const getNotificationTitleFromType = (type: string, success?: boolean) => {
+  switch (type) {
+    case "push":
+      return success ? "Push Analysis Complete" : "Push Analysis Failed";
+    case "pull_request":
+      return success ? "PR Analysis Complete" : "PR Analysis Failed";
+    case "remove":
+      return "Repository Removed";
+    case "delete":
+      return "Repository Deleted";
+    case "analysis":
+      return success ? "Analysis Complete" : "Analysis Failed";
+    default:
+      return "Notification";
   }
 };
 
@@ -113,10 +138,8 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Socket connection for real-time notifications
   const { socket } = useSocket({ autoConnect: true });
 
-  // Listen for analysis notifications from socket
   useEffect(() => {
     if (!socket) return;
 
@@ -141,7 +164,6 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
           success: true,
         });
       } else {
-        // Handle failed analysis fetch
         addNotification({
           type: "analysis" as any,
           title: "Analysis Failed",
@@ -179,16 +201,34 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
       });
     };
 
+    const handleNotification = (data: any) => {
+      console.log("Socket notification received:", data);
+
+      addNotification({
+        type: data.type || "notification",
+        title:
+          data.title || getNotificationTitleFromType(data.type, data.success),
+        message: data.message || "",
+        repoId: data.repoId ? String(data.repoId) : undefined,
+        repoName: data.repoName,
+        timestamp: data.time
+          ? new Date(data.time).toISOString()
+          : new Date().toISOString(),
+        success: data.success !== undefined ? data.success : true,
+      });
+    };
+
     socket.on("analysis_fetched", handleAnalysisFetched);
     socket.on("analysis_complete", handleAnalysisComplete);
+    socket.on("notification", handleNotification);
 
     return () => {
       socket.off("analysis_fetched", handleAnalysisFetched);
       socket.off("analysis_complete", handleAnalysisComplete);
+      socket.off("notification", handleNotification);
     };
   }, [socket, addNotification]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -210,7 +250,6 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
     };
   }, [isOpen, onClose]);
 
-  // Prevent page scroll when mouse is over dropdown
   useEffect(() => {
     const dropdown = dropdownRef.current;
     if (!dropdown || !isOpen) return;
@@ -219,7 +258,6 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
       e.preventDefault();
       e.stopPropagation();
 
-      // Manually scroll the scroll container
       const scrollContainer = scrollContainerRef.current;
       if (scrollContainer) {
         scrollContainer.scrollTop += e.deltaY;
@@ -251,7 +289,6 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
         flexDirection: "column",
       }}
     >
-      {/* Header */}
       <div
         className="flex items-center gap-2 justify-between p-4 border-b"
         style={{
@@ -305,7 +342,6 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
         </div>
       </div>
 
-      {/* Notifications List */}
       <div
         ref={scrollContainerRef}
         className="overflow-y-auto flex-1"
@@ -348,7 +384,6 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
                 }}
                 onClick={() => handleNotificationClick(notification.id)}
               >
-                {/* Unread Indicator */}
                 {!notification.read && (
                   <div
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full"
@@ -357,7 +392,6 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
                 )}
 
                 <div className="flex gap-3 pl-3">
-                  {/* Icon */}
                   <div className="!flex-shrink-0 !mt-1">
                     {getNotificationIcon(
                       notification.type,
@@ -365,7 +399,6 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
                     )}
                   </div>
 
-                  {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <h4
@@ -377,7 +410,6 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
                         {getNotificationTitle(notification)}
                       </h4>
 
-                      {/* Delete button */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -396,7 +428,6 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
                       {notification.message}
                     </p>
 
-                    {/* Metadata */}
                     <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
                       {notification.repoName && (
                         <span
