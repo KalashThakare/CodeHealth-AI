@@ -122,7 +122,6 @@ export async function aggregateRepoActivity(repoId, startDate, endDate) {
 
 /**
  * Backfill historical data for last 30 days
- * Run this once when setting up the cron job
  */
 export async function backfillPushActivity(days = 30) {
   console.log(`🔄 Backfilling push activity for last ${days} days...`);
@@ -170,17 +169,17 @@ export async function cleanupOldMetrics() {
     });
 
     if (deleted > 0) {
-      console.log(`🗑️ Cleaned up ${deleted} old metric records`);
+      console.log(`Cleaned up ${deleted} old metric records`);
     }
   } catch (error) {
-    console.error('❌ Error cleaning up old metrics:', error);
+    console.error('Error cleaning up old metrics:', error);
   }
 }
 
 //cron jobs
 
 export const pushActivityCron = cron.schedule('0 * * * *', async () => {
-  console.log('\n⏰ Running hourly push activity aggregation');
+  console.log('Running hourly push activity aggregation');
   await aggregatePushActivity();
 }, {
   scheduled: false,

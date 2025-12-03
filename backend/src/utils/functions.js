@@ -57,3 +57,29 @@ export const removeFiles = async (repoId, removedArray) =>{
   return deletedCount;
 
 }
+
+//PR metrics helper functions
+
+// Calculate time difference in minutes
+
+export function getTimeDiffInMinutes(startDate, endDate) {
+  if (!startDate || !endDate) return null;
+  return Math.round((new Date(endDate) - new Date(startDate)) / (1000 * 60));
+}
+
+// Calculate median of array
+export function getMedian(arr) {
+  if (arr.length === 0) return 0;
+  const sorted = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+// Categorize time into buckets
+export function categorizeTime(minutes) {
+  if (minutes < 60) return 'under1Hour';
+  if (minutes < 240) return 'under4Hours';
+  if (minutes < 1440) return 'under1Day';
+  if (minutes < 10080) return 'under1Week';
+  return 'over1Week';
+}

@@ -12,6 +12,7 @@ export async function handlePush(payload) {
     const branch = ref?.startsWith("refs/heads/") ? ref.slice("refs/heads/".length) : ref;
     const installationId = payload.installation?.id ?? null;
     const pusher = payload.pusher?.name || payload.sender?.login || "unknown";
+    const pusherGitHubId = payload.sender?.id || null;
     const headCommit = payload.head_commit || null;
     const commits = payload.commits || [];
     const commitSha = payload.head_commit?.id || payload.after || null;

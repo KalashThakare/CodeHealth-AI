@@ -4,7 +4,9 @@ import CommitsAnalysis from "./commit_analysis.js";
 import Commit from "./commitsMetadata.js";
 import notification from "./notification.js";
 import OAuthConnection from "./OauthConnections.js";
+import { PRVelocityMetrics } from "./observability/prVelocityMetrics.js";
 import { PushActivityMetrics } from "./observability/pushActivityMetrics.js";
+import { ReviewerMetrics } from "./observability/reviewerMetrics.js";
 import PullRequestAnalysis from "./pr_analysis_metrics.js";
 import { Project } from "./project.js";
 import PushAnalysisMetrics from "./pushAnalysisMetrics.js";
@@ -199,6 +201,20 @@ PullRequestReviewActivity.belongsTo(Project, {
   as: "project",
 });
 
+PullRequestActivity.hasMany(PullRequestReviewActivity, {
+  foreignKey: 'prNumber',
+  sourceKey: 'prNumber',
+  as: 'reviews',
+  constraints: false, // Composite key workaround
+});
+
+PullRequestReviewActivity.belongsTo(PullRequestActivity, {
+  foreignKey: 'prNumber',
+  targetKey: 'prNumber',
+  as: 'pullRequest',
+  constraints: false, // Composite key workaround
+});
+
 //Observability analytics associations
 
 Project.hasMany(PushActivityMetrics, {
@@ -209,6 +225,32 @@ Project.hasMany(PushActivityMetrics, {
 });
 
 PushActivityMetrics.belongsTo(Project, {
+  foreignKey: 'repoId',
+  targetKey: 'repoId',
+  as: 'project'
+})
+
+Project.hasMany(PRVelocityMetrics, {
+  foreignKey: 'repoId',
+  sourceKey: 'repoId',
+  as: 'prVelocityMetrics',
+  onDelete: 'CASCADE'
+});
+
+PRVelocityMetrics.belongsTo(Project, {
+  foreignKey: 'repoId',
+  targetKey: 'repoId',
+  as: 'project'
+})
+
+Project.hasMany(ReviewerMetrics, {
+  foreignKey: 'repoId',
+  sourceKey: 'repoId',
+  as: 'reviewerMetrics',
+  onDelete: 'CASCADE'
+});
+
+ReviewerMetrics.belongsTo(Project, {
   foreignKey: 'repoId',
   targetKey: 'repoId',
   as: 'project'
