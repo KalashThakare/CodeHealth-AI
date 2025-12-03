@@ -53,7 +53,6 @@ export default function CodeSmellsChart({
     (s) => s.severity.toLowerCase() === "low"
   ).length;
 
-  // Calculate total fix time
   const getTotalFixHours = () => {
     let totalHours = 0;
     codeSmells.forEach((smell) => {
@@ -69,9 +68,7 @@ export default function CodeSmellsChart({
 
   return (
     <div className="space-y-4 mt-2">
-      {/* Main Content - Left Overview, Right Details */}
       <div style={{ display: "flex", gap: "20px", alignItems: "stretch" }}>
-        {/* Left Side - Overview & Stats */}
         <div
           style={{
             flex: "1",
@@ -80,7 +77,6 @@ export default function CodeSmellsChart({
             gap: "16px",
           }}
         >
-          {/* Health Summary */}
           <div
             className="p-4 rounded-lg"
             style={{
@@ -137,7 +133,6 @@ export default function CodeSmellsChart({
             </div>
           </div>
 
-          {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-3">
             <div
               className="p-3 rounded-lg text-center"
@@ -249,7 +244,6 @@ export default function CodeSmellsChart({
             </div>
           </div>
 
-          {/* Severity Breakdown */}
           <div
             className="p-3 rounded-lg"
             style={{
@@ -343,7 +337,6 @@ export default function CodeSmellsChart({
             </div>
           </div>
 
-          {/* Estimated Effort */}
           <div
             style={{
               padding: "12px 14px",
@@ -376,7 +369,6 @@ export default function CodeSmellsChart({
           </div>
         </div>
 
-        {/* Right Side - Issue Details */}
         <div
           style={{
             flex: "1",

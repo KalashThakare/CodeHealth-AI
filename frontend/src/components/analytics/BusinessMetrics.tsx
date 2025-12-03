@@ -23,16 +23,12 @@ export default function BusinessMetrics({
 }: BusinessMetricsProps) {
   const { result, commitAnalysis, repoHealthScore } = analysis;
 
-  // Calculate business metrics
   const businessMetrics = useMemo(() => {
-    // Average cost per developer hour (industry standard: $75-150/hr)
     const DEV_HOURLY_RATE = 100;
 
-    // Estimate refactoring cost based on high-risk files
     const highRiskFiles = result.refactorPriorityFiles.length;
     const avgComplexity = result.avgCyclomaticComplexity;
 
-    // Estimate hours per file based on complexity and LOC
     const hoursPerFile = Math.max(
       2,
       Math.min(40, avgComplexity * 0.5 + totalLOC / totalFiles / 100)
@@ -40,11 +36,9 @@ export default function BusinessMetrics({
     const totalRefactoringHours = highRiskFiles * hoursPerFile;
     const estimatedCost = totalRefactoringHours * DEV_HOURLY_RATE;
 
-    // Technical debt as developer-days (8 hours per day)
     const technicalDebtDays =
       (result.technicalDebtScore * totalFiles * 0.1) / 8;
 
-    // Knowledge risk based on bus factor
     const knowledgeRisk = (() => {
       if (commitAnalysis.busFactor === "low") return "High Risk";
       if (commitAnalysis.busFactor === "medium") return "Medium Risk";
@@ -52,21 +46,18 @@ export default function BusinessMetrics({
       return "Unknown";
     })();
 
-    // Development efficiency score (0-100)
     const efficiencyScore = Math.round(
       result.avgMaintainabilityIndex * 0.4 +
         (100 - result.technicalDebtScore) * 0.3 +
         repoHealthScore.componentScores.codeQuality * 0.3
     );
 
-    // Time saved per year with better maintainability
     const currentMaintTime =
-      totalFiles * (100 - result.avgMaintainabilityIndex) * 0.02; // hours
-    const potentialMaintTime = totalFiles * 20 * 0.02; // if maintainability was 80
+      totalFiles * (100 - result.avgMaintainabilityIndex) * 0.02;
+    const potentialMaintTime = totalFiles * 20 * 0.02;
     const timeSavedPerYear = Math.max(0, currentMaintTime - potentialMaintTime);
     const costSavingsPerYear = timeSavedPerYear * DEV_HOURLY_RATE;
 
-    // ROI calculation
     const roi =
       estimatedCost > 0
         ? ((costSavingsPerYear - estimatedCost) / estimatedCost) * 100
@@ -101,7 +92,6 @@ export default function BusinessMetrics({
       </h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Estimated Refactoring Cost */}
         <div
           className="rounded-lg p-3"
           style={{
@@ -130,7 +120,6 @@ export default function BusinessMetrics({
           </div>
         </div>
 
-        {/* Technical Debt Time */}
         <div
           className="rounded-lg p-3"
           style={{
@@ -159,7 +148,6 @@ export default function BusinessMetrics({
           </div>
         </div>
 
-        {/* Knowledge Risk */}
         <div
           className="rounded-lg p-3"
           style={{
@@ -188,7 +176,6 @@ export default function BusinessMetrics({
           </div>
         </div>
 
-        {/* Development Efficiency */}
         <div
           className="rounded-lg p-3"
           style={{
@@ -218,7 +205,6 @@ export default function BusinessMetrics({
         </div>
       </div>
 
-      {/* ROI Calculation - Compact */}
       <div
         className="analytics-mt-3 p-3 rounded-lg"
         style={{

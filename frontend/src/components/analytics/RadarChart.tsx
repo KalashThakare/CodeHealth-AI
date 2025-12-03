@@ -37,11 +37,9 @@ export default function RadarChart({ componentScores }: RadarChartProps) {
   const { isDark } = useTheme();
   const theme = getChartTheme(isDark);
 
-  // Vercel-style blue colors for better visibility
   const primaryColor = isDark ? "#3b82f6" : "#2563eb";
   const primaryColorRgb = isDark ? "59, 130, 246" : "37, 99, 235";
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (chartRef.current) {

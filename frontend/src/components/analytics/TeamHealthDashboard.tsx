@@ -52,11 +52,9 @@ export default function TeamHealthDashboard({
   const { isDark } = useTheme();
   const theme = getChartTheme(isDark);
 
-  // Primary color based on theme
   const primaryColor = isDark ? "#0070f3" : "#7c3aed";
   const primaryColorRgb = isDark ? "0, 112, 243" : "124, 58, 237";
 
-  // Calculate average risk levels
   const avgOwnershipRisk =
     teamHealthImpacts.reduce((sum, impact) => {
       const level = impact.ownershipRisk.toLowerCase();
@@ -75,7 +73,6 @@ export default function TeamHealthDashboard({
       return sum + (level === "high" ? 3 : level === "medium" ? 2 : 1);
     }, 0) / teamHealthImpacts.length;
 
-  // Count risk levels
   const highOwnershipRisk = teamHealthImpacts.filter(
     (i) => i.ownershipRisk.toLowerCase() === "high"
   ).length;
@@ -86,7 +83,6 @@ export default function TeamHealthDashboard({
     (i) => i.knowledgeGap.toLowerCase() === "high"
   ).length;
 
-  // Radar Chart Data with theme support
   const radarData = {
     labels: [
       "Ownership Distribution",
@@ -99,11 +95,11 @@ export default function TeamHealthDashboard({
       {
         label: "Current State",
         data: [
-          3 - avgOwnershipRisk, // Inverse for better visualization
+          3 - avgOwnershipRisk,
           3 - avgBurnoutRisk,
           3 - avgKnowledgeGap,
-          2.5, // From quick wins impact
-          2.0, // Estimated from velocity data
+          2.5,
+          2.0,
         ],
         backgroundColor: `rgba(${primaryColorRgb}, 0.15)`,
         borderColor: primaryColor,
@@ -171,14 +167,12 @@ export default function TeamHealthDashboard({
     },
   };
 
-  // Sort quick wins by priority
   const topQuickWins = [...quickWins]
     .sort((a, b) => b.priority - a.priority)
     .slice(0, 4);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {/* Team Health Metrics */}
       <div className="analytics-card analytics-card-compact space-y-3">
         <h3
           className="analytics-text-lg font-semibold"
@@ -188,12 +182,10 @@ export default function TeamHealthDashboard({
           Team Health Indicators
         </h3>
 
-        {/* Health Radar */}
         <div style={{ height: "220px" }}>
           <Radar data={radarData} options={radarOptions} />
         </div>
 
-        {/* Risk Breakdown */}
         <div className="grid grid-cols-3 gap-2">
           <div
             className="p-2 rounded"
@@ -289,7 +281,6 @@ export default function TeamHealthDashboard({
           </div>
         </div>
 
-        {/* Recommendations */}
         <div
           className="p-2 rounded"
           style={{
@@ -331,7 +322,6 @@ export default function TeamHealthDashboard({
         </div>
       </div>
 
-      {/* Quick Wins */}
       <div className="analytics-card analytics-card-compact space-y-3">
         <h3
           className="analytics-text-lg font-semibold"
@@ -357,7 +347,6 @@ export default function TeamHealthDashboard({
                 borderWidth: "2px",
               }}
             >
-              {/* Header */}
               <div className="flex items-start justify-between analytics-mb-2">
                 <h4
                   className="analytics-text-sm font-semibold flex-1"
@@ -381,7 +370,6 @@ export default function TeamHealthDashboard({
                 </span>
               </div>
 
-              {/* Metrics */}
               <div className="grid grid-cols-4 gap-2 analytics-mb-2">
                 <div>
                   <p
@@ -446,7 +434,6 @@ export default function TeamHealthDashboard({
                 </div>
               </div>
 
-              {/* Steps */}
               <div>
                 <p
                   className="analytics-text-xs font-semibold analytics-mb-1"
@@ -470,7 +457,6 @@ export default function TeamHealthDashboard({
           ))}
         </div>
 
-        {/* Summary Stats */}
         <div className="grid grid-cols-3 gap-2 analytics-mt-2">
           <div
             className="p-2 rounded text-center"

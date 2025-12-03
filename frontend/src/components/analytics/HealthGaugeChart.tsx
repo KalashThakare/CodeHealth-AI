@@ -19,7 +19,6 @@ export default function HealthGaugeChart({
   const chartRef = useRef<ChartJS<"doughnut"> | null>(null);
   const { isDark } = useTheme();
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (chartRef.current) {
@@ -28,12 +27,11 @@ export default function HealthGaugeChart({
     };
   }, []);
 
-  // Vercel-style colors with good visibility
   const getColor = (score: number) => {
-    if (score >= 80) return isDark ? "#4ade80" : "#16a34a"; // green
-    if (score >= 60) return isDark ? "#60a5fa" : "#2563eb"; // blue
-    if (score >= 40) return isDark ? "#fbbf24" : "#d97706"; // amber
-    return isDark ? "#f87171" : "#dc2626"; // red
+    if (score >= 80) return isDark ? "#4ade80" : "#16a34a";
+    if (score >= 60) return isDark ? "#60a5fa" : "#2563eb";
+    if (score >= 40) return isDark ? "#fbbf24" : "#d97706";
+    return isDark ? "#f87171" : "#dc2626";
   };
 
   const getRatingLabel = (rating: string) => {

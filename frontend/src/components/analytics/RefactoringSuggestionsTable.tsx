@@ -73,7 +73,6 @@ export default function RefactoringSuggestionsTable({
 
   return (
     <div className="space-y-3">
-      {/* Filter Controls */}
       <div className="flex items-center gap-2 flex-wrap">
         <span
           className="analytics-text-sm"
@@ -99,7 +98,6 @@ export default function RefactoringSuggestionsTable({
         ))}
       </div>
 
-      {/* Table */}
       <div className="analytics-card analytics-card-compact overflow-x-auto">
         <table className="analytics-table">
           <thead>
@@ -162,7 +160,6 @@ export default function RefactoringSuggestionsTable({
                   </td>
                 </tr>
 
-                {/* Expanded Row */}
                 {expandedRow === index && (
                   <tr>
                     <td colSpan={6}>
@@ -170,7 +167,6 @@ export default function RefactoringSuggestionsTable({
                         className="p-3 space-y-3"
                         style={{ background: "var(--analytics-card-hover)" }}
                       >
-                        {/* Full File Path */}
                         <div>
                           <p
                             className="analytics-text-xs"
@@ -186,7 +182,6 @@ export default function RefactoringSuggestionsTable({
                           </p>
                         </div>
 
-                        {/* Current Issues */}
                         <div>
                           <p
                             className="analytics-text-sm font-semibold analytics-mb-1"
@@ -214,7 +209,6 @@ export default function RefactoringSuggestionsTable({
                           </ul>
                         </div>
 
-                        {/* Recommendations */}
                         <div>
                           <p
                             className="analytics-text-sm font-semibold analytics-mb-1"
@@ -277,7 +271,6 @@ export default function RefactoringSuggestionsTable({
                           ))}
                         </div>
 
-                        {/* Business Impact Metrics */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                           <div
                             className="p-2 rounded"

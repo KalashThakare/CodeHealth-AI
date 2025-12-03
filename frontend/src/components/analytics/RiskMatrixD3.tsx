@@ -36,10 +36,8 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
     if (!svgRef.current || !tooltipRef.current || suggestions.length === 0)
       return;
 
-    // Clear previous render
     d3.select(svgRef.current).selectAll("*").remove();
 
-    // Theme-aware colors with HIGH CONTRAST for light theme
     const textColor = isDark ? "#a3a3a3" : "#4a1d8f";
     const gridColor = isDark
       ? "rgba(255, 255, 255, 0.05)"
@@ -47,12 +45,10 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
     const axisColor = isDark ? "#333333" : "#d1c4e9";
     const circleStroke = isDark ? "#000" : "#fff";
 
-    // Dimensions
     const margin = { top: 20, right: 20, bottom: 50, left: 60 };
     const width = 600 - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
 
-    // Create SVG
     const svg = d3
       .select(svgRef.current)
       .attr("width", width + margin.left + margin.right)
@@ -60,9 +56,7 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Process data
     const data = suggestions.map((s) => {
-      // Extract numeric values from strings
       const effortDays = parseInt(s.estimatedEffort.match(/\d+/)?.[0] || "1");
       const riskScore =
         s.priority.toLowerCase() === "critical"
@@ -83,7 +77,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
       };
     });
 
-    // Scales
     const xScale = d3
       .scaleLinear()
       .domain([0, d3.max(data, (d) => d.effort) || 10])
@@ -92,7 +85,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
 
     const yScale = d3.scaleLinear().domain([0, 10]).range([height, 0]).nice();
 
-    // Add quadrant backgrounds with theme-aware colors - HIGHER CONTRAST
     const quadrants = [
       {
         x: 0,
@@ -132,7 +124,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
       .attr("height", height / 2)
       .attr("fill", (d) => d.color);
 
-    // Add gridlines with theme-aware colors - HIGHER OPACITY for light theme
     svg
       .append("g")
       .attr("class", "grid")
@@ -160,7 +151,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
       .selectAll("line")
       .style("stroke", gridColor);
 
-    // X Axis with theme colors
     svg
       .append("g")
       .attr("transform", `translate(0,${height})`)
@@ -171,7 +161,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
       .selectAll("line, path")
       .style("stroke", axisColor);
 
-    // Y Axis with theme colors
     svg
       .append("g")
       .call(d3.axisLeft(yScale).ticks(5))
@@ -181,7 +170,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
       .selectAll("line, path")
       .style("stroke", axisColor);
 
-    // X Axis Label
     svg
       .append("text")
       .attr("x", width / 2)
@@ -192,7 +180,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
       .style("font-family", "'Inter', system-ui, sans-serif")
       .text("Estimated Effort (days)");
 
-    // Y Axis Label
     svg
       .append("text")
       .attr("transform", "rotate(-90)")
@@ -204,10 +191,8 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
       .style("font-family", "'Inter', system-ui, sans-serif")
       .text("Risk Score");
 
-    // Tooltip
     const tooltip = d3.select(tooltipRef.current);
 
-    // Add circles with theme-aware colors
     svg
       .selectAll(".dot")
       .data(data)
@@ -222,10 +207,8 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
       .attr("stroke-width", 2)
       .style("cursor", "pointer")
       .on("mouseover", function (event, d) {
-        // Highlight circle
         d3.select(this).attr("r", 12).attr("stroke-width", 3);
 
-        // Show tooltip
         tooltip
           .style("opacity", "1")
           .html(
@@ -247,7 +230,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
         tooltip.style("opacity", "0");
       });
 
-    // Add labels for high priority items
     const highPriorityData = data.filter(
       (d) => d.priority.toLowerCase() === "critical"
     );
@@ -269,7 +251,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
 
   return (
     <div className="analytics-card analytics-card-compact space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h3
           className="analytics-text-lg font-semibold"
@@ -286,7 +267,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
         </div>
       </div>
 
-      {/* Description */}
       <p
         className="analytics-text-sm"
         style={{ color: "var(--analytics-text-secondary)", lineHeight: "1.6" }}
@@ -296,9 +276,7 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
         items. Hover over points for detailed information.
       </p>
 
-      {/* Main Content - Chart Left, Info Right */}
       <div style={{ display: "flex", gap: "16px", alignItems: "stretch" }}>
-        {/* Chart */}
         <div
           style={{
             flex: "2",
@@ -313,7 +291,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
           <svg ref={svgRef}></svg>
         </div>
 
-        {/* Right Side - Info Panel (1/3 width) */}
         <div
           style={{
             flex: "1",
@@ -322,7 +299,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
             gap: "10px",
           }}
         >
-          {/* Summary Stats */}
           <div
             className="p-3 rounded"
             style={{
@@ -458,7 +434,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
             </div>
           </div>
 
-          {/* Legend */}
           <div
             className="p-3 rounded"
             style={{
@@ -528,7 +503,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
             </div>
           </div>
 
-          {/* Tip */}
           <div
             style={{
               padding: "10px 12px",
@@ -566,7 +540,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
         </div>
       </div>
 
-      {/* Tooltip */}
       <div
         ref={tooltipRef}
         style={{
@@ -590,7 +563,6 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
         }}
       />
 
-      {/* Quadrant Guide */}
       <div className="grid grid-cols-4 gap-2 analytics-text-xs">
         <div
           className="p-2 rounded"

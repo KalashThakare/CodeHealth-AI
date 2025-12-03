@@ -27,7 +27,6 @@ export default function VelocityTrendChart({
     velocity,
   } = commitAnalysis;
 
-  // Calculate velocity metrics
   const dailyAverage = avgCommitsPerDay.toFixed(2);
   const monthlyRate = recentCommits30Days;
   const activityRate = ((activeDays / 365) * 100).toFixed(1);
@@ -43,24 +42,24 @@ export default function VelocityTrendChart({
     consistency.toLowerCase() === "stable";
 
   return (
-    <div className="space-y-3">
-      {/* Trend Indicator - Compact */}
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {isTrendingUp ? (
             <FiTrendingUp
-              size={20}
+              size={16}
               style={{ color: "var(--analytics-success)" }}
             />
           ) : (
             <FiTrendingDown
-              size={20}
+              size={16}
               style={{ color: "var(--analytics-error)" }}
             />
           )}
           <span
-            className="analytics-text-base font-semibold"
             style={{
+              fontSize: "0.8125rem",
+              fontWeight: 600,
               color: isTrendingUp
                 ? "var(--analytics-success)"
                 : "var(--analytics-error)",
@@ -73,41 +72,40 @@ export default function VelocityTrendChart({
           className={`analytics-badge ${
             isConsistent ? "analytics-badge-success" : "analytics-badge-warning"
           }`}
+          style={{ fontSize: "0.6875rem" }}
         >
-          Consistency: {consistency}
+          {consistency}
         </span>
       </div>
 
-      {/* Metrics Grid - Compact */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-1.5">
         <VelocityMetric
-          label="Daily Average"
+          label="Daily Avg"
           value={dailyAverage}
           unit="commits/day"
           icon={<FiActivity />}
         />
         <VelocityMetric
-          label="Last 30 Days"
+          label="30 Days"
           value={monthlyRate.toString()}
           unit="commits"
           icon={<FiActivity />}
         />
         <VelocityMetric
-          label="Total Commits"
+          label="Total"
           value={totalCommits.toLocaleString()}
           unit="lifetime"
           icon={<FiActivity />}
         />
         <VelocityMetric
-          label="Active Days"
+          label="Active"
           value={activityRate}
           unit="% of year"
           icon={<FiActivity />}
         />
       </div>
 
-      {/* Visual Bar Chart - Compact */}
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <VelocityBar
           label="Recent Activity"
           percentage={(recentCommits30Days / (totalCommits || 1)) * 100}
@@ -118,34 +116,6 @@ export default function VelocityTrendChart({
           percentage={parseFloat(activityRate)}
           color="var(--analytics-success)"
         />
-        <VelocityBar
-          label="Consistency Score"
-          percentage={isConsistent ? 85 : 60}
-          color="var(--analytics-info)"
-        />
-      </div>
-
-      {/* Insight - Compact */}
-      <div
-        className="p-3 rounded-lg"
-        style={{
-          background: "var(--analytics-card-hover)",
-          border: "1px solid var(--analytics-border)",
-        }}
-      >
-        <p
-          className="analytics-text-sm"
-          style={{ color: "var(--analytics-text-secondary)" }}
-        >
-          <strong style={{ color: "var(--analytics-text-primary)" }}>
-            Insight:
-          </strong>{" "}
-          {avgCommitsPerDay > 2
-            ? "High development velocity indicates active feature development."
-            : avgCommitsPerDay > 1
-            ? "Moderate development pace with room for optimization."
-            : "Low commit frequency may indicate infrequent updates or large batch commits."}
-        </p>
       </div>
     </div>
   );
@@ -164,32 +134,39 @@ function VelocityMetric({
 }) {
   return (
     <div
-      className="p-2.5 rounded-lg"
+      className="p-2 rounded"
       style={{
         background: "var(--analytics-card-hover)",
         border: "1px solid var(--analytics-border)",
       }}
     >
-      <div className="flex items-center gap-1.5 mb-1">
+      <div className="flex items-center gap-1 mb-0.5">
         <span style={{ color: "var(--analytics-accent)" }}>
-          {React.cloneElement(icon as React.ReactElement, { size: 14 })}
+          {React.cloneElement(icon as React.ReactElement, { size: 12 })}
         </span>
         <p
-          className="analytics-text-xs"
-          style={{ color: "var(--analytics-text-secondary)" }}
+          style={{
+            fontSize: "0.625rem",
+            color: "var(--analytics-text-secondary)",
+          }}
         >
           {label}
         </p>
       </div>
       <p
-        className="analytics-text-lg font-bold"
-        style={{ color: "var(--analytics-text-primary)" }}
+        style={{
+          fontSize: "1rem",
+          fontWeight: 700,
+          color: "var(--analytics-text-primary)",
+        }}
       >
         {value}
       </p>
       <p
-        className="analytics-text-xs"
-        style={{ color: "var(--analytics-text-tertiary)" }}
+        style={{
+          fontSize: "0.625rem",
+          color: "var(--analytics-text-tertiary)",
+        }}
       >
         {unit}
       </p>
@@ -210,14 +187,16 @@ function VelocityBar({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between mb-0.5">
         <p
-          className="analytics-text-sm"
-          style={{ color: "var(--analytics-text-secondary)" }}
+          style={{
+            fontSize: "0.75rem",
+            color: "var(--analytics-text-secondary)",
+          }}
         >
           {label}
         </p>
-        <span className="analytics-text-sm font-semibold" style={{ color }}>
+        <span style={{ fontSize: "0.75rem", fontWeight: 600, color }}>
           {clampedPercentage.toFixed(1)}%
         </span>
       </div>

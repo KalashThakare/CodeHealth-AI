@@ -23,7 +23,6 @@ export default function RiskFilesTable({ files }: RiskFilesTableProps) {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
-  // Sort files
   const sortedFiles = useMemo(() => {
     return [...files].sort((a, b) => {
       const aVal = a[sortBy];
@@ -132,9 +131,7 @@ export default function RiskFilesTable({ files }: RiskFilesTableProps) {
                     : "transparent",
                 }}
               >
-                <td className="analytics-text-sm font-mono">
-                  {file.path}
-                </td>
+                <td className="analytics-text-sm font-mono">{file.path}</td>
                 <td className="flex-1 justify-center">
                   <span className={getRiskBadgeClass(file.riskScore)}>
                     {file.riskScore.toFixed(1)}
