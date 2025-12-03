@@ -28,12 +28,12 @@ export default function HealthGaugeChart({
     };
   }, []);
 
-  // Determine color based on score and theme - HIGH CONTRAST for light theme
+  // Vercel-style colors with good visibility
   const getColor = (score: number) => {
-    if (score >= 80) return isDark ? "#10b981" : "#047857"; // Darker green for light
-    if (score >= 60) return isDark ? "#3b82f6" : "#1d4ed8"; // Darker blue for light
-    if (score >= 40) return isDark ? "#f59e0b" : "#b45309"; // Darker yellow for light
-    return isDark ? "#ef4444" : "#b91c1c"; // Darker red for light
+    if (score >= 80) return isDark ? "#4ade80" : "#16a34a"; // green
+    if (score >= 60) return isDark ? "#60a5fa" : "#2563eb"; // blue
+    if (score >= 40) return isDark ? "#fbbf24" : "#d97706"; // amber
+    return isDark ? "#f87171" : "#dc2626"; // red
   };
 
   const getRatingLabel = (rating: string) => {
@@ -41,16 +41,16 @@ export default function HealthGaugeChart({
       excellent: "Excellent",
       good: "Good",
       fair: "Fair",
-      needs_improvement: "Needs Improvement",
+      needs_improvement: "Needs Work",
     };
     return labels[rating] || rating;
   };
 
   const color = getColor(score);
   const emptyColor = isDark
-    ? "rgba(255, 255, 255, 0.05)"
-    : "rgba(124, 58, 237, 0.12)";
-  const textSecondary = isDark ? "#a3a3a3" : "#4a1d8f";
+    ? "rgba(255, 255, 255, 0.06)"
+    : "rgba(0, 0, 0, 0.06)";
+  const textSecondary = isDark ? "#a1a1aa" : "#52525b";
 
   const data = {
     datasets: [
@@ -67,7 +67,7 @@ export default function HealthGaugeChart({
   const options = {
     responsive: true,
     maintainAspectRatio: true,
-    cutout: "75%",
+    cutout: "78%",
     plugins: {
       legend: {
         display: false,
@@ -80,30 +80,38 @@ export default function HealthGaugeChart({
 
   return (
     <div className="relative flex flex-col items-center justify-center">
-      <div className="relative w-full max-w-sm">
+      <div className="relative w-full max-w-[200px]">
         <Doughnut ref={chartRef} data={data} options={options} />
         <div
           className="absolute inset-0 flex flex-col items-center justify-center"
-          style={{ top: "40%" }}
+          style={{ top: "35%" }}
         >
-          <div className="text-5xl font-bold" style={{ color }}>
+          <div style={{ fontSize: "2rem", fontWeight: 700, color }}>
             {score}
           </div>
           <div
-            className="text-sm mt-1"
-            style={{ color: textSecondary, fontWeight: "600" }}
+            style={{
+              fontSize: "0.6875rem",
+              marginTop: "0.125rem",
+              color: textSecondary,
+              fontWeight: 500,
+            }}
           >
             out of 100
           </div>
         </div>
       </div>
-      <div className="mt-4 text-center">
+      <div style={{ marginTop: "0.5rem", textAlign: "center" }}>
         <div
-          className="inline-block px-4 py-2 rounded-full text-sm font-bold border-2"
           style={{
-            backgroundColor: isDark ? `${color}20` : `${color}15`,
+            display: "inline-block",
+            padding: "0.25rem 0.75rem",
+            borderRadius: "9999px",
+            fontSize: "0.6875rem",
+            fontWeight: 600,
+            backgroundColor: isDark ? `${color}15` : `${color}12`,
             color,
-            borderColor: color,
+            border: `1px solid ${color}40`,
           }}
         >
           {getRatingLabel(rating)}
