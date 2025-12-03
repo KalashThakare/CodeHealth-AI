@@ -1,6 +1,7 @@
 /**
  * Chart Theme Utilities
  * Centralized theme management for all chart components
+ * Vercel-like clean dark theme with high visibility
  */
 
 export interface ChartTheme {
@@ -18,31 +19,31 @@ export interface ChartTheme {
 }
 
 export const getDarkTheme = (): ChartTheme => ({
-  primary: "#0070f3",
-  primaryRgb: "0, 112, 243",
-  background: "#000000",
-  cardBackground: "#0a0a0a",
-  textPrimary: "#ededed",
-  textSecondary: "#a3a3a3",
-  gridColor: "rgba(255, 255, 255, 0.05)",
-  borderColor: "#333333",
-  tooltipBg: "rgba(26, 26, 26, 0.98)",
-  tooltipText: "#ededed",
-  tooltipBorder: "#333333",
+  primary: "#3b82f6",
+  primaryRgb: "59, 130, 246",
+  background: "#0a0a0a",
+  cardBackground: "#111111",
+  textPrimary: "#fafafa",
+  textSecondary: "#a1a1aa",
+  gridColor: "rgba(255, 255, 255, 0.08)",
+  borderColor: "#262626",
+  tooltipBg: "rgba(24, 24, 27, 0.98)",
+  tooltipText: "#fafafa",
+  tooltipBorder: "#3f3f46",
 });
 
 export const getLightTheme = (): ChartTheme => ({
-  primary: "#7c3aed",
-  primaryRgb: "124, 58, 237",
-  background: "#f6f4fa",
+  primary: "#2563eb",
+  primaryRgb: "37, 99, 235",
+  background: "#fafafa",
   cardBackground: "#ffffff",
-  textPrimary: "#1a0b2e",
-  textSecondary: "#4a1d8f",
-  gridColor: "rgba(124, 58, 237, 0.15)",
-  borderColor: "#d1c4e9",
+  textPrimary: "#09090b",
+  textSecondary: "#52525b",
+  gridColor: "rgba(0, 0, 0, 0.08)",
+  borderColor: "#e4e4e7",
   tooltipBg: "rgba(255, 255, 255, 0.98)",
-  tooltipText: "#1a0b2e",
-  tooltipBorder: "#d1c4e9",
+  tooltipText: "#09090b",
+  tooltipBorder: "#e4e4e7",
 });
 
 export const getChartTheme = (isDark: boolean): ChartTheme => {
@@ -56,28 +57,28 @@ export const getSeverityColor = (severity: string, isDark: boolean): string => {
   if (isDark) {
     switch (severityLower) {
       case "critical":
-        return "#ef4444";
+        return "#f87171"; // red-400
       case "high":
-        return "#f97316";
+        return "#fb923c"; // orange-400
       case "medium":
-        return "#f59e0b";
+        return "#fbbf24"; // amber-400
       case "low":
-        return "#10b981";
+        return "#4ade80"; // green-400
       default:
-        return "#6b7280";
+        return "#a1a1aa"; // zinc-400
     }
   } else {
     switch (severityLower) {
       case "critical":
-        return "#b91c1c";
+        return "#dc2626"; // red-600
       case "high":
-        return "#c2410c";
+        return "#ea580c"; // orange-600
       case "medium":
-        return "#b45309";
+        return "#d97706"; // amber-600
       case "low":
-        return "#047857";
+        return "#16a34a"; // green-600
       default:
-        return "#374151";
+        return "#52525b"; // zinc-600
     }
   }
 };
@@ -91,28 +92,28 @@ export const getSeverityBgColor = (
   if (isDark) {
     switch (severityLower) {
       case "critical":
-        return "rgba(239, 68, 68, 0.15)";
+        return "rgba(248, 113, 113, 0.15)";
       case "high":
-        return "rgba(249, 115, 22, 0.15)";
+        return "rgba(251, 146, 60, 0.15)";
       case "medium":
-        return "rgba(245, 158, 11, 0.15)";
+        return "rgba(251, 191, 36, 0.15)";
       case "low":
-        return "rgba(16, 185, 129, 0.15)";
+        return "rgba(74, 222, 128, 0.15)";
       default:
-        return "rgba(107, 114, 128, 0.15)";
+        return "rgba(161, 161, 170, 0.15)";
     }
   } else {
     switch (severityLower) {
       case "critical":
-        return "rgba(185, 28, 28, 0.12)";
+        return "rgba(220, 38, 38, 0.1)";
       case "high":
-        return "rgba(194, 65, 12, 0.12)";
+        return "rgba(234, 88, 12, 0.1)";
       case "medium":
-        return "rgba(180, 83, 9, 0.12)";
+        return "rgba(217, 119, 6, 0.1)";
       case "low":
-        return "rgba(4, 120, 87, 0.12)";
+        return "rgba(22, 163, 74, 0.1)";
       default:
-        return "rgba(55, 65, 81, 0.12)";
+        return "rgba(82, 82, 91, 0.1)";
     }
   }
 };
@@ -133,7 +134,7 @@ export const getChartOptions = (
           color: theme.textPrimary,
           font: {
             family: "'Inter', system-ui, sans-serif",
-            size: 12,
+            size: 11,
           },
         },
       },
@@ -143,19 +144,19 @@ export const getChartOptions = (
         bodyColor: theme.tooltipText,
         borderColor: theme.tooltipBorder,
         borderWidth: 1,
-        padding: 12,
+        padding: 10,
         boxShadow: isDark
           ? "0 4px 12px rgba(0, 0, 0, 0.5)"
           : "0 4px 12px rgba(0, 0, 0, 0.1)",
         cornerRadius: 6,
         displayColors: true,
         titleFont: {
-          size: 13,
+          size: 12,
           weight: "600" as const,
           family: "'Inter', system-ui, sans-serif",
         },
         bodyFont: {
-          size: 12,
+          size: 11,
           family: "'Inter', system-ui, sans-serif",
         },
       },
@@ -169,7 +170,7 @@ export const getChartOptions = (
         ticks: {
           color: theme.textSecondary,
           font: {
-            size: 11,
+            size: 10,
             family: "'Inter', system-ui, sans-serif",
           },
         },
@@ -182,7 +183,7 @@ export const getChartOptions = (
         ticks: {
           color: theme.textSecondary,
           font: {
-            size: 11,
+            size: 10,
             family: "'Inter', system-ui, sans-serif",
           },
         },
@@ -192,11 +193,11 @@ export const getChartOptions = (
   };
 };
 
-// Color palette functions with high contrast
+// Color palette functions with high contrast - Vercel style
 export const getColorPalette = (isDark: boolean) => ({
-  primary: isDark ? "#0070f3" : "#7c3aed",
-  success: isDark ? "#10b981" : "#047857",
-  warning: isDark ? "#f59e0b" : "#b45309",
-  error: isDark ? "#ef4444" : "#b91c1c",
-  info: isDark ? "#3b82f6" : "#1d4ed8",
+  primary: isDark ? "#3b82f6" : "#2563eb",
+  success: isDark ? "#4ade80" : "#16a34a",
+  warning: isDark ? "#fbbf24" : "#d97706",
+  error: isDark ? "#f87171" : "#dc2626",
+  info: isDark ? "#60a5fa" : "#2563eb",
 });
