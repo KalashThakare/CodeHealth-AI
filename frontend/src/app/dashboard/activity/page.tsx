@@ -1,328 +1,391 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useActivityStore, ParsedActivity } from "@/store/activityStore";
 import {
+  Activity,
+  Search,
   Calendar,
-  ChevronDown,
+  RefreshCw,
   GitCommit,
-  GitPullRequest,
-  Trash2,
-  Plus,
-  GitBranch,
-  Globe,
+  Users,
+  Zap,
+  Shield,
   User,
+  Clock,
+  ChevronDown,
+  Check,
+  LayoutGrid,
+  AlertCircle,
 } from "lucide-react";
-import "../dashboard.css";
+import "./activity.css";
 
-interface ActivityItem {
-  id: string;
-  type: "deploy" | "create" | "delete" | "alias" | "team";
-  action: string;
-  project?: string;
-  target?: string;
-  branch?: string;
-  commit?: string;
-  user: string;
-  date: string;
-  month: string;
-}
-
-// Mock activity data - replace with real API data
-const mockActivities: ActivityItem[] = [
-  {
-    id: "1",
-    type: "alias",
-    action: "aliased",
-    project: "codehealth-ai",
-    target: "codehealth-ai-git-main.vercel.app",
-    user: "You",
-    date: "Nov 27",
-    month: "November 2025",
-  },
-  {
-    id: "2",
-    type: "deploy",
-    action: "deployed",
-    project: "codehealth-ai",
-    commit: "a3f2b1c",
-    branch: "main",
-    target: "production",
-    user: "You",
-    date: "Nov 27",
-    month: "November 2025",
-  },
-  {
-    id: "3",
-    type: "create",
-    action: "created project",
-    project: "codehealth-ai",
-    user: "You",
-    date: "Nov 27",
-    month: "November 2025",
-  },
-  {
-    id: "4",
-    type: "delete",
-    action: "deleted project",
-    project: "old-project",
-    user: "You",
-    date: "Nov 15",
-    month: "November 2025",
-  },
-  {
-    id: "5",
-    type: "team",
-    action: "created Team",
-    project: "my-team",
-    user: "You",
-    date: "Oct 20",
-    month: "October 2025",
-  },
+const TIME_FILTERS = [
+  { label: "All Time", value: "all" },
+  { label: "Last 7 Days", value: "7d" },
+  { label: "Last 30 Days", value: "30d" },
+  { label: "Last 90 Days", value: "90d" },
 ];
 
-const getActivityIcon = (type: string) => {
-  switch (type) {
-    case "deploy":
-      return <GitCommit className="w-4 h-4" />;
-    case "create":
-      return <Plus className="w-4 h-4 text-green-500" />;
-    case "delete":
-      return <Trash2 className="w-4 h-4 text-red-500" />;
-    case "alias":
-      return <Globe className="w-4 h-4 text-blue-500" />;
-    case "team":
-      return <User className="w-4 h-4 text-purple-500" />;
-    default:
-      return <GitBranch className="w-4 h-4" />;
-  }
-};
+const TYPE_FILTERS = [
+  { label: "All Types", value: "all" },
+  { label: "Repository", value: "repo" },
+  { label: "Analysis", value: "analysis" },
+  { label: "Teams", value: "team" },
+  { label: "Security", value: "security" },
+  { label: "Account", value: "account" },
+];
 
 export default function ActivityPage() {
-  const [timeFilter, setTimeFilter] = useState("All Time");
-  const [typeFilter, setTypeFilter] = useState("All Types");
+  const {
+    activities,
+    loading,
+    error,
+    fetchActivities,
+    getStats,
+    getGroupedActivities,
+  } = useActivityStore();
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [timeFilter, setTimeFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
 
-  // Group activities by month
-  const groupedActivities = mockActivities.reduce((acc, activity) => {
-    if (!acc[activity.month]) {
-      acc[activity.month] = [];
+  const timeDropdownRef = useRef<HTMLDivElement>(null);
+  const typeDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchActivities();
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        timeDropdownRef.current &&
+        !timeDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowTimeDropdown(false);
+      }
+      if (
+        typeDropdownRef.current &&
+        !typeDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowTypeDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [fetchActivities]);
+
+  const handleRefresh = () => {
+    fetchActivities();
+  };
+
+  const stats = getStats();
+  const groupedActivities = getGroupedActivities({
+    search: searchQuery,
+    type: typeFilter,
+    timeRange: timeFilter,
+  });
+
+  const getIconForType = (type: string) => {
+    if (type.includes("repo")) return <GitCommit className="w-4 h-4" />;
+    if (type.includes("analysis") || type.includes("scan"))
+      return <Zap className="w-4 h-4" />;
+    if (type.includes("team") || type.includes("member"))
+      return <Users className="w-4 h-4" />;
+    if (type.includes("security") || type.includes("alert"))
+      return <Shield className="w-4 h-4" />;
+    if (
+      type.includes("login") ||
+      type.includes("logout") ||
+      type.includes("profile") ||
+      type.includes("settings")
+    )
+      return <User className="w-4 h-4" />;
+    return <Activity className="w-4 h-4" />;
+  };
+
+  const getIconClass = (type: string) => {
+    if (type.includes("repo")) return "repo";
+    if (type.includes("analysis") || type.includes("scan")) return "analysis";
+    if (type.includes("team") || type.includes("member")) return "team";
+    if (type.includes("security") || type.includes("alert")) return "security";
+    return "account";
+  };
+
+  const renderActivityDescription = (activity: ParsedActivity) => {
+    const { description, metadata } = activity;
+
+    if (metadata?.repoName) {
+      return (
+        <span>
+          {activity.action}{" "}
+          <span className="highlight-tag blue">{metadata.repoName}</span>
+          {metadata.branch && (
+            <>
+              {" "}
+              on branch{" "}
+              <span className="highlight-tag purple">{metadata.branch}</span>
+            </>
+          )}
+          {metadata.score && (
+            <>
+              {" "}
+              - Score:{" "}
+              <span className="highlight-tag green">{metadata.score}</span>
+            </>
+          )}
+        </span>
+      );
     }
-    acc[activity.month].push(activity);
-    return acc;
-  }, {} as Record<string, ActivityItem[]>);
+
+    if (metadata?.teamName) {
+      return (
+        <span>
+          {activity.action}{" "}
+          <span className="highlight-tag purple">{metadata.teamName}</span>
+          {metadata.memberName && (
+            <>
+              {" "}
+              -{" "}
+              <span className="highlight-tag blue">{metadata.memberName}</span>
+            </>
+          )}
+        </span>
+      );
+    }
+
+    return description;
+  };
+
+  const LoadingSkeleton = () => (
+    <div className="activity-list">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="skeleton-card">
+          <div className="skeleton-icon" />
+          <div className="skeleton-content">
+            <div className="skeleton-line medium" />
+            <div className="skeleton-line short" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-[var(--color-fg)] mb-2">
-          Activity
-        </h1>
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-4 mb-6">
-        {/* Time Filter */}
-        <div className="relative">
-          <button
-            onClick={() => setShowTimeDropdown(!showTimeDropdown)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all"
-            style={{
-              background: "var(--color-bg-secondary)",
-              borderColor: "var(--color-border)",
-              color: "var(--color-fg)",
-            }}
-          >
-            <Calendar className="w-4 h-4" />
-            <span className="text-sm">{timeFilter}</span>
-            <ChevronDown className="w-4 h-4" />
-          </button>
-          {showTimeDropdown && (
-            <div
-              className="absolute top-full mt-2 left-0 w-48 rounded-lg border shadow-lg z-50"
-              style={{
-                background: "var(--color-bg)",
-                borderColor: "var(--color-border)",
-              }}
-            >
-              {["All Time", "Last 7 days", "Last 30 days", "Last 90 days"].map(
-                (option) => (
-                  <button
-                    key={option}
-                    onClick={() => {
-                      setTimeFilter(option);
-                      setShowTimeDropdown(false);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-[var(--color-bg-secondary)] transition-colors"
-                    style={{ color: "var(--color-fg)" }}
-                  >
-                    {option}
-                  </button>
-                )
-              )}
+    <div className="activity-page">
+      <div className="activity-container">
+        <div className="activity-header">
+          <div className="activity-header-content">
+            <div className="activity-icon-wrapper">
+              <Activity className="w-6 h-6 text-[var(--color-fg)]" />
             </div>
-          )}
-        </div>
-
-        {/* Type Filter */}
-        <div className="relative">
-          <button
-            onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-            className="flex items-center gap-2 px-4 py-2 text-sm"
-            style={{ color: "var(--color-fg-secondary)" }}
-          >
-            <ChevronDown className="w-4 h-4" />
-            <span>Type</span>
-          </button>
-          {showTypeDropdown && (
-            <div
-              className="absolute top-full mt-2 left-0 w-48 rounded-lg border shadow-lg z-50"
-              style={{
-                background: "var(--color-bg)",
-                borderColor: "var(--color-border)",
-              }}
-            >
-              {["All Types", "Deployments", "Projects", "Teams"].map(
-                (option) => (
-                  <button
-                    key={option}
-                    onClick={() => {
-                      setTypeFilter(option);
-                      setShowTypeDropdown(false);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-[var(--color-bg-secondary)] transition-colors"
-                    style={{ color: "var(--color-fg)" }}
-                  >
-                    {option}
-                  </button>
-                )
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Activity List */}
-      <div className="space-y-8">
-        {Object.entries(groupedActivities).map(([month, activities]) => (
-          <div key={month}>
-            <h2
-              className="text-sm font-semibold mb-4"
-              style={{ color: "var(--color-fg)" }}
-            >
-              {month}
-            </h2>
-            <div className="space-y-1">
-              {activities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-start gap-4 py-3 px-4 rounded-lg hover:bg-[var(--color-bg-secondary)] transition-colors group"
-                >
-                  <div className="mt-1">{getActivityIcon(activity.type)}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-fg-secondary)" }}
-                      >
-                        {activity.user}
-                      </span>
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-fg-secondary)" }}
-                      >
-                        {activity.action}
-                      </span>
-                      {activity.project && (
-                        <span className="text-sm font-medium text-[var(--color-link)]">
-                          {activity.project}
-                        </span>
-                      )}
-                      {activity.commit && (
-                        <>
-                          <span className="text-sm text-[var(--color-link)]">
-                            {activity.commit}
-                          </span>
-                          <span
-                            className="text-sm"
-                            style={{ color: "var(--color-fg-secondary)" }}
-                          >
-                            in
-                          </span>
-                          <span className="text-sm text-[var(--color-link)]">
-                            {activity.branch}
-                          </span>
-                        </>
-                      )}
-                      {activity.target && activity.type === "deploy" && (
-                        <>
-                          <span
-                            className="text-sm"
-                            style={{ color: "var(--color-fg-secondary)" }}
-                          >
-                            to
-                          </span>
-                          <span
-                            className="text-sm"
-                            style={{ color: "var(--color-fg)" }}
-                          >
-                            {activity.target}
-                          </span>
-                        </>
-                      )}
-                      {activity.target && activity.type === "alias" && (
-                        <>
-                          <span
-                            className="text-sm"
-                            style={{ color: "var(--color-fg-secondary)" }}
-                          >
-                            to
-                          </span>
-                          <span className="text-sm text-[var(--color-link)]">
-                            {activity.target}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <span
-                    className="text-sm whitespace-nowrap"
-                    style={{ color: "var(--color-fg-secondary)" }}
-                  >
-                    {activity.date}
-                  </span>
-                </div>
-              ))}
+            <div className="activity-header-text">
+              <h1>Activity</h1>
+              <p>Track all your actions and events</p>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {mockActivities.length === 0 && (
-        <div
-          className="flex flex-col items-center justify-center py-16 rounded-lg border"
-          style={{
-            background: "var(--color-bg-secondary)",
-            borderColor: "var(--color-border)",
-          }}
-        >
-          <Calendar
-            className="w-12 h-12 mb-4"
-            style={{ color: "var(--color-fg-secondary)" }}
-          />
-          <h3
-            className="text-lg font-medium mb-2"
-            style={{ color: "var(--color-fg)" }}
-          >
-            No activity yet
-          </h3>
-          <p className="text-sm" style={{ color: "var(--color-fg-secondary)" }}>
-            Your recent activity will appear here
-          </p>
         </div>
-      )}
+
+        <div className="activity-stats">
+          <div className="stat-card">
+            <div className="stat-icon blue">
+              <Activity className="w-5 h-5" />
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.total}</span>
+              <span className="stat-label">Total</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon green">
+              <Zap className="w-5 h-5" />
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.today}</span>
+              <span className="stat-label">Today</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon purple">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.thisWeek}</span>
+              <span className="stat-label">This Week</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon orange">
+              <LayoutGrid className="w-5 h-5" />
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.thisMonth}</span>
+              <span className="stat-label">This Month</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="activity-controls">
+          <div className="search-container">
+            <div className="search-icon-wrapper">
+              <Search className="w-4 h-4" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search activities..."
+              className="!search-input !h-full !w-full text-center !m-0"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="filter-dropdown" ref={timeDropdownRef}>
+            <button
+              className="filter-btn"
+              onClick={() => {
+                setShowTimeDropdown(!showTimeDropdown);
+                setShowTypeDropdown(false);
+              }}
+            >
+              <Calendar className="w-4 h-4" />
+              <span>
+                {TIME_FILTERS.find((f) => f.value === timeFilter)?.label}
+              </span>
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            {showTimeDropdown && (
+              <div className="dropdown-menu">
+                {TIME_FILTERS.map((filter) => (
+                  <button
+                    key={filter.value}
+                    className={`dropdown-item ${
+                      timeFilter === filter.value ? "active" : ""
+                    }`}
+                    onClick={() => {
+                      setTimeFilter(filter.value);
+                      setShowTimeDropdown(false);
+                    }}
+                  >
+                    {filter.label}
+                    {timeFilter === filter.value && (
+                      <Check className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="filter-dropdown" ref={typeDropdownRef}>
+            <button
+              className="filter-btn"
+              onClick={() => {
+                setShowTypeDropdown(!showTypeDropdown);
+                setShowTimeDropdown(false);
+              }}
+            >
+              <LayoutGrid className="w-4 h-4" />
+              <span>
+                {TYPE_FILTERS.find((f) => f.value === typeFilter)?.label}
+              </span>
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            {showTypeDropdown && (
+              <div className="dropdown-menu">
+                {TYPE_FILTERS.map((filter) => (
+                  <button
+                    key={filter.value}
+                    className={`dropdown-item ${
+                      typeFilter === filter.value ? "active" : ""
+                    }`}
+                    onClick={() => {
+                      setTypeFilter(filter.value);
+                      setShowTypeDropdown(false);
+                    }}
+                  >
+                    {filter.label}
+                    {typeFilter === filter.value && (
+                      <Check className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            className={`refresh-btn ${loading ? "loading" : ""}`}
+            onClick={handleRefresh}
+            title="Refresh activities"
+          >
+            <RefreshCw />
+          </button>
+        </div>
+
+        {loading && activities.length === 0 ? (
+          <LoadingSkeleton />
+        ) : error ? (
+          <div className="error-state">
+            <AlertCircle className="w-12 h-12" />
+            <h3>Failed to load activities</h3>
+            <p>{error}</p>
+            <button className="retry-btn" onClick={handleRefresh}>
+              <RefreshCw className="w-4 h-4" />
+              Try Again
+            </button>
+          </div>
+        ) : Object.keys(groupedActivities).length > 0 ? (
+          <div className="activity-list">
+            {Object.entries(groupedActivities).map(
+              ([month, monthActivities]) => (
+                <div key={month} className="activity-month-group">
+                  <div className="month-header">
+                    <span className="month-title">{month}</span>
+                    <span className="month-count">
+                      {monthActivities.length} activities
+                    </span>
+                  </div>
+                  {monthActivities.map((activity) => (
+                    <div key={activity.id} className="activity-card">
+                      <div
+                        className={`activity-type-icon ${getIconClass(
+                          activity.type
+                        )}`}
+                      >
+                        {getIconForType(activity.type)}
+                      </div>
+                      <div className="activity-content">
+                        <div className="activity-description">
+                          {renderActivityDescription(activity)}
+                        </div>
+                        <div className="activity-meta">
+                          <Clock />
+                          <span>{activity.formattedDate}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <div className="flex items-center justify-center gap-3">
+              <Activity className="w-12 h-12" />
+              <h3>No activities found</h3>
+            </div>
+
+            <p>
+              {searchQuery || timeFilter !== "all" || typeFilter !== "all"
+                ? "Try adjusting your filters or search query"
+                : "Your recent activity will appear here"}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
