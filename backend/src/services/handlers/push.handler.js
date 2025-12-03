@@ -1,3 +1,4 @@
+import { RepoPushEvent } from "../../database/models/repoAnalytics.js";
 import { pushAnalysisQueue } from "../../lib/redis.js";
 import { pushScanQueue } from "../../lib/redis.js";
 import { removeFiles } from "../../utils/functions.js";
@@ -18,6 +19,17 @@ export async function handlePush(payload) {
     const shouldAnalyze = branch && defaultBranch && branch === defaultBranch;
     if (!shouldAnalyze) {
       console.log("[push] skipped by branch-policy", { branch, defaultBranch });
+
+      // for analytics
+      await RepoPushEvent.create({
+        repoId,
+        userId: pusherGitHubId,
+        commitCount: commits.length,
+        branch,
+        pushedAt: new Date(payload.head_commit?.timestamp || Date.now()),
+      });
+
+
       return { skipped: true, reason: "branch-policy", branch, defaultBranch };
     }
 
@@ -60,6 +72,20 @@ export async function handlePush(payload) {
         console.log("Success fully deleted the files from database", res);
       }
     }
+
+    await RepoPushEvent.create({
+      repoId,
+      userId: pusherGitHubId,
+      commitCount: commits.length,
+      branch,
+      pushedAt: new Date(headCommit?.timestamp || Date.now()),
+    });
+
+    console.log("[analytics] Push event stored:", {
+      repoId,
+      commitCount: commits.length,
+      branch,
+    });
 
     const scanJobId = `scan-${repoId}-${headCommit?.id || Date.now()}`;
     const safeScanJobId = scanJobId.replace(/[^\w.-]/g, "_");

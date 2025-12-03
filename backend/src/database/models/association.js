@@ -7,6 +7,7 @@ import OAuthConnection from "./OauthConnections.js";
 import PullRequestAnalysis from "./pr_analysis_metrics.js";
 import { Project } from "./project.js";
 import PushAnalysisMetrics from "./pushAnalysisMetrics.js";
+import { PullRequestActivity, PullRequestReviewActivity, RepoPushEvent } from "./repoAnalytics.js";
 import  RepoFileMetrics  from "./repoFileMetrics.js";
 import RepoMetadata from "./repoMedata.js";
 import support from "./support.js";
@@ -161,3 +162,38 @@ OAuthConnection.belongsTo(User, {
   as: 'user' 
 });
 
+Project.hasMany(RepoPushEvent, {
+  foreignKey: "repoId",
+  sourceKey: "repoId",
+  as: "pushEvents",
+  onDelete: "CASCADE",
+});
+RepoPushEvent.belongsTo(Project, {
+  foreignKey: "repoId",
+  targetKey: "repoId",
+  as: "project",
+});
+
+Project.hasMany(PullRequestActivity, {
+  foreignKey: "repoId",
+  sourceKey: "repoId",
+  as: "prActivities",
+  onDelete: "CASCADE",
+});
+PullRequestActivity.belongsTo(Project, {
+  foreignKey: "repoId",
+  targetKey: "repoId",
+  as: "project",
+});
+
+Project.hasMany(PullRequestReviewActivity, {
+  foreignKey: "repoId",
+  sourceKey: "repoId",
+  as: "prReviews",
+  onDelete: "CASCADE",
+});
+PullRequestReviewActivity.belongsTo(Project, {
+  foreignKey: "repoId",
+  targetKey: "repoId",
+  as: "project",
+});

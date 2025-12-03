@@ -18,6 +18,7 @@ import { time } from "console";
 import notification from "../database/models/notification.js";
 import { where } from "sequelize";
 import activity from "../database/models/activity.js";
+import { handlePullRequestReview } from "../services/handlers/prReview.handler.js";
 
 function eventToJobName(event) {
   switch (event) {
@@ -465,6 +466,12 @@ export const githubWebhookController = async (req, res) => {
       const result = await handleIssues(payload);
       return res.status(200).json(result);
     }
+
+    if (event === "pull_request_review") {
+      const result = await handlePullRequestReview(payload);
+      return res.status(200).json(result);
+    }
+
 
     return res.status(202).send("ACK");
   } catch (err) {
