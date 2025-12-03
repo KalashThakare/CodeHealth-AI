@@ -4,6 +4,8 @@ import { Op } from "sequelize";
 import { PullRequestActivity, PullRequestReviewActivity } from "../database/models/repoAnalytics.js";
 import { calculateAverage, calculateTrend, formatTime, calculatePerformanceRating, generateRecommendations } from "../utils/functions.js";
 import { ReviewerMetrics } from "../database/models/observability/reviewerMetrics.js";
+import trend from "../database/models/trend.js";
+import { Project } from "../database/models/project.js";
 
 export const pushActivity = async (req, res) => {
     try {
@@ -419,5 +421,80 @@ export const prDistribution = async(req,res)=>{
   } catch (error) {
     console.error('Error fetching PR distribution:', error);
     return res.status(500).json({ error: error.message });
+  }
+}
+
+
+
+export const getTrendAnalysis = async(req, res)=>{
+  try {
+    const { repoId } = req.params;
+
+    if (!repoId) {
+      return res.status(400).json({ error: "Missing repoId in params" });
+    }
+
+    const project = await Project.findOne({
+      where: { repoId }
+    });
+
+    if (!project) {
+      return res.status(404).json({
+        error: "Repository not found or you do not have access."
+      });
+    }
+
+    const trendRows = await trend.findAll({
+      where: { repoId },
+      order: [["createdAt", "ASC"]],
+    });
+
+    if (!trendRows.length) {
+      return res.json({
+        healthTimeline: [],
+        riskTimeline: [],
+        velocityTimeline: [],
+        quickSummary: {}
+      });
+    }
+
+    const healthTimeline = trendRows.map(t => ({
+      date: t.createdAt,
+      healthScore: t.healthScore ?? null,
+      codeQuality: t.codeQuality ?? null,
+    }));
+
+    const riskTimeline = trendRows.map(t => ({
+      date: t.createdAt,
+      technicalDebt: t.technicalDebth ?? null,
+      highRiskFiles: t.highRiskFiles ?? 0,
+    }));
+
+    const velocityTimeline = trendRows.map(t => ({
+      date: t.createdAt,
+      velocityTrend: t.velocityTrend ?? null,
+    }));
+
+    const latest = trendRows.at(-1);
+
+    const quickSummary = {
+      currentHealthScore: latest.healthScore ?? null,
+      currentTechnicalDebt: latest.technicalDebth ?? null,
+      currentHighRiskFiles: latest.highRiskFiles ?? 0,
+      currentVelocityTrend: latest.velocityTrend ?? null,
+      currentCodeQuality: latest.codeQuality ?? null,
+      lastUpdated: latest.createdAt
+    };
+
+    return res.json({
+      healthTimeline,
+      riskTimeline,
+      velocityTimeline,
+      quickSummary
+    });
+
+  } catch (error) {
+    console.error("Trend analysis error:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 }

@@ -5,7 +5,7 @@ const trend = sequelize.define("trend", {
     id: {
         type: DataTypes.UUID,
         primaryKey: true,
-        defaultValue: DataTypes.UUIDV4  // Add this to auto-generate UUIDs
+        defaultValue: DataTypes.UUIDV4  
     },
     userId: {
         type: DataTypes.UUID,
