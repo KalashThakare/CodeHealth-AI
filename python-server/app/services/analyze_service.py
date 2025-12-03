@@ -194,9 +194,31 @@ async def full_repo_analysis(payload: FullRepoAnalysisRequest) -> FullRepoAnalys
     commits_analysis = await analysisClass.analyze_commits(commits)
     print("Commits Analysis:", commits_analysis)
 
-    # Use a single session for all HTTP requests
+    # Count total files that need analysis (Python + JS/TS)
+    python_files_count = len([f for f in repofiles if f["path"].endswith(".py")])
+    js_extensions = ('.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs')
+    js_files_count = len([f for f in repofiles if f["path"].endswith(js_extensions)])
+    total_files_to_analyze = python_files_count + js_files_count
+    
+    print(f"Total files to analyze: {total_files_to_analyze} ({python_files_count} Python + {js_files_count} JS/TS)")
+
+    #session for all HTTP requests
     async with aiohttp.ClientSession() as session:
-        # Send metadata to Express server concurrently
+        # Initializing analysis counter FIRST
+        if total_files_to_analyze > 0:
+            try:
+                async with session.post(
+                    "http://localhost:8080/scanning/initialize-analysis",
+                    json={"repoId": payload.repoId, "totalFiles": total_files_to_analyze}
+                ) as resp:
+                    result = await resp.json()
+                    print(f"Analysis initialized: {result}")
+            except Exception as e:
+                print(f"Error initializing analysis: {str(e)}")
+                # Don't proceed if initialization fails
+                raise Exception(f"Failed to initialize analysis: {str(e)}")
+
+        #Send metadata to Express server
         async def send_metadata(url: str, data: dict, name: str):
             try:
                 async with session.post(url, json=data) as resp:
@@ -229,60 +251,51 @@ async def full_repo_analysis(payload: FullRepoAnalysisRequest) -> FullRepoAnalys
                 {"contributors": contributors, "repoId": payload.repoId, "branch": payload.branch},
                 "Contributors"
             ),
-            # send_metadata(
-            #     "http://localhost:8080/scanning/issues",
-            #     {"issues": issues, "repoId": payload.repoId, "branch": payload.branch},
-            #     "Issues"
-            # ),
-            # send_metadata(
-            #     "http://localhost:8080/scanning/pull-requests",
-            #     {"pullRequests": pr, "repoId": payload.repoId, "branch": payload.branch},
-            #     "Pull Requests"
-            # ),
-            # send_metadata(
-            #     "http://localhost:8080/scanning/releases",
-            #     {"releases": releases, "repoId": payload.repoId, "branch": payload.branch},
-            #     "Releases"
-            # ),
         ]
 
-        # Wait for all metadata to be sent
         await asyncio.gather(*metadata_tasks, return_exceptions=True)
 
-        # Process repository files in batches
+        #Processing repository files in batches
         for i in range(0, len(repofiles), batchSize):
             chunk = repofiles[i:i+batchSize]
             batch_num = i // batchSize + 1
 
             # Process Python files
             py_files = [f for f in chunk if f["path"].endswith(".py")]
-            for repofile in py_files:
-                path = repofile["path"]
-                content = repofile["content"]
+            if py_files:
+                for repofile in py_files:
+                    path = repofile["path"]
+                    content = repofile["content"]
+                    
+                    try:
+                        analysis_result = await analysisClass.analyze_py_code(path, content)
+                        analysis.append(analysis_result)
+                    except Exception as e:
+                        print(f"Error analyzing {path}: {str(e)}")
+                        continue
                 
-                try:
-                    analysis_result = await analysisClass.analyze_py_code(path, content)
-                    analysis.append(analysis_result)
-                    
-                    # Convert Pydantic models to dicts for JSON serialization
-                    serialized_analysis = [
-                        a.model_dump() if hasattr(a, 'model_dump') else a.dict()
-                        for a in analysis
-                    ]
-                    
-                    async with session.post(
-                        "http://localhost:8080/scanning/python-batch",
-                        json={"Metrics": serialized_analysis, "repoId": payload.repoId, "branch": payload.branch}
-                    ) as resp:
-                        result = await resp.json()
-                        print(f"Python batch result: {result}")
-
-                    print(f"Analyzed {len(analysis)} Python files")
-                except Exception as e:
-                    print(f"Error analyzing {path}: {str(e)}")
-                    continue
+                # Send Python metrics in batch
+                if analysis:
+                    try:
+                        # Convert Pydantic models to dicts for JSON serialization
+                        serialized_analysis = [
+                            a.model_dump() if hasattr(a, 'model_dump') else a.dict()
+                            for a in analysis
+                        ]
+                        
+                        async with session.post(
+                            "http://localhost:8080/scanning/python-batch",
+                            json={"Metrics": serialized_analysis, "repoId": payload.repoId, "branch": payload.branch}
+                        ) as resp:
+                            result = await resp.json()
+                            print(f"Python batch {batch_num} result: {result}")
+                        
+                        print(f"Sent {len(analysis)} Python files to Express")
+                        analysis = []  # Clear for next batch
+                    except Exception as e:
+                        print(f"Error sending Python batch {batch_num}: {str(e)}")
             
-            # Process non-Python files
+            # Process non-Python files (JS/TS/etc)
             non_py_files = [f for f in chunk if not f["path"].endswith(".py")]
             if non_py_files:
                 try:
@@ -304,5 +317,3 @@ async def full_repo_analysis(payload: FullRepoAnalysisRequest) -> FullRepoAnalys
         message="Repository analysis completed",
         files=repofiles
     )
-
-# async def issue_analyze(payload):

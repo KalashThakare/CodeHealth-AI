@@ -13,6 +13,7 @@ import support from "./support.js";
 import Team from "./team.js";
 import TeamInvite from "./teamInvite.js";
 import TeamMember from "./teamMember.js";
+import trend from "./trend.js";
 import User from "./User.js";
 import { WebhookEvent } from "./webhookEvents.js";
 
@@ -119,6 +120,19 @@ Project.hasMany(RepositoryAnalysis, {
 });
 
 RepositoryAnalysis.belongsTo(Project, {
+  foreignKey: 'repoId',
+  targetKey: 'repoId',
+  as: 'project'
+});
+
+Project.hasMany(trend, {
+  foreignKey: 'repoId',
+  sourceKey:'repoId',
+  as: 'trend_analysis',
+  onDelete: 'CASCADE'
+});
+
+trend.belongsTo(Project, {
   foreignKey: 'repoId',
   targetKey: 'repoId',
   as: 'project'

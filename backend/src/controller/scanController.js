@@ -1,6 +1,6 @@
 import { Project } from "../database/models/project.js";
 import { handleAnalyse } from "../services/handlers/analyse.handler.js";
-import { filesQueue } from "../lib/redis.js";
+import { connection, filesQueue } from "../lib/redis.js";
 import PushAnalysisMetrics from "../database/models/pushAnalysisMetrics.js";
 import RepoFileMetrics from "../database/models/repoFileMetrics.js";
 import CommitsAnalysis from "../database/models/commit_analysis.js";
@@ -93,6 +93,26 @@ export const Analyse_repo = async (req, res) => {
   }
 };
 
+export const initialiseAnalysis = async(req,res)=>{
+  const { repoId, totalFiles } = req.body;
+  
+  if (!repoId || !totalFiles) {
+    return res.status(400).json({ message: "repoId and totalFiles are required" });
+  }
+  
+  const repoJobsKey = `analysis:jobs:${repoId}`;
+  await connection.set(repoJobsKey, totalFiles, 'EX', 3600);
+  
+  console.log(`[initializeAnalysis] Initialized counter for repo ${repoId} with ${totalFiles} files`);
+  
+  return res.status(200).json({
+    success: true,
+    message: `Analysis initialized for ${totalFiles} files`,
+    repoId,
+    totalFiles
+  });
+}
+
 export const enqueueBatch = async (req, res) => {
   const { files, repoId, branch } = req.body;
   if (!Array.isArray(files)) {
@@ -107,6 +127,12 @@ export const enqueueBatch = async (req, res) => {
       branch: branch,
     },
   }));
+
+  // DON'T modify counter - it's already initialized
+  const repoJobsKey = `analysis:jobs:${repoId}`;
+  const currentCount = await connection.get(repoJobsKey);
+  
+  console.log(`[enqueueBatch] Adding ${jobs.length} JS/TS files for repo ${repoId}, current counter: ${currentCount}`);
 
   await filesQueue.addBulk(jobs);
 
@@ -218,7 +244,11 @@ export const collectePythonMetrics = async (req, res) => {
 
     if (!repo) return res.status(404).json({ message: "No repository found" });
 
-    console.log(`Processing ${Metrics.length} file metrics for repo ${repoId}`);
+    // DON'T increment - counter is already initialized by initializeAnalysis
+    const repoJobsKey = `analysis:jobs:${repoId}`;
+    const currentCount = await connection.get(repoJobsKey);
+    
+    console.log(`[collectePythonMetrics] Processing ${Metrics.length} Python files for repo ${repoId}, current counter: ${currentCount}`);
 
     const records = Metrics.map((metric) => {
       const avgComplexity =
@@ -283,22 +313,95 @@ export const collectePythonMetrics = async (req, res) => {
       `Successfully saved ${savedRecords.length} file metrics to database`
     );
 
-    const backgroundAnalysis = await triggerBackgroundAnalysis(repoId);
+    // Decrement counter and check if we should trigger analysis
+    const lockKey = `analysis:lock:${repoId}`;
+    
+    const luaScript = `
+      local jobsKey = KEYS[1]
+      local lockKey = KEYS[2]
+      local decrementBy = tonumber(ARGV[1])
+      
+      local remaining = redis.call('DECRBY', jobsKey, decrementBy)
+      
+      if remaining == 0 then
+        local lockSet = redis.call('SET', lockKey, 'python', 'NX', 'EX', 300)
+        if lockSet then
+          return 1  -- This process should trigger analysis
+        else
+          return 0  -- Lock already exists
+        end
+      elseif remaining > 0 then
+        return 2  -- More jobs remaining
+      else
+        return -1 -- Counter went negative
+      end
+    `;
+    
+    const result = await connection.eval(
+      luaScript,
+      2,
+      repoJobsKey,
+      lockKey,
+      savedRecords.length.toString()
+    );
+    
+    console.log(`[collectePythonMetrics] Repo ${repoId}: result=${result}, remaining after processing ${savedRecords.length} Python files`);
 
-    if (!backgroundAnalysis) {
-      return res.status(500).json({
-        message: "Failed to complete repository analysis",
-        filesProcessed: savedRecords.length,
-      });
+    if (result === 1) {
+      // All files processed, trigger analysis
+      console.log(`[collectePythonMetrics] All files processed for repo ${repoId}, triggering background analysis`);
+      
+      try {
+        await triggerBackgroundAnalysis(repoId);
+        
+        // Cleanup
+        await connection.del(repoJobsKey);
+        await connection.del(lockKey);
+        
+        return res.status(200).json({
+          success: true,
+          message: `Successfully saved ${savedRecords.length} file metrics and completed analysis`,
+          count: savedRecords.length,
+          analysisTriggered: true,
+        });
+      } catch (error) {
+        console.error('[collectePythonMetrics] Background analysis failed:', error);
+        await connection.del(lockKey);
+        
+        return res.status(500).json({
+          message: "Failed to complete repository analysis",
+          filesProcessed: savedRecords.length,
+          error: error.message,
+        });
+      }
+    } else if (result === 0) {
+      console.log(`[collectePythonMetrics] Analysis already triggered by another process for repo ${repoId}`);
+    } else if (result === 2) {
+      console.log(`[collectePythonMetrics] More files remaining for repo ${repoId}`);
+    } else if (result === -1) {
+      console.warn(`[collectePythonMetrics] Counter went negative for repo ${repoId} - possible race condition`);
     }
 
     return res.status(200).json({
       success: true,
       message: `Successfully saved ${savedRecords.length} file metrics`,
       count: savedRecords.length,
+      analysisTriggered: false,
     });
   } catch (error) {
     console.error("Error collecting Python metrics:", error);
+    
+    // Decrement counter on error to avoid blocking analysis
+    try {
+      const repoJobsKey = `analysis:jobs:${repoId}`;
+      if (Metrics && Metrics.length > 0) {
+        await connection.decrby(repoJobsKey, Metrics.length);
+        console.log(`[collectePythonMetrics] Decremented counter by ${Metrics.length} due to error`);
+      }
+    } catch (redisError) {
+      console.error("Failed to decrement counter on error:", redisError);
+    }
+    
     return res.status(500).json({
       success: false,
       message: "Internal server error",

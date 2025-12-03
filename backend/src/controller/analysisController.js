@@ -19,6 +19,7 @@ import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
 import notification from "../database/models/notification.js";
 import activity from "../database/models/activity.js";
 import { createAlertNotification } from "../utils/alertNotificationHelper.js";
+import trend from "../database/models/trend.js";
 dotenv.config();
 
 
@@ -181,7 +182,10 @@ export const analyze_repo = async (req, res) => {
 export async function triggerBackgroundAnalysis(repoId) {
   try {
     console.log(`[Background] Starting analysis for repo ${repoId}`);
-
+    const timestamp = new Date().toISOString();
+    console.log(`[Background] ========================================`);
+    console.log(`[Background] STARTING analysis for repo ${repoId} at ${timestamp}`);
+    console.log(`[Background] ========================================`);
     const parsedRepoId = parseInt(repoId);
 
 
@@ -285,6 +289,18 @@ export async function triggerBackgroundAnalysis(repoId) {
       repoName: repo.fullName,
       message: `Repository analysis completed successfully for repo: ${repo.fullName}`,
       timestamp: new Date().toISOString()
+    })
+
+    const velocityTrendValue = isNaN(commitAnalysis.velocity?.trend) ? null : commitAnalysis.velocity?.trend;
+
+    await trend.create({
+      repoId: repoId,
+      userId: repo.userId,
+      healthScore: healthScore.overallHealthScore,
+      technicalDebth: repoMetrics.technicalDebtScore,
+      highRiskFiles: repoMetrics.refactorPriorityFiles.length,
+      velocityTrend: velocityTrendValue,
+      codeQuality: healthScore.componentScores.codeQuality
     })
 
     await notification.create({
@@ -542,6 +558,9 @@ export const uninitializeRepo = async (req, res) => {
         where: { repoId: repoId }
       }),
       PullRequestAnalysis.destroy({
+        where: { repoId: repoId }
+      }),
+      trend.destroy({
         where: { repoId: repoId }
       })
     ]);

@@ -641,49 +641,93 @@ ASTworker.on("completed", async (job) => {
   if (job?.data && io) {
     const { repoId, repoName, fullName, userId } = job.data;
 
-    // Check if this is the last job for this repo
-    const remainingJobs = await ASTQueue.getWaitingCount() + await ASTQueue.getActiveCount();
+    const repoJobsKey = `analysis:jobs:${repoId}`;
+    const lockKey = `analysis:lock:${repoId}`;
     
-    if (remainingJobs === 0) {
-      // All files processed, trigger background analysis once
-      console.log(`[ast] All files processed for repo ${repoId}, triggering background analysis`);
+    // Use a Lua script for atomic decrement and check
+    const luaScript = `
+      local jobsKey = KEYS[1]
+      local lockKey = KEYS[2]
       
-      try {
-        await triggerBackgroundAnalysis(repoId);
+      local remaining = redis.call('DECR', jobsKey)
+      
+      if remaining == 0 then
+        local lockSet = redis.call('SET', lockKey, '1', 'NX', 'EX', 300)
+        if lockSet then
+          return 1  -- This process should trigger analysis
+        else
+          return 0  -- Lock already exists, another process is handling it
+        end
+      elseif remaining > 0 then
+        return 2  -- More jobs remaining
+      else
+        return -1 -- Counter went negative
+      end
+    `;
+    
+    try {
+      const result = await connection.eval(
+        luaScript,
+        2,
+        repoJobsKey,
+        lockKey
+      );
+      
+      console.log(`[ast] Repo ${repoId}: result=${result}`);
+
+      if (result === 1) {
+        // This process won the race - trigger analysis
+        console.log(`[ast] All files processed for repo ${repoId}, triggering background analysis`);
         
-        io.to(`user:${userId}`).emit('analysis_complete', {
-          success: true,
+        try {
+          await triggerBackgroundAnalysis(repoId);
+          
+          io.to(`user:${userId}`).emit('analysis_complete', {
+            success: true,
+            repoId,
+            repoName,
+            fullName,
+            stage: 'repository_analysis',
+            message: 'Repository analysis completed successfully',
+            timestamp: new Date().toISOString()
+          });
+          
+          // Cleanup
+          await connection.del(repoJobsKey);
+          await connection.del(lockKey);
+        } catch (error) {
+          console.error(`[ast] Background analysis failed for repo ${repoId}:`, error);
+          
+          io.to(`user:${userId}`).emit('analysis_complete', {
+            success: false,
+            repoId,
+            repoName,
+            fullName,
+            stage: 'repository_analysis',
+            error: error.message,
+            timestamp: new Date().toISOString()
+          });
+          
+          await connection.del(lockKey);
+        }
+      } else if (result === 0) {
+        // Another process is handling the analysis
+        console.log(`[ast] Analysis already being triggered by another process for repo ${repoId}`);
+      } else if (result === 2) {
+        // Still processing files
+        io.to(`user:${userId}`).emit('file_analyzed', {
           repoId,
-          repoName,
-          fullName,
-          stage: 'repository_analysis',
-          message: 'Repository analysis completed successfully',
+          path: job.data.path,
           timestamp: new Date().toISOString()
         });
-      } catch (error) {
-        console.error(`[ast] Background analysis failed for repo ${repoId}:`, error);
-        
-        io.to(`user:${userId}`).emit('analysis_complete', {
-          success: false,
-          repoId,
-          repoName,
-          fullName,
-          stage: 'repository_analysis',
-          error: error.message,
-          timestamp: new Date().toISOString()
-        });
+      } else if (result === -1) {
+        console.warn(`[ast] Counter for repo ${repoId} went negative`);
       }
-    } else {
-      // Still processing files, just notify file completion
-      io.to(`user:${userId}`).emit('file_analyzed', {
-        repoId,
-        path: job.data.path,
-        timestamp: new Date().toISOString()
-      });
+    } catch (error) {
+      console.error(`[ast] Error in completion handler for repo ${repoId}:`, error);
     }
   }
 });
-
 const astEvents = new QueueEvents("repoFiles", { connection });
 astEvents.on("waiting", ({ jobId }) => console.log("[ast] waiting", jobId));
 astEvents.on("active", ({ jobId }) => console.log("[ast] active", jobId));
