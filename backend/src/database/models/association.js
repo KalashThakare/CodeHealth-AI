@@ -4,6 +4,7 @@ import CommitsAnalysis from "./commit_analysis.js";
 import Commit from "./commitsMetadata.js";
 import notification from "./notification.js";
 import OAuthConnection from "./OauthConnections.js";
+import { PushActivityMetrics } from "./observability/pushActivityMetrics.js";
 import PullRequestAnalysis from "./pr_analysis_metrics.js";
 import { Project } from "./project.js";
 import PushAnalysisMetrics from "./pushAnalysisMetrics.js";
@@ -197,3 +198,18 @@ PullRequestReviewActivity.belongsTo(Project, {
   targetKey: "repoId",
   as: "project",
 });
+
+//Observability analytics associations
+
+Project.hasMany(PushActivityMetrics, {
+  foreignKey: 'repoId',
+  sourceKey: 'repoId',
+  as: 'pushActivityMetrics',
+  onDelete: 'CASCADE'
+});
+
+PushActivityMetrics.belongsTo(Project, {
+  foreignKey: 'repoId',
+  targetKey: 'repoId',
+  as: 'project'
+})

@@ -4,12 +4,13 @@ import dotenv from "dotenv";
 import cookieparser from "cookie-parser";
 import sequelize from "./database/db.js";
 import cors from "cors"
+import { receiveFeedbackController } from "./controller/feedback&review.Controller.js";
+//Routes
 import OAuth from "./routes/OAuth.routes.js"
 import githubRoutes from "./routes/githubRoutes.js";
 import Auth from "../src/routes/authRoutes.js"
 import teamRoutes from "./routes/teamRoutes.js";
 import { protectRoute } from "./middleware/auth.middleware.js";
-import { receiveFeedbackController } from "./controller/feedback&review.Controller.js";
 import accountRoutes from "../src/routes/account.Routes.js"
 import scanningRoutes from "./routes/scanning.Routes.js";
 import analysisRoutes from "./routes/analysisRoutes.js";
@@ -17,7 +18,9 @@ import dashboardRoutes from "./routes/dashboard.Routes.js"
 import supportRoutes from "./routes/supportRoutes.js"
 import activityRoutes from "./routes/activity.Routes.js"
 import notificationsRoutes from "./routes/notificationRoutes.js"
+//databaseAssociation
 import "./database/models/index.js"
+//Workers
 import "./workers/analysis.worker.js"
 import "./workers/scanning.worker.js"
 
