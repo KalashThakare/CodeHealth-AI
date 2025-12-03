@@ -84,51 +84,36 @@ export default function RiskFilesTable({ files }: RiskFilesTableProps) {
       <table className="analytics-table">
         <thead>
           <tr>
-            <th>
-              <button
-                onClick={() => handleSort("path")}
-                className="flex items-center gap-1"
-              >
+            <th className="!flex-1 !justify-center">
+              <button onClick={() => handleSort("path")}>
                 File Path
                 {sortBy === "path" &&
                   (sortOrder === "asc" ? <FiChevronUp /> : <FiChevronDown />)}
               </button>
             </th>
-            <th>
-              <button
-                onClick={() => handleSort("riskScore")}
-                className="flex items-center gap-1"
-              >
+            <th className="!flex-1 !justify-center">
+              <button onClick={() => handleSort("riskScore")}>
                 Risk Score
                 {sortBy === "riskScore" &&
                   (sortOrder === "asc" ? <FiChevronUp /> : <FiChevronDown />)}
               </button>
             </th>
-            <th>
-              <button
-                onClick={() => handleSort("cyclomaticComplexity")}
-                className="flex items-center gap-1"
-              >
+            <th className="!flex-1 !justify-center">
+              <button onClick={() => handleSort("cyclomaticComplexity")}>
                 Complexity
                 {sortBy === "cyclomaticComplexity" &&
                   (sortOrder === "asc" ? <FiChevronUp /> : <FiChevronDown />)}
               </button>
             </th>
             <th>
-              <button
-                onClick={() => handleSort("maintainabilityIndex")}
-                className="flex items-center gap-1"
-              >
+              <button onClick={() => handleSort("maintainabilityIndex")}>
                 Maintainability
                 {sortBy === "maintainabilityIndex" &&
                   (sortOrder === "asc" ? <FiChevronUp /> : <FiChevronDown />)}
               </button>
             </th>
             <th>
-              <button
-                onClick={() => handleSort("locTotal")}
-                className="flex items-center gap-1"
-              >
+              <button onClick={() => handleSort("locTotal")}>
                 LOC
                 {sortBy === "locTotal" &&
                   (sortOrder === "asc" ? <FiChevronUp /> : <FiChevronDown />)}
@@ -147,8 +132,10 @@ export default function RiskFilesTable({ files }: RiskFilesTableProps) {
                     : "transparent",
                 }}
               >
-                <td className="analytics-text-sm font-mono">{file.path}</td>
-                <td>
+                <td className="analytics-text-sm font-mono">
+                  {file.path}
+                </td>
+                <td className="flex-1 justify-center">
                   <span className={getRiskBadgeClass(file.riskScore)}>
                     {file.riskScore.toFixed(1)}
                   </span>
@@ -165,7 +152,11 @@ export default function RiskFilesTable({ files }: RiskFilesTableProps) {
                 <td>
                   <button
                     onClick={() => toggleRow(index)}
-                    style={{ color: "var(--analytics-accent)" }}
+                    className="analytics-btn-secondary !bg-none"
+                    style={{
+                      color: "var(--analytics-accent)",
+                      background: "none",
+                    }}
                   >
                     {expandedRows.has(index) ? (
                       <FiChevronUp />

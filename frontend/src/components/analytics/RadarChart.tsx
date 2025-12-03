@@ -37,9 +37,9 @@ export default function RadarChart({ componentScores }: RadarChartProps) {
   const { isDark } = useTheme();
   const theme = getChartTheme(isDark);
 
-  // Primary color based on theme
-  const primaryColor = isDark ? "#0070f3" : "#7c3aed";
-  const primaryColorRgb = isDark ? "0, 112, 243" : "124, 58, 237";
+  // Vercel-style blue colors for better visibility
+  const primaryColor = isDark ? "#3b82f6" : "#2563eb";
+  const primaryColorRgb = isDark ? "59, 130, 246" : "37, 99, 235";
 
   // Cleanup on unmount
   useEffect(() => {
@@ -61,30 +61,32 @@ export default function RadarChart({ componentScores }: RadarChartProps) {
           componentScores.busFactor,
           componentScores.community,
         ],
-        backgroundColor: `rgba(${primaryColorRgb}, 0.15)`,
+        backgroundColor: `rgba(${primaryColorRgb}, 0.2)`,
         borderColor: primaryColor,
         borderWidth: 2,
         pointBackgroundColor: primaryColor,
-        pointBorderColor: isDark ? "#000" : "#fff",
-        pointHoverBackgroundColor: isDark ? "#fff" : primaryColor,
+        pointBorderColor: isDark ? "#18181b" : "#fff",
+        pointHoverBackgroundColor: isDark ? "#fafafa" : primaryColor,
         pointHoverBorderColor: primaryColor,
+        pointRadius: 4,
+        pointHoverRadius: 6,
       },
     ],
   };
 
   const options = {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     scales: {
       r: {
         min: 0,
         max: 100,
         ticks: {
-          stepSize: 20,
+          stepSize: 25,
           backdropColor: "transparent",
           color: theme.textSecondary,
           font: {
-            size: 11,
+            size: 9,
             family: "'Inter', system-ui, sans-serif",
           },
         },
@@ -94,7 +96,7 @@ export default function RadarChart({ componentScores }: RadarChartProps) {
         pointLabels: {
           color: theme.textSecondary,
           font: {
-            size: 12,
+            size: 10,
             family: "'Inter', system-ui, sans-serif",
             weight: 500 as const,
           },
@@ -114,15 +116,15 @@ export default function RadarChart({ componentScores }: RadarChartProps) {
         bodyColor: theme.tooltipText,
         borderColor: theme.tooltipBorder,
         borderWidth: 1,
-        padding: 12,
+        padding: 10,
         cornerRadius: 6,
         titleFont: {
-          size: 13,
+          size: 11,
           weight: 600 as const,
           family: "'Inter', system-ui, sans-serif",
         },
         bodyFont: {
-          size: 12,
+          size: 10,
           family: "'Inter', system-ui, sans-serif",
         },
         callbacks: {
@@ -135,7 +137,7 @@ export default function RadarChart({ componentScores }: RadarChartProps) {
   };
 
   return (
-    <div className="relative w-full max-w-md mx-auto">
+    <div className="relative w-full h-full" style={{ minHeight: "220px" }}>
       <Radar ref={chartRef} data={data} options={options} />
     </div>
   );

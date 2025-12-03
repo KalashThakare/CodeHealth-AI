@@ -2,7 +2,13 @@
 
 import React, { useEffect, useRef } from "react";
 import * as d3 from "d3";
-import { FiInfo } from "react-icons/fi";
+import {
+  FiInfo,
+  FiZap,
+  FiTarget,
+  FiCheckCircle,
+  FiClock,
+} from "react-icons/fi";
 import { useTheme } from "@/hooks/useTheme";
 import { getSeverityColor } from "@/lib/chartTheme";
 
@@ -262,7 +268,7 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
   }, [suggestions, isDark]);
 
   return (
-    <div className="analytics-card analytics-card-compact space-y-3">
+    <div className="analytics-card analytics-card-compact space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3
@@ -282,24 +288,282 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
 
       {/* Description */}
       <p
-        className="analytics-text-xs"
-        style={{ color: "var(--analytics-text-secondary)" }}
+        className="analytics-text-sm"
+        style={{ color: "var(--analytics-text-secondary)", lineHeight: "1.6" }}
       >
         Files plotted by refactoring effort (x-axis) vs business risk (y-axis).
         Focus on <strong>top-right quadrant</strong> for high-risk, high-effort
-        items.
+        items. Hover over points for detailed information.
       </p>
 
-      {/* Chart */}
-      <div
-        className="flex justify-center"
-        style={{
-          background: "var(--analytics-card-hover)",
-          borderRadius: "8px",
-          padding: "16px",
-        }}
-      >
-        <svg ref={svgRef}></svg>
+      {/* Main Content - Chart Left, Info Right */}
+      <div style={{ display: "flex", gap: "16px", alignItems: "stretch" }}>
+        {/* Chart */}
+        <div
+          style={{
+            flex: "2",
+            background: "var(--analytics-card-hover)",
+            borderRadius: "8px",
+            padding: "12px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <svg ref={svgRef}></svg>
+        </div>
+
+        {/* Right Side - Info Panel (1/3 width) */}
+        <div
+          style={{
+            flex: "1",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+          }}
+        >
+          {/* Summary Stats */}
+          <div
+            className="p-3 rounded"
+            style={{
+              background: "var(--analytics-card-hover)",
+              border: "1px solid var(--analytics-border)",
+            }}
+          >
+            <h4
+              style={{
+                fontSize: "0.9rem",
+                fontWeight: 600,
+                marginBottom: "8px",
+                color: "var(--analytics-text-primary)",
+              }}
+            >
+              Quick Summary
+            </h4>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "var(--analytics-text-secondary)",
+                  }}
+                >
+                  Total Files
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.95rem",
+                    fontWeight: 600,
+                    color: "var(--analytics-text-primary)",
+                  }}
+                >
+                  {suggestions.length}
+                </span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "var(--analytics-text-secondary)",
+                  }}
+                >
+                  Critical
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.95rem",
+                    fontWeight: 600,
+                    color: "var(--analytics-error)",
+                  }}
+                >
+                  {
+                    suggestions.filter(
+                      (s) => s.priority.toLowerCase() === "critical"
+                    ).length
+                  }
+                </span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "var(--analytics-text-secondary)",
+                  }}
+                >
+                  High Risk
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.95rem",
+                    fontWeight: 600,
+                    color: "var(--analytics-warning)",
+                  }}
+                >
+                  {
+                    suggestions.filter(
+                      (s) => s.priority.toLowerCase() === "high"
+                    ).length
+                  }
+                </span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "var(--analytics-text-secondary)",
+                  }}
+                >
+                  Medium/Low
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.95rem",
+                    fontWeight: 600,
+                    color: "var(--analytics-success)",
+                  }}
+                >
+                  {
+                    suggestions.filter((s) =>
+                      ["medium", "low"].includes(s.priority.toLowerCase())
+                    ).length
+                  }
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div
+            className="p-3 rounded"
+            style={{
+              background: "var(--analytics-card-hover)",
+              border: "1px solid var(--analytics-border)",
+            }}
+          >
+            <h4
+              style={{
+                fontSize: "0.9rem",
+                fontWeight: 600,
+                marginBottom: "8px",
+                color: "var(--analytics-text-primary)",
+              }}
+            >
+              Legend
+            </h4>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "6px" }}
+            >
+              {[
+                {
+                  label: "Critical",
+                  severity: "critical",
+                  desc: "Immediate action",
+                },
+                { label: "High", severity: "high", desc: "Address soon" },
+                { label: "Medium", severity: "medium", desc: "Plan to fix" },
+                { label: "Low", severity: "low", desc: "Monitor only" },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <div
+                    style={{
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      background: getSeverityColor(item.severity, isDark),
+                      border: `2px solid ${isDark ? "#000" : "#fff"}`,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <span
+                      style={{
+                        fontSize: "0.8rem",
+                        fontWeight: 600,
+                        color: "var(--analytics-text-primary)",
+                      }}
+                    >
+                      {item.label}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "0.75rem",
+                        color: "var(--analytics-text-tertiary)",
+                        marginLeft: "6px",
+                      }}
+                    >
+                      {item.desc}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tip */}
+          <div
+            style={{
+              padding: "10px 12px",
+              borderLeft: "3px solid var(--analytics-accent)",
+              background: "rgba(255, 255, 255, 0.03)",
+              borderRadius: "0 6px 6px 0",
+            }}
+          >
+            <p
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--analytics-text-secondary)",
+                lineHeight: "1.5",
+                margin: 0,
+                fontStyle: "italic",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "6px",
+              }}
+            >
+              <FiZap
+                size={14}
+                style={{
+                  color: "var(--analytics-accent)",
+                  flexShrink: 0,
+                  marginTop: "2px",
+                }}
+              />
+              <span>
+                Prioritize files in the top-left quadrant first — high impact
+                with minimal effort.
+              </span>
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Tooltip */}
@@ -326,36 +590,8 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
         }}
       />
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-3 justify-center">
-        {[
-          { label: "Critical", severity: "critical" },
-          { label: "High", severity: "high" },
-          { label: "Medium", severity: "medium" },
-          { label: "Low", severity: "low" },
-        ].map((item) => (
-          <div key={item.label} className="flex items-center gap-1">
-            <div
-              style={{
-                width: "12px",
-                height: "12px",
-                borderRadius: "50%",
-                background: getSeverityColor(item.severity, isDark),
-                border: `2px solid ${isDark ? "#000" : "#fff"}`,
-              }}
-            />
-            <span
-              className="analytics-text-xs"
-              style={{ color: "var(--analytics-text-secondary)" }}
-            >
-              {item.label}
-            </span>
-          </div>
-        ))}
-      </div>
-
       {/* Quadrant Guide */}
-      <div className="grid grid-cols-2 gap-2 analytics-text-xs">
+      <div className="grid grid-cols-4 gap-2 analytics-text-xs">
         <div
           className="p-2 rounded"
           style={{
@@ -368,7 +604,11 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
           }}
         >
           <strong
-            style={{ color: "var(--analytics-error)", fontWeight: "700" }}
+            style={{
+              color: "var(--analytics-error)",
+              fontWeight: "700",
+              fontSize: "0.8rem",
+            }}
           >
             High Risk, High Effort
           </strong>
@@ -376,9 +616,11 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
             style={{
               color: "var(--analytics-text-secondary)",
               marginTop: "4px",
+              fontSize: "0.75rem",
+              lineHeight: "1.4",
             }}
           >
-            Complex refactoring needed
+            Complex refactoring needed. Plan carefully with team.
           </p>
         </div>
         <div
@@ -393,7 +635,11 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
           }}
         >
           <strong
-            style={{ color: "var(--analytics-warning)", fontWeight: "700" }}
+            style={{
+              color: "var(--analytics-warning)",
+              fontWeight: "700",
+              fontSize: "0.8rem",
+            }}
           >
             High Risk, Low Effort
           </strong>
@@ -401,9 +647,95 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
             style={{
               color: "var(--analytics-text-secondary)",
               marginTop: "4px",
+              fontSize: "0.75rem",
+              lineHeight: "1.4",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "4px",
             }}
           >
-            Quick wins with high impact
+            <FiTarget
+              size={12}
+              style={{
+                color: "var(--analytics-warning)",
+                flexShrink: 0,
+                marginTop: "2px",
+              }}
+            />
+            <span>Quick wins! Prioritize these first for best ROI.</span>
+          </p>
+        </div>
+        <div
+          className="p-2 rounded"
+          style={{
+            background: isDark
+              ? "rgba(245, 158, 11, 0.08)"
+              : "rgba(180, 83, 9, 0.08)",
+            border: isDark
+              ? "1px solid rgba(245, 158, 11, 0.3)"
+              : "1.5px solid rgba(180, 83, 9, 0.4)",
+          }}
+        >
+          <strong
+            style={{
+              color: "var(--analytics-info)",
+              fontWeight: "700",
+              fontSize: "0.8rem",
+            }}
+          >
+            Low Risk, High Effort
+          </strong>
+          <p
+            style={{
+              color: "var(--analytics-text-secondary)",
+              marginTop: "4px",
+              fontSize: "0.75rem",
+              lineHeight: "1.4",
+            }}
+          >
+            Consider if worth the time investment.
+          </p>
+        </div>
+        <div
+          className="p-2 rounded"
+          style={{
+            background: isDark
+              ? "rgba(16, 185, 129, 0.08)"
+              : "rgba(4, 120, 87, 0.08)",
+            border: isDark
+              ? "1px solid rgba(16, 185, 129, 0.3)"
+              : "1.5px solid rgba(4, 120, 87, 0.4)",
+          }}
+        >
+          <strong
+            style={{
+              color: "var(--analytics-success)",
+              fontWeight: "700",
+              fontSize: "0.8rem",
+            }}
+          >
+            Low Risk, Low Effort
+          </strong>
+          <p
+            style={{
+              color: "var(--analytics-text-secondary)",
+              marginTop: "4px",
+              fontSize: "0.75rem",
+              lineHeight: "1.4",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "4px",
+            }}
+          >
+            <FiCheckCircle
+              size={12}
+              style={{
+                color: "var(--analytics-success)",
+                flexShrink: 0,
+                marginTop: "2px",
+              }}
+            />
+            <span>Safe zone. Address when time permits.</span>
           </p>
         </div>
       </div>
