@@ -74,7 +74,7 @@ async function computeMissingPRMetrics() {
 /**
  * Aggregate PR velocity metrics for all repositories
  */
-async function aggregatePRVelocity() {
+export async function aggregatePRVelocity() {
   console.log('Starting PR velocity aggregation...');
   
   try {
@@ -106,6 +106,8 @@ async function aggregatePRVelocity() {
  */
 async function aggregateRepoPRMetrics(repoId, startDate, endDate) {
   try {
+
+    const today = new Date();
     // Get all PRs
     const allPRs = await PullRequestActivity.findAll({
       where: { repoId },

@@ -1,7 +1,9 @@
 import { PRVelocityMetrics } from "../database/models/observability/prVelocityMetrics.js";
 import { PushActivityMetrics } from "../database/models/observability/pushActivityMetrics.js";
 import { Op } from "sequelize";
-import { PullRequestActivity } from "../database/models/repoAnalytics.js";
+import { PullRequestActivity, PullRequestReviewActivity } from "../database/models/repoAnalytics.js";
+import { calculateAverage, calculateTrend, formatTime, calculatePerformanceRating, generateRecommendations } from "../utils/functions.js";
+import { ReviewerMetrics } from "../database/models/observability/reviewerMetrics.js";
 
 export const pushActivity = async (req, res) => {
     try {
@@ -410,7 +412,7 @@ export const prDistribution = async(req,res)=>{
       });
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       mergeTimeDistribution,
       reviewTimeDistribution
     });

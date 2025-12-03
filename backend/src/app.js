@@ -18,6 +18,7 @@ import dashboardRoutes from "./routes/dashboard.Routes.js"
 import supportRoutes from "./routes/supportRoutes.js"
 import activityRoutes from "./routes/activity.Routes.js"
 import notificationsRoutes from "./routes/notificationRoutes.js"
+import observabilityRoutes from "./routes/observability.Routes.js"
 //databaseAssociation
 import "./database/models/index.js"
 //Workers
@@ -78,5 +79,7 @@ app.use("/support",supportRoutes)
 app.use("/notifications", notificationsRoutes);
 
 app.use("/activity", activityRoutes)
+
+app.use("/observability", observabilityRoutes);
 
 export default app;

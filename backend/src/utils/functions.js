@@ -83,3 +83,70 @@ export function categorizeTime(minutes) {
   if (minutes < 10080) return 'under1Week';
   return 'over1Week';
 }
+
+
+export function calculateAverage(arr) {
+  const filtered = arr.filter(n => n != null && !isNaN(n));
+  if (filtered.length === 0) return 0;
+  return filtered.reduce((a, b) => a + b, 0) / filtered.length;
+}
+
+export function calculateTrend(firstHalf, secondHalf) {
+  const avg1 = calculateAverage(firstHalf);
+  const avg2 = calculateAverage(secondHalf);
+  
+  if (avg1 === 0) return 'stable';
+  
+  const change = ((avg2 - avg1) / avg1) * 100;
+  
+  if (Math.abs(change) < 5) return 'stable';
+  return change < 0 ? 'improving' : 'declining';
+}
+
+export function formatTime(minutes) {
+  if (minutes < 60) return `${Math.round(minutes)} min`;
+  if (minutes < 1440) return `${(minutes / 60).toFixed(1)} hours`;
+  return `${(minutes / 1440).toFixed(1)} days`;
+}
+
+export function calculatePerformanceRating(avgResponseTime) {
+  if (avgResponseTime < 60) return 'excellent';
+  if (avgResponseTime < 240) return 'good';
+  if (avgResponseTime < 1440) return 'fair';
+  return 'slow';
+}
+
+export function generateRecommendations(reviewers, bottlenecks) {
+  const recommendations = [];
+
+  if (bottlenecks.length > 0) {
+    recommendations.push({
+      type: 'bottleneck',
+      severity: 'high',
+      message: `${bottlenecks.length} reviewer(s) are bottlenecks. Consider redistributing load.`,
+      reviewers: bottlenecks.map(r => r.reviewerName)
+    });
+  }
+
+  const overloadedReviewers = reviewers.filter(r => r.pendingReviews > 5);
+  if (overloadedReviewers.length > 0) {
+    recommendations.push({
+      type: 'overload',
+      severity: 'medium',
+      message: `${overloadedReviewers.length} reviewer(s) have >5 pending reviews.`,
+      reviewers: overloadedReviewers.map(r => r.reviewerName)
+    });
+  }
+
+  const slowReviewers = reviewers.filter(r => r.avgResponseTime > 1440); // > 1 day
+  if (slowReviewers.length > 0) {
+    recommendations.push({
+      type: 'slow_response',
+      severity: 'medium',
+      message: `${slowReviewers.length} reviewer(s) averaging >1 day response time.`,
+      reviewers: slowReviewers.map(r => r.reviewerName)
+    });
+  }
+
+  return recommendations;
+}
