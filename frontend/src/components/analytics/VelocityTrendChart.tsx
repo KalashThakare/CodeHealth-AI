@@ -142,7 +142,7 @@ function VelocityMetric({
     >
       <div className="flex items-center gap-1 mb-0.5">
         <span style={{ color: "var(--analytics-accent)" }}>
-          {React.cloneElement(icon as React.ReactElement, { size: 12 })}
+          {React.cloneElement(icon as React.ReactElement<{ size?: number }>, { size: 12 })}
         </span>
         <p
           style={{
