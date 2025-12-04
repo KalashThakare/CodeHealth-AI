@@ -40,10 +40,10 @@ export async function getRepoMetrics(repoId) {
     const latestStaleCount = stalePr ? stalePr.stalePRs : 0;
 
     return {
-        healthScore: metrics.overallHealthScore || 0, // Get from your health score calculation
-        stalePRs: latestStaleCount, // Count of stale PRs
-        codeQuality: metrics.codeQualityScore || 0, // Your code quality metric
-        highRiskFiles: metrics.refactorPriorityFiles.length || 0, // Count of high risk files
-        technicalDebt: metrics.technicalDebtScore || 0 // Your technical debt metric
+        healthScore: metrics.overallHealthScore || 0, 
+        stalePRs: latestStaleCount,
+        codeQuality: metrics.codeQualityScore || 0, 
+        highRiskFiles: metrics.refactorPriorityFiles.length || 0, 
+        technicalDebt: metrics.technicalDebtScore || 0 
     };
 }
