@@ -1,4 +1,3 @@
-// components/SignUp.js
 "use client";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
@@ -43,7 +42,6 @@ export default function SignUp() {
 
   return (
     <div className="App">
-      {/* Theme Toggle in Top Right Corner */}
       <div className="absolute top-4 right-4 z-50">
         <DashboardThemeToggle />
       </div>

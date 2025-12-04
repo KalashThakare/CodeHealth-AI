@@ -47,10 +47,8 @@ export default function SocketStatus({
       updateStatus();
     };
 
-    // Initial update
     updateStatus();
 
-    // Listen to socket events for status updates
     const socket = socketService.getSocket();
     if (socket) {
       socket.on("connect", handleConnect);
@@ -76,7 +74,6 @@ export default function SocketStatus({
   };
 
   if (!showDetails) {
-    // Simple dot indicator
     return (
       <div
         className={`fixed ${positionClasses[position]} z-50`}
@@ -100,7 +97,6 @@ export default function SocketStatus({
     );
   }
 
-  // Detailed status panel
   return (
     <div
       className={`fixed ${positionClasses[position]} z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 min-w-[200px]`}

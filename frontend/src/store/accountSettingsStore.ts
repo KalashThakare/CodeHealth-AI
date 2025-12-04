@@ -29,7 +29,6 @@ export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
   fetchAccountSettings: async () => {
     set({ loading: true, error: null });
     try {
-      // Fetch account settings from API
       const response = await fetch('/api/account-settings');
       const data = await response.json();
       set({ accountSettings: data });
@@ -43,7 +42,6 @@ export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
   updateDisplayName: async (displayName: string): Promise<void> => {
     set({ loading: true, error: null });
     try {
-      // Update display name via API
       await fetch('/api/account-settings/display-name', {
         method: 'PUT',
         body: JSON.stringify({ displayName }),

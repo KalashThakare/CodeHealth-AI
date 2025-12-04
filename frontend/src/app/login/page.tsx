@@ -1,4 +1,3 @@
-// components/Login.js
 "use client";
 import { useAuthStore } from "@/store/authStore";
 import { useState } from "react";
@@ -28,7 +27,7 @@ export default function Login() {
         router.push("/dashboard");
       }
     } finally {
-      setLoaded(false); // Always reset loaded after login attempt
+      setLoaded(false);
     }
   };
 
@@ -43,7 +42,6 @@ export default function Login() {
 
   return (
     <div className="App">
-      {/* Theme Toggle in Top Right Corner */}
       <div className="absolute top-4 right-4 z-50">
         <DashboardThemeToggle />
       </div>

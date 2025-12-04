@@ -1,42 +1,32 @@
-/* Import Professional Font */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
-/* Apply Professional Font Globally for GitProject Page */
 .gitproject-page * {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   letter-spacing: -0.01em;
 }
 
-/* GitProject Page-Specific Theme Variables */
-/* Light Theme */
 [data-theme="light"] {
-  /* Backgrounds - Better contrast for light theme */
-  --gp-bg: #f8f9fa; /* Main background */
-  --gp-bg-secondary: #ffffff; /* Secondary bg (inputs, cards) */
-  --gp-bg-tertiary: #e9ecef; /* Tertiary bg (progress bars) */
+  --gp-bg: #f8f9fa; 
+  --gp-bg-secondary: #ffffff; 
+  --gp-bg-tertiary: #e9ecef; 
 
-  /* Cards & Borders */
-  --gp-card: #ffffff; /* Card backgrounds */
-  --gp-border: #dee2e6; /* Borders */
+  --gp-card: #ffffff; 
+  --gp-border: #dee2e6; 
 
-  /* Text Colors - Improved contrast for better visibility */
-  --gp-fg: #1a1a1a; /* Primary text - dark for visibility */
-  --gp-fg-secondary: #4b5563; /* Secondary text - darker than before */
-  --gp-btn-fg: #ffffff; /* Button text on primary bg */
+  --gp-fg: #1a1a1a; 
+  --gp-fg-secondary: #4b5563; 
+  --gp-btn-fg: #ffffff; 
 
-  /* Brand Colors */
-  --gp-primary: #7c3aed; /* Primary brand color (purple) */
-  --gp-primary-rgb: 124, 58, 237; /* RGB for transparency */
-  --gp-accent: #a78bfa; /* Accent color (light purple) */
+  --gp-primary: #7c3aed; 
+  --gp-primary-rgb: 124, 58, 237; 
+  --gp-accent: #a78bfa; 
 
-  /* Terminal/Status Colors - Higher contrast */
-  --gp-terminal-success: #059669; /* Success/Green - darker */
-  --gp-terminal-warning: #d97706; /* Warning/Orange - darker */
-  --gp-terminal-error: #dc2626; /* Error/Red - darker */
-  --gp-terminal-info: #2563eb; /* Info/Blue - darker */
+  --gp-terminal-success: #059669; 
+  --gp-terminal-warning: #d97706; 
+  --gp-terminal-error: #dc2626; 
+  --gp-terminal-info: #2563eb; 
 
-  /* Shadows */
   --gp-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   --gp-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -44,34 +34,27 @@
     0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-/* Dark Theme */
 [data-theme="dark"] {
-  /* Backgrounds */
   --gp-bg: #0a0a0a;
   --gp-bg-secondary: #1a1a1a;
   --gp-bg-tertiary: #2a2a2a;
 
-  /* Cards & Borders */
   --gp-card: #141414;
   --gp-border: #2a2a2a;
 
-  /* Text Colors */
   --gp-fg: #f8f9fa;
   --gp-fg-secondary: #9ca3af;
   --gp-btn-fg: #ffffff;
 
-  /* Brand Colors */
   --gp-primary: #8b5cf6;
   --gp-primary-rgb: 139, 92, 246;
   --gp-accent: #a78bfa;
 
-  /* Terminal/Status Colors */
   --gp-terminal-success: #10b981;
   --gp-terminal-warning: #f59e0b;
   --gp-terminal-error: #ef4444;
   --gp-terminal-info: #3b82f6;
 
-  /* Shadows */
   --gp-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   --gp-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4),
     0 4px 6px -2px rgba(0, 0, 0, 0.2);
@@ -79,7 +62,6 @@
     0 10px 10px -5px rgba(0, 0, 0, 0.3);
 }
 
-/* Card Styles - More Compact & Professional */
 .card {
   background: var(--gp-card);
   border: 1px solid var(--gp-border);
@@ -104,7 +86,6 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Button Styles - Sleeker & More Professional */
 .btn {
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;

@@ -24,7 +24,6 @@ export const LeftSection: React.FC<LeftSectionProps> = ({
         <Logo />
       </Link>
 
-      {/* User name and team dropdown - hide when scrolled */}
       {!isScrolled && (
         <div
           style={{

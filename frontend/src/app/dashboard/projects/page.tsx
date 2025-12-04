@@ -184,7 +184,6 @@ function UsageStats({
   );
 }
 
-// Get alert severity based on title keywords
 function getAlertSeverity(
   title: string
 ): "error" | "warning" | "info" | "success" {
@@ -208,8 +207,6 @@ function getAlertSeverity(
   }
   return "info";
 }
-
-// Get icon and colors based on severity
 function getAlertStyles(severity: "error" | "warning" | "info" | "success") {
   switch (severity) {
     case "error":
@@ -304,7 +301,6 @@ function AlertsSection({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Header with dismiss all */}
       {alerts.length > 1 && (
         <div className="flex items-center justify-between mb-1">
           <span
@@ -323,7 +319,6 @@ function AlertsSection({
         </div>
       )}
 
-      {/* Alert items */}
       <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1">
         {alerts.slice(0, 5).map((alert) => {
           const severity = getAlertSeverity(alert.title);
@@ -339,7 +334,6 @@ function AlertsSection({
                 border: `1px solid ${styles.borderColor}`,
               }}
             >
-              {/* Dismiss button */}
               <button
                 onClick={() => onDismiss(alert.id)}
                 className="absolute top-2 right-2 p-1 rounded hover:bg-black/10 transition-colors"
@@ -381,7 +375,6 @@ function AlertsSection({
         })}
       </div>
 
-      {/* Show more indicator */}
       {alerts.length > 5 && (
         <p
           className="text-xs text-center pt-1"
@@ -482,7 +475,6 @@ export default function ProjectsPage() {
 
   return (
     <div className="dashboard-container">
-      {/* Left Sidebar */}
       <aside className="dashboard-sidebar">
         <div className="sidebar-section-title">Usage</div>
         <div className="sidebar-section">
@@ -525,14 +517,11 @@ export default function ProjectsPage() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="dashboard-main !gap-4">
-        {/* Projects Header */}
         <div className="projects-header">
           <h2 className="!text-[15px]">Projects</h2>
         </div>
 
-        {/* Projects Grid/List */}
         {githubLoading ? (
           <div className="loading-container">
             <div className="loading-spinner" />

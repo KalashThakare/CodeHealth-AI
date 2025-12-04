@@ -16,7 +16,6 @@ export const AuthGuard = ({ children, requireAuth = true }: AuthGuardProps) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      // Wait for hydration first
       if (!isHydrated) return;
 
       try {
@@ -31,7 +30,6 @@ export const AuthGuard = ({ children, requireAuth = true }: AuthGuardProps) => {
     initAuth();
   }, [isHydrated, checkAuth, router]);
 
-  // Show loading while checking auth or hydrating
   if (!isHydrated || isChecking || isloggingin) {
     return (
       <div className="min-h-screen glass-bg flex flex-col items-center justify-center">
@@ -41,7 +39,6 @@ export const AuthGuard = ({ children, requireAuth = true }: AuthGuardProps) => {
     );
   }
 
-  // Redirect to login if auth required but user not authenticated
   if (requireAuth && !authUser) {
     router.replace("/login");
     return (

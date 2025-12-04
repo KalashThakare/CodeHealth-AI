@@ -2,8 +2,6 @@ import { create } from "zustand";
 import { axiosInstance, axiosAIInstance } from "@/lib/axios";
 import { toast } from "sonner";
 
-// ==================== INTERFACES ====================
-
 export interface RefactorPriorityFile {
   path: string;
   riskScore: number;
@@ -64,7 +62,6 @@ export interface Distributions {
   complexityDistribution: number[];
 }
 
-// AI Insights Interfaces
 export interface RefactoringSuggestion {
   file: string;
   priority: string;
@@ -157,63 +154,44 @@ export interface FullRepoAnalysis {
   aiInsights?: AIInsights;
 }
 
-// ==================== STORE STATE INTERFACE ====================
-
 interface AnalysisState {
-  // Analysis Data
   fullAnalysis: FullRepoAnalysis | null;
 
-  // UI State
-  loading: boolean; // For main analysis loading
-  loadingAiInsights: boolean; // For AI insights loading only
+  loading: boolean; 
+  loadingAiInsights: boolean; 
   error: string | null;
-  aiInsightsError: string | null; // Separate error for AI insights
+  aiInsightsError: string | null; 
 
-  // Actions - Fetch Analysis (3 backend routes)
   fetchFullAnalysis: (repoId: string, useCache?: boolean) => Promise<void>;
   fetchAiInsights: (repoId: string) => Promise<any>;
   validateAiInsights: (repoId: string) => Promise<any>;
 
-  // Actions - Utility
   clearError: () => void;
   clearAllData: () => void;
 
-  // Actions - Export
   exportToCSV: () => string | null;
   exportToPDF: () => void;
 }
 
-// ==================== ZUSTAND STORE ====================
 
 export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
-  // ==================== INITIAL STATE ====================
   fullAnalysis: null,
   loading: false,
   loadingAiInsights: false,
   error: null,
   aiInsightsError: null,
 
-  // ==================== FETCH FULL ANALYSIS ====================
-  /**
-   * Fetch full repository analysis
-   * GET /analyze/:repoId/full-repo
-   *
-   * Backend: analyze_repo controller
-   * Returns: { message: "Success", analysis: {...all fields...} }
-   */
   fetchFullAnalysis: async (repoId: string, useCache: boolean = true) => {
     set({ loading: true, error: null });
 
     try {
       console.log("[Analysis] Fetching full analysis for repo:", repoId);
 
-      // 2) Network fetch (only when useCache=false OR no cache exists)
       const response = await axiosInstance.get(`/analyze/${repoId}/full-repo`);
 
       if (response.data?.message === "Success" && response.data?.analysis) {
         const analysis = response.data.analysis;
 
-        // Map database fields to TypeScript interface
         const analysisData: FullRepoAnalysis = {
           result: {
             avgCyclomaticComplexity: analysis.avgCyclomaticComplexity || 0,
@@ -315,28 +293,18 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
     }
   },
 
-  // ==================== FETCH AI INSIGHTS ====================
-  /**
-   * Fetch AI-generated insights for repository
-   * GET /analyze/:repoId/insights
-   *
-   * Backend: getAiInsights controller
-   * Returns: { message: "Success", repoId, aiInsights: {...} }
-   */
   fetchAiInsights: async (repoId: string) => {
     set({ loadingAiInsights: true, aiInsightsError: null });
 
     try {
       console.log("[Analysis] Fetching AI insights for repo:", repoId);
 
-      // Use AI instance with longer timeout
       const response = await axiosAIInstance.get(
         `/analyze/${repoId}/insights`,
-        { timeout: 120000 } // 2 minutes timeout
+        { timeout: 120000 } 
       );
 
       if (response.data?.message === "Success" && response.data?.aiInsights) {
-        // Update the full analysis with AI insights
         const currentAnalysis = get().fullAnalysis;
 
         if (currentAnalysis) {
@@ -392,14 +360,6 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
     }
   },
 
-  // ==================== VALIDATE AI INSIGHTS ====================
-  /**
-   * Validate if AI insights exist for repository
-   * GET /analyze/:repoId/fetchInsights
-   *
-   * Backend: fetchAiInsights controller
-   * Returns: { success: boolean, message: string }
-   */
   validateAiInsights: async (repoId: string) => {
     try {
       console.log("[Analysis] Validating AI insights for repo:", repoId);
@@ -430,8 +390,6 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
     }
   },
 
-  // ==================== UTILITY ACTIONS ====================
-
   clearError: () => {
     set({ error: null });
   },
@@ -445,11 +403,6 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
     toast.info("All analysis data cleared");
   },
 
-  // ==================== EXPORT ACTIONS ====================
-
-  /**
-   * Export analysis data to CSV format
-   */
   exportToCSV: () => {
     const { fullAnalysis } = get();
 
@@ -461,10 +414,8 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
     try {
       const { result, commitAnalysis, repoHealthScore } = fullAnalysis;
 
-      // Create CSV content
       let csv = "Code Health Analytics Report\n\n";
 
-      // Overall Metrics
       csv += "Overall Metrics\n";
       csv += "Metric,Value\n";
       csv += `Overall Health Score,${repoHealthScore.overallHealthScore}\n`;
@@ -479,7 +430,6 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
         2
       )}\n\n`;
 
-      // Commit Analysis
       csv += "Development Activity\n";
       csv += "Metric,Value\n";
       csv += `Total Commits,${commitAnalysis.totalCommits}\n`;
@@ -490,7 +440,6 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
       csv += `Bus Factor,${commitAnalysis.busFactor}\n`;
       csv += `Velocity Trend,${commitAnalysis.velocity.trend}\n\n`;
 
-      // High Risk Files
       csv += "High Risk Files\n";
       csv += "Path,Risk Score,Complexity,Maintainability,Reason\n";
       result.refactorPriorityFiles.forEach((file) => {
@@ -505,10 +454,7 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
       return null;
     }
   },
-
-  /**
-   * Export analysis data to PDF (placeholder for future implementation)
-   */
+  
   exportToPDF: () => {
     toast.info("PDF export feature coming soon!");
   },

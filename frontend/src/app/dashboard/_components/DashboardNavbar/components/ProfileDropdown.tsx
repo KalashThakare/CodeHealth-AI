@@ -50,7 +50,6 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
         boxShadow: "var(--shadow)",
       }}
     >
-      {/* User Info Section */}
       <div
         className="px-4 py-3"
         style={{
@@ -72,8 +71,7 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
         </div>
       </div>
 
-      {/* Navigation Links - Only show when main nav is hidden */}
-      <div className="flex flex-col min-[520px]:hidden py-1">
+      <div className="hidden max-[519px]:flex flex-col py-1">
         <h4
           className="px-4 py-2 text-xs font-semibold uppercase tracking-wide"
           style={{ color: "var(--color-fg-secondary)" }}
@@ -123,7 +121,6 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
         />
       </div>
 
-      {/* Main Navigation Items */}
       <div className="py-1">
         <Link
           href="/dashboard"
@@ -195,13 +192,11 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
         </Link>
       </div>
 
-      {/* Divider */}
       <div
         className="border-t mx-2"
         style={{ borderColor: "var(--color-border)" }}
       />
 
-      {/* Theme Selector */}
       <div className="py-1">
         <div
           className="flex items-center justify-between px-4 py-2 w-full text-sm"
@@ -243,13 +238,11 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
         </div>
       </div>
 
-      {/* Divider */}
       <div
         className="border-t mx-2"
         style={{ borderColor: "var(--color-border)" }}
       />
 
-      {/* Bottom Items */}
       <div className="py-1">
         <Link
           href="/"

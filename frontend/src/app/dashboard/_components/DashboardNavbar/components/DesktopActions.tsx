@@ -18,7 +18,6 @@ export const DesktopActions: React.FC<DesktopActionsProps> = ({ state }) => {
 
   return (
     <div className="hidden sm:flex items-center space-x-3">
-      {/* Feedback Button */}
       <div className="relative">
         <button
           ref={feedbackButtonRef}
@@ -33,7 +32,6 @@ export const DesktopActions: React.FC<DesktopActionsProps> = ({ state }) => {
           <MessageSquare className="w-5 h-5" />
         </button>
 
-        {/* Feedback Dropdown */}
         <FeedbackDropdown
           isOpen={state.isFeedbackOpen}
           onClose={() => state.setIsFeedbackOpen(false)}
@@ -41,7 +39,6 @@ export const DesktopActions: React.FC<DesktopActionsProps> = ({ state }) => {
         />
       </div>
 
-      {/* Notifications */}
       <div className="relative">
         <button
           ref={notificationButtonRef}
@@ -63,12 +60,9 @@ export const DesktopActions: React.FC<DesktopActionsProps> = ({ state }) => {
               borderColor: "var(--color-border)",
             }}
           />
-          {/* Notification Badge */}
           {unreadCount > 0 ? (
             <>
-              {/* Glowing green dot */}
               <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></span>
-              {/* Count badge */}
               {unreadCount > 0 && (
                 <span
                   className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded-full border-2"
@@ -83,12 +77,10 @@ export const DesktopActions: React.FC<DesktopActionsProps> = ({ state }) => {
               )}
             </>
           ) : (
-            /* Gray dot when no notifications */
             <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-gray-400 rounded-full"></span>
           )}
         </button>
 
-        {/* Notifications Dropdown */}
         <NotificationsDropdown
           isOpen={state.isNotificationsOpen}
           onClose={() => state.setIsNotificationsOpen(false)}

@@ -147,7 +147,6 @@ export default function SupportPage() {
   return (
     <div className="support-page">
       <div className="support-container">
-        {/* Header */}
         <div className="support-header">
           <div className="support-header-content">
             <h1>Support Center</h1>
@@ -173,7 +172,6 @@ export default function SupportPage() {
         </div>
 
         <div className="support-filters">
-          {/* Search */}
           <div className="support-search">
             <Search className="search-icon" />
             <input

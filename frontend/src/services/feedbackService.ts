@@ -19,7 +19,6 @@ export const submitFeedbackAPI = async (
   } catch (error: any) {
     console.error("Feedback submission error:", error);
 
-    // Handle axios error responses
     if (error.response?.data?.error) {
       throw new Error(error.response.data.error);
     } else if (error.message) {

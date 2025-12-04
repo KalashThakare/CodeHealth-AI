@@ -50,35 +50,34 @@ export const getChartTheme = (isDark: boolean): ChartTheme => {
   return isDark ? getDarkTheme() : getLightTheme();
 };
 
-// Severity color functions with high contrast
 export const getSeverityColor = (severity: string, isDark: boolean): string => {
   const severityLower = severity.toLowerCase();
 
   if (isDark) {
     switch (severityLower) {
       case "critical":
-        return "#f87171"; // red-400
+        return "#f87171"; 
       case "high":
-        return "#fb923c"; // orange-400
+        return "#fb923c"; 
       case "medium":
-        return "#fbbf24"; // amber-400
+        return "#fbbf24"; 
       case "low":
-        return "#4ade80"; // green-400
+        return "#4ade80"; 
       default:
-        return "#a1a1aa"; // zinc-400
+        return "#a1a1aa"; 
     }
   } else {
     switch (severityLower) {
       case "critical":
-        return "#dc2626"; // red-600
+        return "#dc2626"; 
       case "high":
-        return "#ea580c"; // orange-600
+        return "#ea580c"; 
       case "medium":
-        return "#d97706"; // amber-600
+        return "#d97706"; 
       case "low":
-        return "#16a34a"; // green-600
+        return "#16a34a";
       default:
-        return "#52525b"; // zinc-600
+        return "#52525b";
     }
   }
 };
@@ -118,7 +117,6 @@ export const getSeverityBgColor = (
   }
 };
 
-// Chart.js default options with theme
 export const getChartOptions = (
   isDark: boolean,
   additionalOptions: any = {}
@@ -193,7 +191,6 @@ export const getChartOptions = (
   };
 };
 
-// Color palette functions with high contrast - Vercel style
 export const getColorPalette = (isDark: boolean) => ({
   primary: isDark ? "#3b82f6" : "#2563eb",
   success: isDark ? "#4ade80" : "#16a34a",

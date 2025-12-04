@@ -59,7 +59,6 @@ export default function GitHubImportPage() {
   const [selectedRepo, setSelectedRepo] = useState<any>(null);
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
 
-  // Only get count after mount to avoid hydration mismatch
   const initializedCount = mounted ? getInitializedCount() : 0;
 
   useEffect(() => {
@@ -86,7 +85,6 @@ export default function GitHubImportPage() {
     }
 
     try {
-      // Fetch new analysis (backend handles caching)
       await fetchFullAnalysis(String(selectedRepo.repoId), false);
       setShowAnalysisResults(true);
       toast.success("New analysis completed");
@@ -107,7 +105,6 @@ export default function GitHubImportPage() {
     <div className="gitproject-page min-h-screen bg-[var(--gp-bg)]">
       <DashboardNavbar />
       <div className="max-w-7xl mx-auto p-4">
-        {/* Header */}
         <header className="mb-6">
           <h1 className="text-2xl font-bold text-[var(--gp-fg)] mb-1">
             GitHub Repository Analysis
@@ -118,7 +115,6 @@ export default function GitHubImportPage() {
           </p>
         </header>
 
-        {/* Error Display */}
         {(githubError || analysisError) && (
           <div className="alert alert-error animate-fadeIn">
             <div className="flex items-center justify-between">
@@ -140,7 +136,6 @@ export default function GitHubImportPage() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Sidebar - Repository List */}
           <div className="lg:col-span-1">
             <div className="apple-card">
               <div className="flex items-center justify-between mb-4">
@@ -175,7 +170,6 @@ export default function GitHubImportPage() {
                 </div>
               </div>
 
-              {/* Search */}
               <div className="relative mb-3">
                 <FiSearch
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--gp-fg-secondary)]"
@@ -190,7 +184,6 @@ export default function GitHubImportPage() {
                 />
               </div>
 
-              {/* Repository List */}
               <div className="space-y-1.5 max-h-[600px]">
                 {githubLoading ? (
                   <div className="empty-state">
@@ -274,13 +267,10 @@ export default function GitHubImportPage() {
             </div>
           </div>
 
-          {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Selected Repository Info */}
             {!selectedRepo ? (
               <div className="apple-card py-8">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
-                  {/* Left 1/4 - Icon */}
                   <div className="col-span-1 w-full flex items-center justify-center">
                     <div className="w-20 h-20 rounded-xl bg-[var(--gp-bg-secondary)] flex items-center justify-center">
                       <FiGithub
@@ -290,7 +280,6 @@ export default function GitHubImportPage() {
                     </div>
                   </div>
 
-                  {/* Right 3/4 - Content */}
                   <div className="col-span-1 md:col-span-3 text-center md:text-left">
                     <h3 className="text-lg font-semibold text-[var(--gp-fg)] mb-2">
                       Select a Repository
@@ -344,7 +333,6 @@ export default function GitHubImportPage() {
                   </a>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex gap-2 flex-wrap">
                   <button
                     onClick={handleStartAnalysis}
@@ -366,8 +354,6 @@ export default function GitHubImportPage() {
                     )}
                   </button>
                 </div>
-
-                {/* View Analytics Button */}
                 {hasAnalysisData && (
                   <div className="w-full mt-2 flex justify-center items-center !bg-transparent">
                     <button
@@ -390,7 +376,6 @@ export default function GitHubImportPage() {
               </div>
             )}
 
-            {/* About Section or Analysis Results */}
             {!hasAnalysisData && <DefaultAnalysisInfo />}
             {hasAnalysisData && (
               <AnalysisResults repo={selectedRepo} analysis={displayAnalysis} />
@@ -402,7 +387,6 @@ export default function GitHubImportPage() {
   );
 }
 
-/* Analysis Results Component */
 function AnalysisResults({ repo, analysis }: { repo: any; analysis: any }) {
   const result = analysis?.result || {};
   const commitAnalysis = analysis?.commitAnalysis || {};
@@ -420,7 +404,6 @@ function AnalysisResults({ repo, analysis }: { repo: any; analysis: any }) {
 
   return (
     <div className="apple-card space-y-4 animate-fadeIn z-10">
-      {/* Header */}
       <div className="pb-3 border-b border-[var(--gp-border)]">
         <h3 className="text-base font-semibold text-[var(--gp-fg)] mb-2">
           Analysis Results
@@ -440,7 +423,6 @@ function AnalysisResults({ repo, analysis }: { repo: any; analysis: any }) {
         </div>
       </div>
 
-      {/* Metrics Grid */}
       <div className="grid grid-cols-2 gap-3">
         <MetricCard
           icon={<FiCode />}
@@ -468,7 +450,6 @@ function AnalysisResults({ repo, analysis }: { repo: any; analysis: any }) {
         />
       </div>
 
-      {/* Health Score Breakdown */}
       {Object.keys(componentScores).length > 0 && (
         <div className="card">
           <h4 className="font-medium text-[var(--gp-fg)] text-sm mb-3">
@@ -499,7 +480,6 @@ function AnalysisResults({ repo, analysis }: { repo: any; analysis: any }) {
         </div>
       )}
 
-      {/* High Priority Files */}
       {refactorFiles.length > 0 && (
         <div>
           <h4 className="font-medium text-[var(--gp-fg)] text-sm mb-2 flex items-center gap-1.5">
@@ -524,7 +504,6 @@ function AnalysisResults({ repo, analysis }: { repo: any; analysis: any }) {
         </div>
       )}
 
-      {/* Commit Activity */}
       {totalCommits > 0 && (
         <div className="card">
           <h4 className="font-medium text-[var(--gp-fg)] text-sm mb-2.5">
@@ -563,7 +542,6 @@ function AnalysisResults({ repo, analysis }: { repo: any; analysis: any }) {
         </div>
       )}
 
-      {/* No Data */}
       {totalFiles === 0 && totalCommits === 0 && (
         <div className="empty-state">
           <FiAlertCircle className="empty-state-icon" />
@@ -577,7 +555,6 @@ function AnalysisResults({ repo, analysis }: { repo: any; analysis: any }) {
   );
 }
 
-/* Metric Card - Compact */
 function MetricCard({
   icon,
   label,
@@ -600,7 +577,6 @@ function MetricCard({
   );
 }
 
-/* Default Info - Compact Grid Layout */
 function DefaultAnalysisInfo() {
   const features = [
     {
@@ -639,7 +615,6 @@ function DefaultAnalysisInfo() {
         repository's code quality, maintainability, and health metrics.
       </p>
 
-      {/* Features Grid */}
       <div className="grid grid-cols-2 gap-0 mb-1">
         {features.map((item, idx) => (
           <div key={idx} className="card !p-4 !m-1">
@@ -653,7 +628,6 @@ function DefaultAnalysisInfo() {
         ))}
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-3 gap-4 mb-1">
         <div className="card text-center">
           <div className="text-xl font-bold text-primary">10+</div>
@@ -669,7 +643,6 @@ function DefaultAnalysisInfo() {
         </div>
       </div>
 
-      {/* Tip */}
       <div className="alert alert-info !m-0">
         <p className="text-xs font-medium mb-0.5">
           <strong>Pro Tip:</strong> Best Practices

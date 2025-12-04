@@ -34,7 +34,6 @@ export const DesktopNavLinks: React.FC<DesktopNavLinksProps> = ({
       ref={refs.navLinksRef}
       onMouseLeave={() => setHoveredIndex(null)}
     >
-      {/* Moving highlight background */}
       <div
         className="transition-all !duration-130"
         style={{
@@ -62,7 +61,6 @@ export const DesktopNavLinks: React.FC<DesktopNavLinksProps> = ({
             {link.name}
           </Link>
 
-          {/* Active indicator line */}
           <div
             className="absolute bottom-0 left-0 w-full transition-all duration-130"
             style={{

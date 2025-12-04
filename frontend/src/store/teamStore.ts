@@ -44,7 +44,7 @@ type TeamStore = {
   currentTeam: Team | null;
   members: Member[];
   invites: Invite[];
-  myInvites: Invite[]; // Separate for received invites
+  myInvites: Invite[]; 
   teamInvites?: Record<string, Invite[]>;
   loading: boolean;
   error: string | null;
@@ -54,7 +54,6 @@ type TeamStore = {
   teamInvitesLoaded: Record<string, boolean>;
   myInvitesLoaded: boolean;
 
-  // Core functions
   fetchTeams: () => Promise<void>;
   fetchTeamMembers: (teamId: string) => Promise<void>;
   fetchTeamInvites: (teamId: string) => Promise<void>;
@@ -64,7 +63,6 @@ type TeamStore = {
     description: string;
   }) => Promise<Team | null>;
 
-  // Invite management
   sendInvite: (
     teamId: string,
     email: string,
@@ -74,7 +72,6 @@ type TeamStore = {
   declineInvite: (token: string) => Promise<boolean>;
   cancelInvite: (teamId: string, inviteId: string) => Promise<boolean>;
 
-  // Member management
   updateMemberRole: (
     teamId: string,
     memberId: string,
@@ -82,11 +79,9 @@ type TeamStore = {
   ) => Promise<boolean>;
   removeMember: (teamId: string, memberId: string) => Promise<boolean>;
 
-  // Team management
   deleteTeam: (teamId: string) => Promise<boolean>;
   leaveTeam: (teamId: string) => Promise<boolean>;
 
-  // Utilities
   getTeamInvites: (teamId: string) => Invite[];
   setCurrentTeam: (team: Team | null) => void;
   clearError: () => void;
@@ -100,11 +95,11 @@ function getAuthHeaders() {
 }
 
 export const useTeamStore = create<TeamStore>((set, get) => ({
-  teams: [], // to store teams the user belongs to
-  currentTeam: null, // to store the currently selected team
-  members: [],  // members of the current team
-  invites: [],  // invites sent for the current team
-  myInvites: [],  // 
+  teams: [], 
+  currentTeam: null, 
+  members: [],  
+  invites: [],  
+  myInvites: [],  
   teamInvites: {},
   loading: false,
   error: null,
@@ -200,9 +195,6 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
     }
   },
 
-  // fetchInvites: async () => {
-  //   return get().fetchMyInvites();
-  // },
 
   fetchTeamInvites: async (teamId) => {
     const { teamInvitesLoaded, loading } = get();
@@ -218,9 +210,7 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
         res.data?.invites || res.data?.items || res.data || [];
       console.log(`Fetched ${teamInvites.length} invites for team ${teamId}`);
 
-      // FIX: Don't overwrite global invites, store team-specific invites separately
       set((state) => ({
-        // Store team invites separately to avoid pollution
         teamInvites: {
           ...state.teamInvites,
           [teamId]: teamInvites,
@@ -306,10 +296,9 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
       console.log("Accepted invite for team:", res.data?.teamId);
       set({ loading: false });
 
-      // Refresh data after accepting
       await get().fetchTeams();
       set((state) => ({
-        myInvitesLoaded: false, // Force refresh
+        myInvitesLoaded: false,
       }));
 
       return res.data;
@@ -335,7 +324,7 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
       console.log("Declined invite");
       set((state) => ({
         loading: false,
-        myInvitesLoaded: false, // Force refresh
+        myInvitesLoaded: false,
       }));
 
       return true;
@@ -462,7 +451,6 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
 
       console.log("Cancelled invite:", inviteId);
 
-      // Remove from both invites arrays
       set((state) => ({
         invites: state.invites.filter((i) => i.id !== inviteId),
         myInvites: state.myInvites.filter((i) => i.id !== inviteId),
@@ -495,9 +483,9 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
       teams: [],
       currentTeam: null,
       members: [],
-      invites: [], // This should only be used for team-specific invites in team detail pages
-      myInvites: [], // This is for user's received invites
-      teamInvites: {}, // ADD: Store team-specific invites separately
+      invites: [], 
+      myInvites: [], 
+      teamInvites: {}, 
       loading: false,
       error: null,
       teamsLoaded: false,

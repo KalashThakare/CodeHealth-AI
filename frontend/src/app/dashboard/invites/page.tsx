@@ -11,10 +11,10 @@ export default function InvitesPage() {
   const { authUser } = useAuthStore();
 
   const {
-    myInvites, // ✅ User's received invites
+    myInvites, 
     loading,
     error,
-    fetchMyInvites, // ✅ Fetch received invites
+    fetchMyInvites, 
     acceptInvite,
     declineInvite,
     clearError,
@@ -25,40 +25,34 @@ export default function InvitesPage() {
     new Set()
   );
 
-  // ✅ CHANGE: Fetch user's received invites
   useEffect(() => {
     if (authUser && !myInvitesLoaded) {
-      console.log("🔄 Invites page: Fetching received invites...");
+      console.log("Invites page: Fetching received invites...");
       fetchMyInvites();
     }
   }, [authUser, fetchMyInvites, myInvitesLoaded]);
 
-  // ✅ CHANGE: Enhanced invite acceptance with proper token handling
   const handleAcceptInvite = async (invite: any) => {
     if (!invite.tokenHash) {
-      console.error("❌ No token hash found for invite:", invite.id);
+      console.error("No token hash found for invite:", invite.id);
       return;
     }
 
     setProcessingInvites((prev) => new Set([...prev, invite.id]));
 
     try {
-      console.log("🔄 Accepting invite:", invite.id);
-      // Use the token hash from the invite
+      console.log("Accepting invite:", invite.id);
       const result = await acceptInvite(invite.tokenHash);
 
       if (result) {
-        console.log("✅ Invite accepted successfully");
-        // Refresh invites to remove the accepted one
+        console.log("Invite accepted successfully");
         await fetchMyInvites();
-
-        // Optionally redirect to the team page
         if (result.teamId) {
           router.push(`/dashboard/teams/${result.teamId}`);
         }
       }
     } catch (error) {
-      console.error("❌ Failed to accept invite:", error);
+      console.error("Failed to accept invite:", error);
     } finally {
       setProcessingInvites((prev) => {
         const newSet = new Set(prev);
@@ -68,7 +62,6 @@ export default function InvitesPage() {
     }
   };
 
-  // ✅ CHANGE: Enhanced invite decline with proper token handling
   const handleDeclineInvite = async (invite: any) => {
     if (
       !window.confirm(
@@ -81,23 +74,22 @@ export default function InvitesPage() {
     }
 
     if (!invite.tokenHash) {
-      console.error("❌ No token hash found for invite:", invite.id);
+      console.error("No token hash found for invite:", invite.id);
       return;
     }
 
     setProcessingInvites((prev) => new Set([...prev, invite.id]));
 
     try {
-      console.log("🔄 Declining invite:", invite.id);
+      console.log("Declining invite:", invite.id);
       const success = await declineInvite(invite.tokenHash);
 
       if (success) {
-        console.log("✅ Invite declined successfully");
-        // Refresh invites to remove the declined one
+        console.log("Invite declined successfully");
         await fetchMyInvites();
       }
     } catch (error) {
-      console.error("❌ Failed to decline invite:", error);
+      console.error("Failed to decline invite:", error);
     } finally {
       setProcessingInvites((prev) => {
         const newSet = new Set(prev);
@@ -106,8 +98,6 @@ export default function InvitesPage() {
       });
     }
   };
-
-  // ✅ CHANGE: Group invites by status and team
   const groupedInvites = myInvites.reduce((groups, invite) => {
     const now = new Date();
     const expiresAt = new Date(invite.expiresAt);
@@ -136,7 +126,6 @@ export default function InvitesPage() {
   return (
     <div className="min-h-screen glass-bg">
       <div className="max-w-4xl mx-auto p-6">
-        {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <Link
@@ -160,7 +149,6 @@ export default function InvitesPage() {
           </p>
         </div>
 
-        {/* Error State */}
         {error && (
           <div className="glass-card bg-red-500/10 border-red-500/30 p-4 rounded-lg mb-6">
             <div className="flex items-center justify-between">
@@ -174,8 +162,6 @@ export default function InvitesPage() {
             </div>
           </div>
         )}
-
-        {/* Loading State */}
         {loading && myInvites.length === 0 && (
           <div className="flex justify-center py-12">
             <div className="glass-card p-8 rounded-2xl shadow-xl text-center">
@@ -185,7 +171,6 @@ export default function InvitesPage() {
           </div>
         )}
 
-        {/* ✅ CHANGE: Statistics Cards */}
         {!loading && myInvites.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div className="glass-card p-4 rounded-xl text-center">
@@ -211,7 +196,6 @@ export default function InvitesPage() {
           </div>
         )}
 
-        {/* ✅ CHANGE: Pending Invitations Section */}
         {pendingInvites.length > 0 && (
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">
@@ -298,12 +282,10 @@ export default function InvitesPage() {
           </div>
         )}
 
-        {/* ✅ CHANGE: Other Invitations Section */}
         {(acceptedInvites.length > 0 || expiredInvites.length > 0) && (
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Invitation History</h2>
 
-            {/* Accepted Invitations */}
             {acceptedInvites.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-lg font-medium mb-3 text-green-400">
@@ -335,7 +317,6 @@ export default function InvitesPage() {
               </div>
             )}
 
-            {/* Expired Invitations */}
             {expiredInvites.length > 0 && (
               <div>
                 <h3 className="text-lg font-medium mb-3 text-red-400">
@@ -369,7 +350,6 @@ export default function InvitesPage() {
           </div>
         )}
 
-        {/* Empty State */}
         {!loading && myInvites.length === 0 && (
           <div className="text-center py-12">
             <div className="glass-card p-8 rounded-2xl shadow-xl max-w-md mx-auto">
@@ -405,7 +385,6 @@ export default function InvitesPage() {
           </div>
         )}
 
-        {/* Information Section */}
         <div className="mt-12">
           <div className="glass-card p-6 rounded-2xl shadow-xl">
             <h3 className="text-lg font-semibold mb-4">

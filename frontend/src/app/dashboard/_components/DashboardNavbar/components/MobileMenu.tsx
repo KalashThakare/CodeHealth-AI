@@ -73,7 +73,6 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
         role="dialog"
         aria-modal="true"
       >
-        {/* Header with Close Link */}
         <div className="relative">
             <X
               onClick={(e) => {
@@ -86,7 +85,6 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
             />
         </div>
 
-        {/* User Info */}
         <div
           className="px-4 py-3 border-b"
           style={{ borderColor: "var(--color-border)" }}
@@ -114,7 +112,6 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
           </div>
         </div>
 
-        {/* Navigate To - smaller, lighter links with dot bullets */}
         <div
           className="py-2 border-b hidden max-[520px]:block"
           style={{ borderColor: "var(--color-border)" }}
@@ -165,7 +162,6 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
           </div>
         </div>
 
-        {/* Actions and Profile Items (all as links) */}
         <div
           className="border-t py-2"
           style={{ borderColor: "var(--color-border)" }}
@@ -229,7 +225,6 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
             <Plus className="w-4 h-4" />
           </Link>
 
-          {/* Theme Selector (links that invoke theme then close menu) */}
           <div
             className="flex items-center justify-between px-4 py-2 w-full text-sm"
             style={{ color: "var(--color-fg-secondary)" }}
@@ -310,13 +305,11 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
             </div>
           </div>
 
-          {/* Divider */}
           <div
             className="border-t mx-2"
             style={{ borderColor: "var(--color-border)" }}
           />
 
-          {/* Bottom Items */}
           <div className="py-1">
             <Link
               href="/"

@@ -48,7 +48,6 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 glass-nav glass-theme">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-14 sm:h-16">
-          {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
             <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-fg)]">
               CodeHealth
@@ -58,7 +57,6 @@ export default function Navbar() {
             </h1>
           </div>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="flex items-baseline space-x-6 lg:space-x-8">
               <a
@@ -88,7 +86,6 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Theme Toggle & Auth Buttons */}
           <div className="hidden md:flex items-center space-x-3 lg:space-x-4">
             <button
               onClick={toggleTheme}
@@ -122,7 +119,6 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Mobile Controls */}
           <div className="md:hidden flex items-center space-x-2">
             <button
               onClick={toggleTheme}
@@ -168,7 +164,6 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {isMenuOpen && (
           <div
             id="mobile-menu"

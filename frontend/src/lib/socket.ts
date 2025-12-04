@@ -8,9 +8,6 @@ class SocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
 
-  /**
-   * Initialize socket connection with authentication token
-   */
   connect(token: string): Socket {
     if (this.socket?.connected) {
       console.log("Socket already connected");
@@ -33,9 +30,6 @@ class SocketService {
     return this.socket;
   }
 
-  /**
-   * Set up default event listeners
-   */
   private setupEventListeners(): void {
     if (!this.socket) return;
 
@@ -62,9 +56,6 @@ class SocketService {
     });
   }
 
-  /**
-   * Disconnect socket
-   */
   disconnect(): void {
     if (this.socket) {
       this.socket.disconnect();
@@ -73,23 +64,14 @@ class SocketService {
     }
   }
 
-  /**
-   * Get current socket instance
-   */
   getSocket(): Socket | null {
     return this.socket;
   }
 
-  /**
-   * Check if socket is connected
-   */
   isConnected(): boolean {
     return this.socket?.connected ?? false;
   }
 
-  /**
-   * Emit event to server
-   */
   emit(event: string, data?: any): void {
     if (this.socket?.connected) {
       this.socket.emit(event, data);
@@ -98,31 +80,21 @@ class SocketService {
     }
   }
 
-  /**
-   * Listen to event from server
-   */
   on(event: string, callback: (...args: any[]) => void): void {
     if (this.socket) {
       this.socket.on(event, callback);
     }
   }
 
-  /**
-   * Remove event listener
-   */
   off(event: string, callback?: (...args: any[]) => void): void {
     if (this.socket) {
       this.socket.off(event, callback);
     }
   }
 
-  /**
-   * Send heartbeat ping
-   */
   ping(): void {
     this.emit("ping");
   }
 }
 
-// Export singleton instance
 export const socketService = new SocketService();

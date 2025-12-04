@@ -5,7 +5,6 @@ export default function Footer() {
     <footer className="bg-[var(--color-bg-secondary)] border-t border-[var(--color-border)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-          {/* Company Info */}
           <div className="sm:col-span-2 lg:col-span-2">
             <h3 className="text-xl sm:text-2xl font-bold text-[var(--color-fg)] mb-3 sm:mb-4">
               CodeHealth<span className="text-[var(--color-primary)]">AI</span>
@@ -39,7 +38,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Product Links */}
           <div>
             <h4 className="text-base sm:text-lg font-semibold text-[var(--color-fg)] mb-3 sm:mb-4">
               Product
@@ -80,7 +78,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Support Links */}
           <div>
             <h4 className="text-base sm:text-lg font-semibold text-[var(--color-fg)] mb-3 sm:mb-4">
               Support

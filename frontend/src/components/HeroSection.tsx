@@ -69,7 +69,6 @@ export default function HeroSection() {
     { scope: heroRef }
   );
 
-  // Theme-aware particle color - Vercel gray for dark, purple for light
   const particleColor = theme === "dark" ? "#444444" : "#6d4e9c";
 
   return (
@@ -78,7 +77,6 @@ export default function HeroSection() {
       className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 pt-16 sm:pt-20 overflow-hidden"
       style={{ backgroundColor: "var(--color-bg)" }}
     >
-      {/* Full-page Particles Background */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <Particles
           particleColors={[particleColor, particleColor]}
@@ -97,7 +95,6 @@ export default function HeroSection() {
 
       <div className="relative z-10 max-w-7xl mx-auto w-full">
         <div className="min-h-[80vh] grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-          {/* Left side - Text Content */}
           <div className="text-center lg:text-left sm:break-words relative order-2 lg:order-1">
             <h1
               className="font-title align-middle font-light hero-title text-4xl sm:text-6xl md:text-7xl lg:text-6xl xl:text-7xl mb-6 sm:mb-8 leading-[1.05] text-nowrap"
@@ -159,15 +156,12 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Right side - Animated Terminal */}
           <div className="relative top-18 right-8 lg:pl-8 order-1 lg:order-2 hidden lg:block">
             <AnimatedTerminal theme={theme} />
           </div>
         </div>
 
-        {/* Feature Highlights */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mt-20 sm:mt-32">
-          {/* Developer Analytics Card */}
           <FeatureCard
             icon={<BarChart3 className="w-6 h-6" />}
             title="Developer Analytics"
@@ -175,7 +169,6 @@ export default function HeroSection() {
             accentColor="var(--color-border)"
           />
 
-          {/* Cost Intelligence Card */}
           <FeatureCard
             icon={<DollarSign className="w-6 h-6" />}
             title="Cost Intelligence"
@@ -183,7 +176,6 @@ export default function HeroSection() {
             accentColor="var(--color-border2)"
           />
 
-          {/* Performance Insights Card */}
           <FeatureCard
             icon={<Rocket className="w-6 h-6" />}
             title="Performance Insights"
@@ -197,7 +189,6 @@ export default function HeroSection() {
   );
 }
 
-// Feature Card Component
 interface FeatureCardProps {
   icon: React.ReactNode;
   title: string;
@@ -217,7 +208,6 @@ function FeatureCard({
     <div
       className={`glass-card glass-shimmer glass-theme text-center p-6 sm:p-8 group relative overflow-hidden ${className}`}
     >
-      {/* Floating accent elements */}
       <div
         className="absolute top-2 right-2 w-2 h-2 rounded-full animate-pulse"
         style={{
@@ -231,7 +221,6 @@ function FeatureCard({
         }}
       />
 
-      {/* Icon container */}
       <div className="relative mx-auto mb-4 sm:mb-6 w-fit">
         <div
           className="w-12 sm:w-16 h-12 sm:h-16 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-all duration-300 relative overflow-hidden"
@@ -240,7 +229,6 @@ function FeatureCard({
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <span className="text-white relative z-10">{icon}</span>
         </div>
-        {/* Glow ring */}
         <div
           className="absolute inset-0 w-12 sm:w-16 h-12 sm:h-16 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition-all duration-300"
           style={{
@@ -262,7 +250,6 @@ function FeatureCard({
         {description}
       </p>
 
-      {/* Hover overlay */}
       <div
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl"
         style={{
@@ -273,7 +260,6 @@ function FeatureCard({
   );
 }
 
-// Theme-Aware Animated Terminal Component
 function AnimatedTerminal({ theme }: { theme: "light" | "dark" }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [displayText, setDisplayText] = useState("");
@@ -351,7 +337,6 @@ function AnimatedTerminal({ theme }: { theme: "light" | "dark" }) {
           border: `1px solid ${theme === "dark" ? "#262626" : "#e5e5e5"}`,
         }}
       >
-        {/* Terminal Header */}
         <div
           className="flex items-center justify-between px-4 py-3"
           style={{
@@ -376,12 +361,10 @@ function AnimatedTerminal({ theme }: { theme: "light" | "dark" }) {
           <div className="w-16" />
         </div>
 
-        {/* Terminal Content */}
         <div
           className="p-4 min-h-[260px] font-mono text-sm leading-relaxed"
           style={{ backgroundColor: theme === "dark" ? "#0a0a0a" : "#fafafa" }}
         >
-          {/* Command prompt */}
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             <span
               style={{ color: theme === "dark" ? "#22c55e" : "#16a34a" }}
@@ -403,10 +386,8 @@ function AnimatedTerminal({ theme }: { theme: "light" | "dark" }) {
             </span>
           </div>
 
-          {/* Response text */}
           <div className="space-y-1.5">
             {displayText.split("\n").map((line, index) => {
-              // Style different line types
               let lineStyle: React.CSSProperties = {
                 color: theme === "dark" ? "#a3a3a3" : "#525252",
               };
@@ -494,7 +475,6 @@ function AnimatedTerminal({ theme }: { theme: "light" | "dark" }) {
         </div>
       </div>
 
-      {/* Decorative elements */}
       <div
         className="absolute -top-2 -right-2 w-4 h-4 rounded-full opacity-30 animate-pulse"
         style={{ backgroundColor: "var(--color-primary)" }}

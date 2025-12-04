@@ -1,57 +1,7 @@
-// 'use client'
-// import { Moon, Sun } from "lucide-react";
-// import * as React from "react";
-
-// export const Toggle = () => {
-
-//   function getInitialTheme(): "light" | "dark" {
-//     if (typeof window === "undefined") return "light";
-//     const stored = localStorage.getItem("theme");
-//     if (stored === "light" || stored === "dark") return stored;
-//     const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-//     return systemDark ? "dark" : "light";
-//   }
-
-//   const [theme, setTheme] = React.useState<"light" | "dark">(getInitialTheme);
-//   const [mounted, setMounted] = React.useState(false);
-//   React.useEffect(() => setMounted(true), []);
-
-//   React.useEffect(() => {
-//     document.documentElement.setAttribute("data-theme", theme);
-//     localStorage.setItem("theme", theme);
-//   }, [theme]);
-
-//   React.useEffect(() => {
-//     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-//     const handler = (e: MediaQueryListEvent) => {
-//       if (!localStorage.getItem("theme")) {
-//         setTheme(e.matches ? "dark" : "light");
-//       }
-//     };
-//     mq.addEventListener("change", handler);
-//     return () => mq.removeEventListener("change", handler);
-//   }, []);
-
-//   if (!mounted) return null;
-
-//   return (
-//     <button
-//       type="button"
-//       className="absolute top-2 right-2"
-//       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-//       style={{ background: "none", border: "none", padding: 0 }}
-//     >
-//       {theme === "dark" ? <Sun className="bg-white rounded-full p-1 h-8 w-8 text-yellow-400" /> : <Moon className="bg-black rounded-full p-1 h-8 w-8" />}
-//     </button>
-//   );
-// };
-
-
 "use client";
 import { Moon, Sun, Laptop } from "lucide-react";
 import * as React from "react";
 
-// Custom hook for theme logic
 export const useTheme = () => {
   function getInitialTheme(): "light" | "dark" | "system" {
     if (typeof window === "undefined") return "system";
@@ -109,7 +59,6 @@ export const useTheme = () => {
     return () => mq.removeEventListener("change", handler);
   }, [theme]);
 
-  // Theme actions
   const setLightTheme = () => setTheme("light");
   const setDarkTheme = () => setTheme("dark");
   const setSystemTheme = () => setTheme("system");
@@ -130,7 +79,6 @@ export const useTheme = () => {
   };
 };
 
-// Default Toggle component using the hook
 export const Toggle = () => {
   const { theme, mounted, setLightTheme, setDarkTheme, setSystemTheme } =
     useTheme();
@@ -142,7 +90,6 @@ export const Toggle = () => {
       className="flex items-center rounded-lg p-1 space-x-1"
       style={{ backgroundColor: "var(--color-bg-tertiary)" }}
     >
-      {/* System Theme Button */}
       <button
         onClick={setSystemTheme}
         className="relative w-7 h-7 rounded-md p-1.5 transition-all duration-200 hover:scale-105 active:scale-95"
@@ -170,7 +117,6 @@ export const Toggle = () => {
         )}
       </button>
 
-      {/* Dark Theme Button */}
       <button
         onClick={setDarkTheme}
         className="relative w-7 h-7 rounded-md p-1.5 transition-all duration-200 hover:scale-105 active:scale-95"
@@ -198,7 +144,6 @@ export const Toggle = () => {
         )}
       </button>
 
-      {/* Light Theme Button */}
       <button
         onClick={setLightTheme}
         className="relative w-7 h-7 rounded-md p-1.5 transition-all duration-200 hover:scale-105 active:scale-95"
@@ -229,7 +174,6 @@ export const Toggle = () => {
   );
 };
 
-// Simple toggle using the hook
 export const SimpleToggle = () => {
   const { theme, mounted, toggleTheme, actualTheme } = useTheme();
 

@@ -21,7 +21,6 @@ export const FeedbackDropdown: React.FC<FeedbackDropdownProps> = ({
   const [feedbackText, setFeedbackText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -36,7 +35,6 @@ export const FeedbackDropdown: React.FC<FeedbackDropdownProps> = ({
 
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      // Focus textarea when opened
       setTimeout(() => textareaRef.current?.focus(), 100);
     }
 
@@ -90,7 +88,6 @@ export const FeedbackDropdown: React.FC<FeedbackDropdownProps> = ({
         borderColor: "var(--color-border)",
       }}
     >
-      {/* Header */}
       <div
         className="px-4 py-3 border-b flex items-center justify-between"
         style={{ borderColor: "var(--color-border)" }}
@@ -104,13 +101,11 @@ export const FeedbackDropdown: React.FC<FeedbackDropdownProps> = ({
         <button
           onClick={onClose}
           className="!p-1 !rounded-md !hover:opacity-70 !transition-opacity"
-          //   style={{ color: "var(--color-fg-muted)" }}
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Feedback Form */}
       <form onSubmit={handleSubmit} className="p-4">
         <textarea
           ref={textareaRef}
@@ -151,7 +146,6 @@ export const FeedbackDropdown: React.FC<FeedbackDropdownProps> = ({
         </div>
       </form>
 
-      {/* Footer Info */}
       <div
         className="px-4 py-2 border-t text-xs"
         style={{

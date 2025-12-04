@@ -49,7 +49,6 @@ const resolveColorToRgb = (
   if (!raw) return hexToRgb("#ffffff");
   const trimmed = raw.trim();
 
-  // CSS var(...) e.g. var(--color-fg)
   if (trimmed.startsWith("var(")) {
     const varName = trimmed.slice(4, -1).trim();
     const computed =
@@ -59,18 +58,14 @@ const resolveColorToRgb = (
     const fromRgb = parseRgbFunction(c);
     if (fromRgb) return fromRgb;
     if (c.startsWith("#")) return hexToRgb(c);
-    // fallback: try plain value
     return hexToRgb("#ffffff");
   }
 
-  // direct rgb(...) or rgba(...)
   const fromRgb = parseRgbFunction(trimmed);
   if (fromRgb) return fromRgb;
 
-  // hex
   if (trimmed.startsWith("#")) return hexToRgb(trimmed);
 
-  // named color or fallback - try computed color
   try {
     const el = document.createElement("div");
     el.style.color = trimmed;
@@ -80,7 +75,6 @@ const resolveColorToRgb = (
     const parsed = parseRgbFunction(comp);
     if (parsed) return parsed;
   } catch (e) {
-    // ignore
   }
 
   return hexToRgb("#ffffff");
@@ -161,7 +155,7 @@ const Particles: React.FC<ParticlesProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [themeKey, setThemeKey] = useState<number>(0); // bump to re-init on theme change
+  const [themeKey, setThemeKey] = useState<number>(0); 
 
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
@@ -185,7 +179,6 @@ const Particles: React.FC<ParticlesProps> = ({
     const container = containerRef.current;
     if (!container) return;
 
-    // resolve palette (supports var(--...), rgb(...), #hex, named colors)
     const paletteSource =
       particleColors && particleColors.length ? particleColors : defaultColors;
     const paletteResolved = paletteSource.map((c) => resolveColorToRgb(c));
@@ -304,9 +297,7 @@ const Particles: React.FC<ParticlesProps> = ({
       if (container.contains(gl.canvas)) {
         container.removeChild(gl.canvas);
       }
-      // dispose GL resources (gl contexts/buffers are GC'd with canvas removal)
     };
-    // re-init when these change or the themeKey bumps
   }, [
     particleCount,
     particleSpread,
@@ -320,7 +311,7 @@ const Particles: React.FC<ParticlesProps> = ({
     disableRotation,
     className,
     themeKey,
-    particleColors, // Include particleColors to re-render when theme changes
+    particleColors, 
   ]);
 
   return (

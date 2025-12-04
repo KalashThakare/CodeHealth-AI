@@ -315,7 +315,6 @@ export default function AnalyticsPage() {
 
         <div className="flex justify-between items-center mb-4">
           <QuickStatsBar
-            // lastAnalyzed={aiInsights?.timestamp || new Date().toISOString()}
             stats={[
               {
                 label: "Files",

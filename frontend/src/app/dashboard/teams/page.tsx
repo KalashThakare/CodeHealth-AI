@@ -38,20 +38,12 @@ export default function TeamsPage() {
   const [initialUIBusy, setInitialUIBusy] = useState(true);
   const initialLoadRef = useRef(false);
 
-  /* ---------- DATA LOADING STRATEGY ----------
-     Problem previously: fetchTeams & fetchMyInvites were called in same effect.
-     fetchTeams sets loading=true → fetchMyInvites early-returned (because store checks loading).
-     Result: myInvites never fetched -> pending invites = 0.
-     Fix: Sequential loading (await teams, then invites). Also second watcher if invites still not loaded.
-  ------------------------------------------------ */
-
   const sequentialLoad = useCallback(async () => {
     if (!authUser) return;
     try {
       if (!teamsLoaded) {
         await fetchTeams();
       }
-      // Only attempt after teams load finished (loading now false)
       if (!myInvitesLoaded) {
         await fetchMyInvites();
       }
@@ -68,21 +60,18 @@ export default function TeamsPage() {
     }
   }, [authUser, sequentialLoad]);
 
-  // Safety net: if teams finished later and invites still not loaded & not loading, fetch invites.
   useEffect(() => {
     if (authUser && teamsLoaded && !myInvitesLoaded && !loading) {
       fetchMyInvites();
     }
   }, [authUser, teamsLoaded, myInvitesLoaded, loading, fetchMyInvites]);
 
-  // Auto clear error
   useEffect(() => {
     if (!error) return;
     const t = setTimeout(() => clearError(), 5000);
     return () => clearTimeout(t);
   }, [error, clearError]);
 
-  // Force refresh (hard reset + sequential load)
   const handleRefresh = async () => {
     reset();
     setInitialUIBusy(true);
@@ -154,7 +143,6 @@ export default function TeamsPage() {
   return (
     <div className="min-h-screen glass-bg">
       <div className="max-w-7xl mx-auto px-5 py-8">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold tracking-tight font-title">
@@ -220,7 +208,6 @@ export default function TeamsPage() {
           </div>
         )}
 
-        {/* Stats */}
         <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-10">
           <StatCard
             label="Total Teams"
@@ -244,7 +231,6 @@ export default function TeamsPage() {
           />
         </div>
 
-        {/* Search */}
         <div
           className="rounded-xl p-4 mb-8 flex items-center gap-3"
           style={{
@@ -289,7 +275,6 @@ export default function TeamsPage() {
           )}
         </div>
 
-        {/* Empty States */}
         {noTeams && !showGlobalInitialSpinner && (
           <EmptyState
             title="No Teams Yet"
@@ -330,7 +315,6 @@ export default function TeamsPage() {
           />
         )}
 
-        {/* Teams Grid */}
         {!noTeams && !emptySearch && (
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
             {filteredTeams.map((team) => {

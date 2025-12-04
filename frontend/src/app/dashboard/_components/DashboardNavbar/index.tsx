@@ -17,14 +17,10 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
 }) => {
   const router = useRouter();
   const { logout } = useAuthStore();
-
-  // State management
   const state = useNavbarState();
   const refs = useDropdownClose(state);
   const highlightState = useHighlightEffect(refs);
   const { isScrolled } = useScrollNavbar();
-
-  // Handler functions
   const handleLogOut = async () => {
     await logout();
     router.replace("/");
@@ -32,7 +28,6 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
 
   return (
     <>
-      {/* Main Navbar */}
       <nav
         className="sticky top-0 z-50 border-b glassmorphism-navbar"
         style={{
@@ -44,7 +39,6 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
         }}
       >
         <div className="h-fit mx-auto px-1 sm:px-6">
-          {/* Top row with logo, user info, and actions */}
           <div
             className="flex justify-between items-center w-full"
             style={{
@@ -55,10 +49,8 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
               transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
-            {/* Left Section */}
             <LeftSection state={state} refs={refs} isScrolled={false} />
 
-            {/* Right Section */}
             <RightSection
               state={state}
               refs={refs}
@@ -67,15 +59,13 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
             />
           </div>
 
-          {/* Bottom row - nav links and logo when scrolled */}
           <div
-            className="flex items-center w-full"
+            className="hidden min-[520px]:flex items-center w-full"
             style={{
               transform: isScrolled ? "translateY(0)" : "translateY(0)",
               transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
-            {/* Logo - only visible when scrolled */}
             <div
               style={{
                 width: "100%",
@@ -89,7 +79,6 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
               <Logo />
             </div>
 
-            {/* Desktop Navigation Links - Always visible */}
             <div
               style={{
                 width: "100%",

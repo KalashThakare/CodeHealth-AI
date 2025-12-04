@@ -39,12 +39,10 @@ export default function SettingsPage() {
     { id: "danger", label: "Account Management" },
   ];
 
-  // Load account settings on mount
   useEffect(() => {
     fetchAccountSettings();
   }, [fetchAccountSettings]);
 
-  // Update form data when account settings change
   useEffect(() => {
     if (accountSettings) {
       setFormData({
@@ -56,7 +54,6 @@ export default function SettingsPage() {
     }
   }, [accountSettings]);
 
-  // Clear error after 5 seconds
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => clearError(), 5000);
@@ -109,8 +106,7 @@ export default function SettingsPage() {
     if (deleteConfirmText !== "DELETE") return;
 
     try {
-      await deleteAccount();
-      // Redirect to login or home page after successful deletion
+      await deleteAccount()
       window.location.href = "/login";
     } catch (err) {
       console.error("Failed to delete account:", err);
@@ -209,7 +205,6 @@ export default function SettingsPage() {
     );
   };
 
-  // Validation functions
   const validateEmail = (email: string): string | null => {
     if (!email.trim()) return "Email is required";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -226,7 +221,7 @@ export default function SettingsPage() {
   };
 
   const validatePhoneNumber = (phone: string): string | null => {
-    if (!phone.trim()) return null; // Phone is optional
+    if (!phone.trim()) return null; 
     const phoneRegex = /^\+?[\d\s\-\(\)]{10,}$/;
     return phoneRegex.test(phone) ? null : "Please enter a valid phone number";
   };
@@ -234,7 +229,6 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen glass-bg">
       <div className="max-w-6xl mx-auto px-5 py-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight font-title">
             Account Settings
@@ -244,28 +238,7 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Error Banner */}
-        {/* {error && (
-          <div
-            className="rounded-lg border px-4 py-3 mb-6 text-sm flex items-center justify-between"
-            style={{
-              background: "rgba(255,0,0,0.08)",
-              borderColor: "rgba(255,0,0,0.25)",
-              color: "#f87171",
-            }}
-          >
-            <span>{error}</span>
-            <button
-              onClick={clearError}
-              className="text-xs px-2 py-1 rounded hover:bg-red-500/20 transition-colors"
-            >
-              ✕
-            </button>
-          </div>
-        )} */}
-
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
             <nav
               className="rounded-2xl p-4 sticky top-8"
@@ -293,7 +266,6 @@ export default function SettingsPage() {
             </nav>
           </div>
 
-          {/* Main Content */}
           <div className="lg:col-span-3">
             <div
               className="rounded-2xl p-6"
@@ -303,7 +275,6 @@ export default function SettingsPage() {
                 boxShadow: "var(--shadow)",
               }}
             >
-              {/* Profile Information Section */}
               {activeSection === "profile" && (
                 <div className="space-y-8">
                   <div>
@@ -334,7 +305,6 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              {/* Contact Information Section */}
               {activeSection === "security" && (
                 <div className="space-y-8">
                   <div>
@@ -366,7 +336,6 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              {/* Account Management Section */}
               {activeSection === "danger" && (
                 <div className="space-y-8">
                   <div>
@@ -382,7 +351,6 @@ export default function SettingsPage() {
                       }}
                     >
                       <div className="flex items-start gap-4">
-                        {/* <div className="text-2xl">🗑️</div> */}
                         <div className="flex-1">
                           <h3 className="font-semibold text-lg text-red-400 mb-2">
                             Delete Account

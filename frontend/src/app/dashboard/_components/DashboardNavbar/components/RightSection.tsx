@@ -22,7 +22,6 @@ export const RightSection: React.FC<RightSectionProps> = ({
 
   return (
     <div className="flex items-center gap-3">
-      {/* Desktop Actions - smooth hide with transition */}
       <div
         style={{
           display: isScrolled ? "none" : "block",
@@ -30,8 +29,6 @@ export const RightSection: React.FC<RightSectionProps> = ({
       >
         <DesktopActions state={state} />
       </div>
-
-      {/* Profile Button & Dropdown - smooth hide with transition */}
       <div
         className="hidden sm:block relative rounded-full"
         ref={refs.profileDropdownRef}
@@ -68,7 +65,6 @@ export const RightSection: React.FC<RightSectionProps> = ({
         />
       </div>
 
-      {/* Mobile Menu - always visible */}
       <MobileMenu state={state} refs={refs} handleLogOut={handleLogOut} />
     </div>
   );

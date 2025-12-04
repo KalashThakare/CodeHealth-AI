@@ -38,7 +38,6 @@ interface RepositoryAnalysis {
 }
 
 interface GitHubStore {
-  // State
   githubToken: string | null;
   githubUser: GitHubUser | null;
   repositories: GitHubRepo[];
@@ -48,7 +47,6 @@ interface GitHubStore {
   error: string | null;
   initializingRepoId: number | null;
 
-  // Actions
   setGitHubToken: (token: string) => void;
   fetchGitHubUser: () => Promise<void>;
   fetchGitHubRepos: () => Promise<void>;
@@ -64,17 +62,13 @@ interface GitHubStore {
 }
 
 interface GitHubState {
-  // GitHub User
   githubUser: GitHubUser | null;
 
-  // GitHub Repositories
   repositories: GitHubRepo[];
 
-  // Loading & Error States
   isLoading: boolean;
   error: string | null;
 
-  // Actions
   fetchGitHubUser: () => Promise<void>;
   fetchGitHubRepos: () => Promise<void>;
   clearError: () => void;
@@ -83,7 +77,6 @@ interface GitHubState {
 export const useGitHubStore = create<GitHubStore>()(
   persist(
     (set, get) => ({
-      // Initial state
       githubToken: null,
       githubUser: null,
       repositories: [],
@@ -93,7 +86,6 @@ export const useGitHubStore = create<GitHubStore>()(
       error: null,
       initializingRepoId: null,
 
-      // Actions
       setGitHubToken: (token: string) => {
         set({ githubToken: token });
         toast.success("GitHub token set successfully");
@@ -188,7 +180,6 @@ export const useGitHubStore = create<GitHubStore>()(
             { headers: { Authorization: `Bearer ${token}` } }
           );
 
-          // Add to analysis history
           const currentHistory = get().analysisHistory;
           set({
             analysisHistory: [res.data, ...currentHistory],
@@ -227,7 +218,6 @@ export const useGitHubStore = create<GitHubStore>()(
         ).length;
         const repo = repositories.find((r) => r.repoId === repoId);
 
-        // Check if already at max
         if (initializedCount >= 2 && !repo?.initialised) {
           toast.error(
             "Maximum 2 repositories can be initialized. Please remove initialization from another repository first."
