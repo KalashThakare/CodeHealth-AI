@@ -1,5 +1,6 @@
 import RepositoryAnalysis from "../database/models/analysis.js";
 import { PRVelocityMetrics } from "../database/models/observability/prVelocityMetrics.js";
+import { Project } from "../database/models/project.js";
 
 export function evaluateCondition(currentValue, operator, threshold) {
     switch (operator) {
@@ -31,6 +32,12 @@ export async function getRepoMetrics(repoId) {
         }
     })
 
+    const repo = await Project.findOne({
+        where:{
+            repoId:repoId
+        }
+    })
+
     const stalePr = await PRVelocityMetrics.findOne({
         where: { repoId },
         order: [['date', 'DESC']],   // latest date
@@ -44,6 +51,7 @@ export async function getRepoMetrics(repoId) {
         stalePRs: latestStaleCount,
         codeQuality: metrics.codeQualityScore || 0, 
         highRiskFiles: metrics.refactorPriorityFiles.length || 0, 
-        technicalDebt: metrics.technicalDebtScore || 0 
+        technicalDebt: metrics.technicalDebtScore || 0 ,
+        repoName:repo.fullName
     };
 }

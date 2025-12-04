@@ -9,6 +9,7 @@ import { Queue } from 'bullmq';
 import { io } from "../server.js";
 import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
 import { triggerBackgroundAnalysis } from "../controller/analysisController.js";
+import { triggerAlertScan } from "../controller/alertController.js";
 
 dotenv.config();
 
@@ -76,7 +77,18 @@ export const PushAnalysisWorker = new Worker(
 PushAnalysisWorker.on("ready", () => console.log("[push] worker ready"));
 PushAnalysisWorker.on("error", err => console.error("[push] worker error", err));
 PushAnalysisWorker.on("failed", (job, err) => console.error(`[push] job failed ${job?.id}`, err));
-PushAnalysisWorker.on("completed", job => console.log(`[push] job completed ${job.id}`));
+PushAnalysisWorker.on("completed", async(job) => {
+  if(job?.data && io){
+    const {repoId} = job.data;
+    const repo = await Project.findOne({
+      where:{
+        repoId:repoId
+      }
+    })
+    triggerAlertScan(repoId, repo.userId);
+  }
+  console.log(`[push] job completed ${job.id}`)
+});
 
 const events = new QueueEvents("pushAnalysis", { connection });
 events.on("waiting", ({ jobId }) => console.log("[push] waiting", jobId));

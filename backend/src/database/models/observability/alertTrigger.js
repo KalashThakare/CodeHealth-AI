@@ -11,7 +11,7 @@ const AlertTrigger = sequelize.define('AlertTrigger', {
     type: DataTypes.UUID,
     allowNull: false,
     references: {
-      model: 'Alert',
+      model: 'AlertRule',
       key: 'id'
     }
   },

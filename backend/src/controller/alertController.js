@@ -1,13 +1,23 @@
 import alertRule from "../database/models/observability/alert.js";
 import AlertTrigger from "../database/models/observability/alertTrigger.js";
+import User from "../database/models/User.js";
+import { sendAlertNotification } from "../lib/mail/noodemailer.js";
 import { getRepoMetrics, isInCooldown, evaluateCondition } from "../utils/alertHelperFunctions.js";
 
 
 export async function triggerAlertScan(repoId, userId) {
   try {
+
+    console.log("==============================================================================================================================================================================================")
     if (!repoId || !userId) {
       throw Error("fields are missing for triggerAlertScan");
     }
+
+    const user = await User.findOne({
+      where:{
+        id:userId
+      }
+    })
 
     const conditions = await alertRule.findAll({
       where: {
@@ -68,7 +78,7 @@ export async function triggerAlertScan(repoId, userId) {
 
           if (!existingTrigger) {
            
-            await AlertTrigger.create({
+            const newTrigger = await AlertTrigger.create({
               alertId: condition.id,
               currentValue: currentValue,
               thresholdValue: condition.threshold,
@@ -80,6 +90,16 @@ export async function triggerAlertScan(repoId, userId) {
                 userId: userId
               }
             });
+
+            await sendAlertNotification(user.email,{
+              alertName:condition.name,
+              repoName: metrics.repoName,
+              currentValue: currentValue,
+              threshold: condition.threshold,
+              operator: condition.operator,
+              triggeredAt: newTrigger.triggeredAt,
+              dashboardLink: 'http://localhost:3000/dashboard/projects'
+            })
 
             await condition.update({
               lastTriggeredAt: new Date(),
