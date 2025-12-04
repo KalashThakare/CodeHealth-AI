@@ -220,8 +220,11 @@ export default function ActivityPage() {
                   onClick={handleRefresh}
                   type="button"
                 >
-                  <RefreshCw />
-                  Try Again
+                  <div className="flex !items-center !justify-center gap-2">
+                    <div className="!flex pt-3 !items-center !justify-center"><RefreshCw size={16}/></div>
+                    <span>Try Again</span>
+                  </div>
+                  
                 </button>
               </div>
             ) : Object.keys(groupedActivities).length > 0 ? (
