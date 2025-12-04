@@ -20,6 +20,7 @@ import notification from "../database/models/notification.js";
 import activity from "../database/models/activity.js";
 import { createAlertNotification } from "../utils/alertNotificationHelper.js";
 import trend from "../database/models/trend.js";
+import { triggerAlertScan } from "./alertController.js";
 dotenv.config();
 
 
@@ -310,6 +311,9 @@ export async function triggerBackgroundAnalysis(repoId) {
     })
 
     console.log(`[Background] Analysis completed for repo ${parsedRepoId}`);
+
+    triggerAlertScan(repoId, repo.userId);
+    
   } catch (error) {
     console.error(`[Background] Analysis failed for repo ${repoId}:`, error);
 

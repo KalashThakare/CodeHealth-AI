@@ -19,6 +19,7 @@ import supportRoutes from "./routes/supportRoutes.js"
 import activityRoutes from "./routes/activity.Routes.js"
 import notificationsRoutes from "./routes/notificationRoutes.js"
 import observabilityRoutes from "./routes/observability.Routes.js"
+import alertRoutes from "./routes/alertRoutes.js"
 //databaseAssociation
 import "./database/models/index.js"
 //Workers
@@ -81,5 +82,7 @@ app.use("/notifications", notificationsRoutes);
 app.use("/activity", activityRoutes)
 
 app.use("/observability", observabilityRoutes);
+
+app.use("/alertrule", alertRoutes)
 
 export default app;

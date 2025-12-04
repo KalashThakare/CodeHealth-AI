@@ -4,6 +4,9 @@ import CommitsAnalysis from "./commit_analysis.js";
 import Commit from "./commitsMetadata.js";
 import notification from "./notification.js";
 import OAuthConnection from "./OauthConnections.js";
+import alertRule from "./observability/alert.js";
+import alert from "./observability/alert.js";
+import AlertTrigger from "./observability/alertTrigger.js";
 import { PRVelocityMetrics } from "./observability/prVelocityMetrics.js";
 import { PushActivityMetrics } from "./observability/pushActivityMetrics.js";
 import { ReviewerMetrics } from "./observability/reviewerMetrics.js";
@@ -255,3 +258,37 @@ ReviewerMetrics.belongsTo(Project, {
   targetKey: 'repoId',
   as: 'project'
 })
+
+//Alert Models association
+
+User.hasMany(alertRule, {
+  foreignKey: 'userId',
+  as: 'AlertRule',
+  onDelete: 'CASCADE'
+});
+alertRule.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
+Project.hasMany(alertRule, {
+  foreignKey: 'repoId',
+  sourceKey: 'repoId',
+  as: 'AlertRule',
+  onDelete: 'CASCADE'
+});
+alertRule.belongsTo(Project, {
+  foreignKey: 'repoId',
+  targetKey: 'repoId',
+  as: 'project'
+});
+
+alertRule.hasMany(AlertTrigger, {
+  foreignKey: 'alertId',
+  as: 'triggers',
+  onDelete: 'CASCADE'
+});
+AlertTrigger.belongsTo(alertRule, {
+  foreignKey: 'alertId',
+  as: 'AlertRule'
+});
