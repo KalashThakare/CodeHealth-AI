@@ -118,7 +118,7 @@ export function EducationalTooltip({ termKey, children }: TooltipProps) {
             <span>{term.analogy}</span>
           </div>
           <button
-            className="edu-tooltip-expand"
+            className="edu-tooltip-expand !border-none"
             onClick={() => setShowDetailed(!showDetailed)}
           >
             {showDetailed ? "Hide details" : "Learn more"}

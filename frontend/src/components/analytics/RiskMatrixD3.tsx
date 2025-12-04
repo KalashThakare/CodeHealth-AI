@@ -256,7 +256,7 @@ export default function RiskMatrixD3({ suggestions }: RiskMatrixD3Props) {
           className="analytics-text-lg font-semibold"
           style={{ color: "var(--analytics-text-primary)" }}
         >
-          Risk vs Effort Matrix (D3.js)
+          Risk vs Effort Matrix
         </h3>
         <div
           className="flex items-center gap-1"

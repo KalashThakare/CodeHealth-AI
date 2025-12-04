@@ -137,13 +137,13 @@ export default function RefactoringSuggestionsTable({
                     {suggestion.currentIssues.length} issues
                   </td>
                   <td className="analytics-text-sm">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-center gap-1">
                       <FiClock size={12} />
                       {suggestion.estimatedEffort}
                     </div>
                   </td>
                   <td className="analytics-text-sm">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-center gap-1">
                       <FiAlertTriangle
                         size={12}
                         style={{ color: getPriorityColor(suggestion.priority) }}
@@ -189,11 +189,11 @@ export default function RefactoringSuggestionsTable({
                           >
                             Current Issues:
                           </p>
-                          <ul className="space-y-1">
+                          <ul className="space-y-1 ">
                             {suggestion.currentIssues.map((issue, i) => (
                               <li
                                 key={i}
-                                className="analytics-text-sm flex items-start gap-2"
+                                className="analytics-text-sm flex items-center justify-center gap-2"
                                 style={{
                                   color: "var(--analytics-text-secondary)",
                                 }}
@@ -226,15 +226,15 @@ export default function RefactoringSuggestionsTable({
                               }}
                             >
                               <p
-                                className="analytics-text-sm analytics-mb-1"
+                                className="analytics-text-sm text-left pl-5 analytics-mb-1"
                                 style={{
                                   color: "var(--analytics-text-primary)",
                                 }}
                               >
                                 {rec.action}
                               </p>
-                              <div className="grid grid-cols-2 gap-2 analytics-text-xs">
-                                <div>
+                              <div className="grid grid-cols-2 gap-2 justify-between analytics-text-xs">
+                                <div className="flex justify-start pl-5 gap-1">
                                   <span
                                     style={{
                                       color: "var(--analytics-text-tertiary)",
@@ -250,7 +250,7 @@ export default function RefactoringSuggestionsTable({
                                     {rec.benefit}
                                   </p>
                                 </div>
-                                <div>
+                                <div className="flex justify-center gap-1">
                                   <span
                                     style={{
                                       color: "var(--analytics-text-tertiary)",
@@ -279,7 +279,7 @@ export default function RefactoringSuggestionsTable({
                               border: "1px solid var(--analytics-border)",
                             }}
                           >
-                            <div className="flex items-center gap-1 analytics-mb-1">
+                            <div className="flex items-center gap-1 analytics-mb-1 pl-5">
                               <FiDollarSign
                                 size={12}
                                 style={{ color: "var(--analytics-error)" }}
@@ -294,7 +294,7 @@ export default function RefactoringSuggestionsTable({
                               </span>
                             </div>
                             <p
-                              className="analytics-text-sm font-semibold"
+                              className="analytics-text-sm font-semibold text-left pl-5"
                               style={{ color: "var(--analytics-text-primary)" }}
                             >
                               {suggestion.businessImpact.currentCost}
@@ -308,7 +308,7 @@ export default function RefactoringSuggestionsTable({
                               border: "1px solid var(--analytics-border)",
                             }}
                           >
-                            <div className="flex items-center gap-1 analytics-mb-1">
+                            <div className="flex items-center gap-1 analytics-mb-1 pl-5">
                               <FiAlertTriangle
                                 size={12}
                                 style={{ color: "var(--analytics-warning)" }}
@@ -323,7 +323,7 @@ export default function RefactoringSuggestionsTable({
                               </span>
                             </div>
                             <p
-                              className="analytics-text-sm font-semibold"
+                              className="analytics-text-sm font-semibold text-left pl-5"
                               style={{ color: "var(--analytics-text-primary)" }}
                             >
                               {suggestion.businessImpact.incidentRisk}
@@ -337,7 +337,7 @@ export default function RefactoringSuggestionsTable({
                               border: "1px solid var(--analytics-border)",
                             }}
                           >
-                            <div className="flex items-center gap-1 analytics-mb-1">
+                            <div className="flex items-center gap-1 analytics-mb-1 pl-5">
                               <FiTrendingUp
                                 size={12}
                                 style={{ color: "var(--analytics-info)" }}
@@ -352,7 +352,7 @@ export default function RefactoringSuggestionsTable({
                               </span>
                             </div>
                             <p
-                              className="analytics-text-sm font-semibold"
+                              className="analytics-text-sm font-semibold text-left pl-5"
                               style={{ color: "var(--analytics-error)" }}
                             >
                               {suggestion.businessImpact.velocitySlowdown}
@@ -366,7 +366,7 @@ export default function RefactoringSuggestionsTable({
                               border: "1px solid var(--analytics-border)",
                             }}
                           >
-                            <div className="flex items-center gap-1 analytics-mb-1">
+                            <div className="flex items-center gap-1 analytics-mb-1 pl-5">
                               <FiTrendingUp
                                 size={12}
                                 style={{ color: "var(--analytics-success)" }}
@@ -381,7 +381,7 @@ export default function RefactoringSuggestionsTable({
                               </span>
                             </div>
                             <p
-                              className="analytics-text-sm font-semibold"
+                              className="analytics-text-sm font-semibold text-left pl-5"
                               style={{ color: "var(--analytics-success)" }}
                             >
                               {suggestion.businessImpact.postRefactoringGain}
