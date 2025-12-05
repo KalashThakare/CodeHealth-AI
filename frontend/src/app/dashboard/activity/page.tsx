@@ -112,25 +112,19 @@ export default function ActivityPage() {
   );
 
   return (
-    <div className="activity-page">
-      <div className="activity-container">
-        <div className="activity-header">
-          <div className="activity-header-row">
-            <h1>Activity</h1>
-            <button
-              className={`refresh-btn ${loading ? "loading" : ""}`}
-              onClick={handleRefresh}
-              title="Refresh"
-              type="button"
-            >
-              <RefreshCw size={16} strokeWidth={2} />
-            </button>
-          </div>
+    
+    <div className="">
+      <div className="activity-header border-b border-white/15">
+          <header className="activity-header">
+        <div className="activity-container">
+          <h1>Activity</h1>
         </div>
-
+      </header>
+        </div>
+      <div className="activity-container">
         <div className="activity-main">
-          <aside className="activity-sidebar">
-            <div className="filter-section">
+          <aside className="activity-sidebar border-r border-white/15">
+            <div className="filter-section pr-8 pt-8">
               <span className="filter-section-title">Filters</span>
               <div className="filter-dropdown" ref={timeDropdownRef}>
                 <button
@@ -169,7 +163,7 @@ export default function ActivityPage() {
               </div>
             </div>
 
-            <div className="filter-section">
+            <div className="filter-section pr-8">
               <span className="filter-section-title">Type</span>
               <div className="filter-type-list">
                 {TYPE_FILTERS.map((filter) => {
@@ -193,7 +187,7 @@ export default function ActivityPage() {
           </aside>
 
           <div className="activity-content-area">
-            <div className="search-container">
+            {/* <div className="search-container">
               <div className="search-input-wrapper">
                 <div className="search-icon">
                   <Search />
@@ -206,7 +200,7 @@ export default function ActivityPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-            </div>
+            </div> */}
 
             {loading && activities.length === 0 ? (
               <LoadingSkeleton />
@@ -228,7 +222,7 @@ export default function ActivityPage() {
                 </button>
               </div>
             ) : Object.keys(groupedActivities).length > 0 ? (
-              <div className={`activity-list ${loading ? "refreshing" : ""}`}>
+              <div className={`activity-list ${loading ? "refreshing" : "pt-8"}`}>
                 {Object.entries(groupedActivities).map(
                   ([month, monthActivities]) => (
                     <div key={month} className="activity-month-group">
