@@ -78,7 +78,7 @@ ${safeMsg}
   await transporter.sendMail(mailOptions);
 };
 
-export const sendAlertNotification = async (userEmail, alertData) => {
+export const sendAlertMail = async (userEmail, alertData) => {
   const {
     alertName,
     repoName,
