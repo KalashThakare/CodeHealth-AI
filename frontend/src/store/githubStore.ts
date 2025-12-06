@@ -146,7 +146,7 @@ export const useGitHubStore = create<GitHubStore>()(
             repositories,
             isLoading: false,
           });
-          toast.success(`Fetched ${res.data.length} repositories`);
+          // toast.success(`Fetched ${res.data.length} repositories`);
         } catch (error: any) {
           const errorMessage =
             error?.response?.data?.error || "Failed to fetch GitHub repos";
@@ -160,7 +160,7 @@ export const useGitHubStore = create<GitHubStore>()(
 
       selectRepository: (repo: GitHubRepo) => {
         set({ selectedRepo: repo });
-        toast.info(`Selected repository: ${repo.repoName}`);
+        // toast.info(`Selected repository: ${repo.repoName}`);
       },
 
       analyzeRepository: async (

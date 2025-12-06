@@ -23,6 +23,7 @@ import {
   FiInfo,
 } from "react-icons/fi";
 import "../dashboard.css";
+import { toast } from "sonner";
 
 function MiniSemiCircle({
   value,
@@ -411,7 +412,19 @@ export default function ProjectsPage() {
   const fetchAlerts = useNotificationStore((s) => s.fetchAlerts);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [openOptionsMenu, setOpenOptionsMenu] = useState<number | null>(null);
   const dataFetchRef = useRef(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openOptionsMenu) {
+        setOpenOptionsMenu(null);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [openOptionsMenu]);
 
   useEffect(() => {
     if (dataFetchRef.current) return;
@@ -448,8 +461,8 @@ export default function ProjectsPage() {
   );
 
   const handleProjectClick = (repo: any) => {
+    console.log("Selecting and navigating to project:", repo.fullName);
     selectRepository(repo);
-    console.log("Navigating to project:", repo.fullName);
     router.push("/gitProject");
   };
 
@@ -599,7 +612,23 @@ export default function ProjectsPage() {
                       className="tooltip-wrapper"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <button className="activity-btn">
+                      <button
+                        className="activity-btn"
+                        onClick={() => {
+                          if (!repo.initialised) {
+                            selectRepository(repo);
+                            toast.warning(
+                              "Please initialize the repository first to see its analysis",
+                              {
+                                duration: 4000,
+                              }
+                            );
+                            router.push(`/gitProject`);
+                          } else {
+                            router.push(`/analytics/${repo.repoId}`);
+                          }
+                        }}
+                      >
                         <FiActivity size={18} />
                       </button>
                       <div className="tooltip-content">
@@ -607,12 +636,63 @@ export default function ProjectsPage() {
                         Insights.
                       </div>
                     </div>
-                    <button
-                      className="more-options-btn"
+                    <div
+                      className="relative !bg-none"
                       onClick={(e) => e.stopPropagation()}
+                      style={{
+                        background: "transparent",
+                        border: "var(--color-accent)",
+                      }}
                     >
-                      <FiMoreHorizontal size={18} />
-                    </button>
+                      <button
+                        className="more-options-btn !bg-none"
+                        style={{
+                          background: "transparent",
+                          border: "var(--color-accent)",
+                        }}
+                        onClick={() =>
+                          setOpenOptionsMenu(
+                            openOptionsMenu === repo.id ? null : repo.id
+                          )
+                        }
+                      >
+                        <FiMoreHorizontal size={18} />
+                      </button>
+                      {openOptionsMenu === repo.id && (
+                        <div
+                          className="absolute right-0 bottom-full w-fit mb-2 z-50 rounded-xl shadow-lg border-0"
+                          style={{
+                            backgroundColor: "var(--color-card)",
+                            borderColor: "var(--color-border)",
+                          }}
+                        >
+                          <button
+                            className="w-fit !text-left !border-0 !px-2 !py-1 !text-sm !hover:bg-opacity-80 transition-colors !rounded-xl"
+                            style={{
+                              color: "var(--color-fg)",
+                              backgroundColor: "transparent",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor =
+                                "var(--color-bg-secondary)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor =
+                                "transparent";
+                            }}
+                            onClick={() => {
+                              setOpenOptionsMenu(null);
+                              // selectRepository(repo);
+                              router.push(
+                                `${process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI}`
+                              );
+                            }}
+                          >
+                            Manage
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

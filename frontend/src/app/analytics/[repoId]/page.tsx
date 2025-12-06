@@ -127,7 +127,7 @@ export default function AnalyticsPage() {
         toast.success("CSV exported successfully!");
       }
     } else {
-      toast.info("Preparing PDF export...");
+      // toast.info("Preparing PDF export...");
       setTimeout(() => {
         window.print();
       }, 300);

@@ -56,14 +56,27 @@ export default function GitHubImportPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [analytics, setAnalytics] = useState(false);
-  const [selectedRepo, setSelectedRepo] = useState<any>(null);
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
+
+  const selectedRepoFromStore = useGitHubStore((s) => s.selectedRepo);
+  const [selectedRepo, setSelectedRepo] = useState<any>(selectedRepoFromStore);
 
   const initializedCount = mounted ? getInitializedCount() : 0;
 
   useEffect(() => {
     fetchGitHubRepos();
   }, [fetchGitHubRepos]);
+
+  useEffect(() => {
+    if (
+      selectedRepoFromStore &&
+      selectedRepoFromStore.repoId !== selectedRepo?.repoId
+    ) {
+      setSelectedRepo(selectedRepoFromStore);
+      setShowAnalysisResults(false);
+      clearAnalysisError();
+    }
+  }, [selectedRepoFromStore]);
 
   const filteredRepos = repositories.filter(
     (repo) =>

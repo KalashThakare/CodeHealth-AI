@@ -1135,11 +1135,21 @@
 }
 
 .more-options-btn:hover {
-  background: var(--color-bg-secondary);
+  background: "transparent";
   color: var(--color-fg);
 }
 
-[data-theme="dark"] .more-options-btn:hover {
-  background: var(--dashboard-bg-hover);
+.more-options-btn:active,
+.more-options-btn:focus {
+  background: transparent;
+  color: var(--color-fg);
+  border: 1px solid var(--color-accent);
+  outline: none;
+}
+
+[data-theme="dark"] .more-options-btn:active,
+[data-theme="dark"] .more-options-btn:focus {
+  background: transparent;
   color: var(--dashboard-text);
+  border: 1px solid var(--color-border);
 }
