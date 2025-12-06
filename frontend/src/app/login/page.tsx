@@ -45,16 +45,130 @@ export default function Login() {
       <div className="absolute top-4 right-4 z-50">
         <DashboardThemeToggle />
       </div>
-      
-      <div className="w-fit" style={{ width: "100%", maxWidth: "320px" }}>
-        <h1
-          className="text-center"
-          style={{ fontSize: "2rem", marginBottom: "1.5rem" }}
-        >
-          Log in
-        </h1>
 
-        <form onSubmit={handleSubmit}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "1.5rem",
+          maxWidth: "900px",
+          margin: "0 auto",
+        }}
+      >
+        <div style={{ textAlign: "center", maxWidth: "600px" }}>
+          <h1
+            style={{
+              fontSize: "2.5rem",
+              marginBottom: "1rem",
+              fontWeight: "700",
+            }}
+          >
+            Welcome Back to<br />CodeHealth AI
+          </h1>
+          <p
+            style={{
+              color: "var(--color-fg-secondary)",
+              fontSize: "1.125rem",
+              lineHeight: "1.6",
+              marginBottom: "2rem",
+            }}
+          >
+            Your intelligent code analysis companion powered by advanced AI
+          </p>
+
+          {/* Key Features List */}
+          <div
+            style={{
+              textAlign: "left",
+              display: "grid",
+              gap: "0.875rem",
+              marginBottom: "1.5rem",
+            }}
+          >
+            <div
+              style={{ display: "flex", alignItems: "start", gap: "0.75rem" }}
+            >
+              <span
+                style={{ fontSize: "1.25rem", flexShrink: 0, color: "var(--color-fg-primary)" }}
+              >
+                ✓
+              </span>
+              <p
+                style={{
+                  margin: 0,
+                  color: "var(--color-fg-secondary)",
+                  fontSize: "0.9375rem",
+                  lineHeight: "1.5",
+                }}
+              >
+                <strong style={{ color: "var(--color-fg)" }}>
+                  Smart Analysis:
+                </strong>{" "}
+                AI-powered code health scoring and architectural insights
+              </p>
+            </div>
+            <div
+              style={{ display: "flex", alignItems: "start", gap: "0.75rem" }}
+            >
+              <span
+                style={{ fontSize: "1.25rem", flexShrink: 0, color: "var(--color-fg-primary)" }}
+              >
+                ✓
+              </span>
+              <p
+                style={{
+                  margin: 0,
+                  color: "var(--color-fg-secondary)",
+                  fontSize: "0.9375rem",
+                  lineHeight: "1.5",
+                }}
+              >
+                <strong style={{ color: "var(--color-fg)" }}>
+                  Real-time Metrics:
+                </strong>{" "}
+                Track PR velocity, team performance, and code quality trends
+              </p>
+            </div>
+            <div
+              style={{ display: "flex", alignItems: "start", gap: "0.75rem" }}
+            >
+              <span
+                style={{ fontSize: "1.25rem", flexShrink: 0, color: "var(--color-fg-primary)" }}
+              >
+                ✓
+              </span>
+              <p
+                style={{
+                  margin: 0,
+                  color: "var(--color-fg-secondary)",
+                  fontSize: "0.9375rem",
+                  lineHeight: "1.5",
+                }}
+              >
+                <strong style={{ color: "var(--color-fg)" }}>
+                  Deep Insights:
+                </strong>{" "}
+                Identify code smells, security issues, and refactoring
+                opportunities
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-fit" style={{ width: "100%", maxWidth: "320px" }}>
+          <h2
+            className="text-center"
+            style={{
+              fontSize: "1.5rem",
+              marginBottom: "1.5rem",
+              fontWeight: "600",
+            }}
+          >
+            Log in to your account
+          </h2>
+
+          {/* <form onSubmit={handleSubmit}>
           <input
             type="email"
             value={email}
@@ -80,61 +194,62 @@ export default function Login() {
           >
             Continue with Email
           </button>
-        </form>
+        </form> */}
 
-        <div
+          {/* <div
           style={{
             borderTop: "1px solid var(--color-border)",
             margin: "1.5rem 0",
           }}
-        />
+        /> */}
 
-        <button
-          className="btn"
-          style={{
-            width: "100%",
-            marginBottom: "0.75rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.75rem",
-            background: "var(--color-bg)",
-            color: "var(--color-fg)",
-          }}
-          onClick={handleGoogleAuthClick}
-        >
-          <FaGoogle /> Continue with Google
-        </button>
-        <button
-          className="btn"
-          style={{
-            width: "100%",
-            marginBottom: "0.75rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.75rem",
-            background: "var(--color-bg)",
-            color: "var(--color-fg)",
-          }}
-          onClick={handleGithubAuthClick}
-        >
-          <FaGithub /> Continue with GitHub
-        </button>
-
-        <div className="text-center">
-          <span style={{ color: "var(--color-fg)", fontSize: "1rem" }}>
-            Don't have an account?{" "}
-          </span>
-          <a
-            href="/signup"
+          <button
+            className="btn"
             style={{
-              color: "var(--color-link)",
-              fontWeight: 500,
+              width: "100%",
+              marginBottom: "0.75rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.75rem",
+              background: "var(--color-bg)",
+              color: "var(--color-fg)",
             }}
+            onClick={handleGoogleAuthClick}
           >
-            Sign Up
-          </a>
+            <FaGoogle /> Continue with Google
+          </button>
+          <button
+            className="btn"
+            style={{
+              width: "100%",
+              marginBottom: "0.75rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.75rem",
+              background: "var(--color-bg)",
+              color: "var(--color-fg)",
+            }}
+            onClick={handleGithubAuthClick}
+          >
+            <FaGithub /> Continue with GitHub
+          </button>
+
+          <div className="text-center">
+            <span style={{ color: "var(--color-fg)", fontSize: "1rem" }}>
+              Don't have an account?{" "}
+            </span>
+            <a
+              href="/signup"
+              style={{
+                color: "var(--color-link)",
+                fontWeight: 500,
+              }}
+            >
+              Sign Up
+            </a>
+          </div>
         </div>
       </div>
     </div>

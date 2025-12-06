@@ -46,14 +46,18 @@ export const DashboardThemeToggle = () => {
     <button
       type="button"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      className="glass-btn glass-btn-secondary w-10 h-10 rounded-lg flex items-center justify-center transition-all hover:scale-105 group"
+      className="w-10 h-10 rounded-lg flex items-center justify-center transition-all hover:scale-105 group"
       title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      style={{
+        background:"var(--color-bg)"
+      }}
     >
-      <div className="relative">
+      <div className="relative"
+      >
         {theme === "dark" ? (
-          <Sun className="w-5 h-5 text-yellow-500 group-hover:text-yellow-400 transition-colors" />
+          <Sun className="w-5 h-5 transition-colors" style={{color:"var(--color-fg)"}}/>
         ) : (
-          <Moon className="w-5 h-5 text-slate-600 group-hover:text-slate-500 transition-colors" />
+          <Moon className="w-5 h-5 transition-colors" style={{color:"var(--color-fg)"}}/>
         )}
       </div>
     </button>
