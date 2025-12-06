@@ -241,9 +241,9 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <div className="lg:col-span-1">
             <nav
-              className="rounded-2xl p-4 sticky top-8"
+              className="rounded-2xl p-3 sticky top-8"
               style={{
-                background: "var(--color-card)",
+                background: "var(--color-bg-primary)",
                 border: "1px solid var(--color-border)",
                 boxShadow: "var(--shadow)",
               }}
@@ -253,11 +253,18 @@ export default function SettingsPage() {
                   <button
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all ${
-                      activeSection === section.id
-                        ? "bg-[var(--color-primary)] text-white"
-                        : "hover:bg-[var(--color-bg-secondary)]"
-                    }`}
+                    style={{
+                      background: "var(--color-bg-secondary)",
+                      color:
+                        activeSection === section.id
+                          ? "var(--color-fg)"
+                          : "var(--color-fg-secondary)",
+                      border:
+                        activeSection === section.id
+                          ? "1px solid var(--color-border)"
+                          : "1px solid transparent",
+                    }}
+                    className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg text-left transition-all`}
                   >
                     <span className="font-medium text-sm">{section.label}</span>
                   </button>
@@ -270,7 +277,7 @@ export default function SettingsPage() {
             <div
               className="rounded-2xl p-6"
               style={{
-                background: "var(--color-card)",
+                background: "var(--color-bg-primary)",
                 border: "1px solid var(--color-border)",
                 boxShadow: "var(--shadow)",
               }}
@@ -344,15 +351,14 @@ export default function SettingsPage() {
                     </h2>
 
                     <div
-                      className="rounded-xl p-6 border-2"
+                      className="rounded-xl p-6 border-1"
                       style={{
-                        background: "rgba(239, 68, 68, 0.05)",
-                        borderColor: "rgba(239, 68, 68, 0.2)",
+                        border: "1px solid var(--color-border)",
                       }}
                     >
                       <div className="flex items-start gap-4">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-red-400 mb-2">
+                          <h3 className="font-semibold text-lg !text-red-400 mb-2">
                             Delete Account
                           </h3>
                           <p className="text-sm opacity-70 mb-4">
