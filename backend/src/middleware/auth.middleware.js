@@ -4,7 +4,7 @@ import User from "../database/models/User.js";
 
 export const protectRoute = async (req, res, next) => {
 
-    const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
+    const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
 
     if (!token) {
         return res.status(400).json({ message: "Unauthorised" });
@@ -27,6 +27,7 @@ export const protectRoute = async (req, res, next) => {
         }
 
         req.user = user;
+        req.token = token;
 
         next();
 

@@ -276,8 +276,7 @@ export const githubAuthCallback = async (req, res) => {
         // Continue to SCENARIO 2 if token is invalid
       }
     }
-
-    // SCENARIO 2: User is signing up/logging in with GitHub
+    
     // First, check if this GitHub account is already connected to a user
     const existingConnection = await OAuthConnection.findOne({
       where: {

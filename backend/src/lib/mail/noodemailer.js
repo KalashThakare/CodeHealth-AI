@@ -122,7 +122,7 @@ export const sendAlertMail = async (userEmail, alertData) => {
   const severityColor = getSeverityColor();
   const timestamp = triggeredAt ? new Date(triggeredAt).toLocaleString() : new Date().toLocaleString();
 
-  const subject = `🚨 Alert Triggered: ${alertDisplayName} - ${repoName}`;
+  const subject = `Alert Triggered: ${alertDisplayName} - ${repoName}`;
 
   const text = `Alert Notification
 
