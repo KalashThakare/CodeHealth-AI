@@ -140,7 +140,7 @@ export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
   deleteAccount: async () => {
     set({ loading: true, error: null });
     try {
-      await axiosInstance.delete("/api/account-settings");
+      await axiosInstance.delete("/account/delete");
       set({ accountSettings: null });
       toast.success("Account deleted successfully");
     } catch (error: unknown) {
