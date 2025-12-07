@@ -45,7 +45,9 @@ import {
 } from "recharts";
 import { useGitHubStore } from "@/store/githubStore";
 import { useObservabilityStore } from "@/store/observabilityStore";
+import { useAlertStore } from "@/store/alertStore";
 import "./observability.css";
+import { toast } from "sonner";
 
 const NAV_SECTIONS = [
   { id: "overview", label: "Overview", icon: LayoutGrid },
@@ -55,6 +57,7 @@ const NAV_SECTIONS = [
   { id: "stale", label: "Stale PRs", icon: AlertTriangle },
   { id: "reviewers", label: "Reviewers", icon: Users },
   { id: "distribution", label: "PR Distribution", icon: PieChart },
+  { id: "alerts", label: "Alert Rules", icon: AlertCircle },
 ];
 
 const TIME_RANGES = [
@@ -365,6 +368,10 @@ export default function ObservabilityPage() {
                   <StalePRsSection data={stalePRsData} />
                 )}
 
+                {activeSection === "alerts" && (
+                  <AlertRulesSection repoId={String(currentRepoId)} />
+                )}
+
                 {activeSection === "reviewers" && (
                   <ReviewerPerformanceSection data={reviewerData} />
                 )}
@@ -540,9 +547,7 @@ function SummaryMetrics({
 
       <div className="obs-metric-card">
         <div className="obs-metric-header">
-          <FileCode
-            className="obs-metric-icon"
-          />
+          <FileCode className="obs-metric-icon" />
           <span className="obs-metric-label">Code Quality</span>
         </div>
         <div
@@ -562,9 +567,7 @@ function SummaryMetrics({
 
       <div className="obs-metric-card">
         <div className="obs-metric-header">
-          <AlertTriangle
-            className="obs-metric-icon"
-          />
+          <AlertTriangle className="obs-metric-icon" />
           <span className="obs-metric-label">Tech Debt</span>
         </div>
         <div
@@ -585,9 +588,7 @@ function SummaryMetrics({
 
       <div className="obs-metric-card">
         <div className="obs-metric-header">
-          <GitCommit
-            className="obs-metric-icon"
-          />
+          <GitCommit className="obs-metric-icon" />
           <span className="obs-metric-label">Commits</span>
         </div>
         <div className="obs-metric-value" style={{ color: CHART_COLORS.info }}>
@@ -604,9 +605,7 @@ function SummaryMetrics({
 
       <div className="obs-metric-card">
         <div className="obs-metric-header">
-          <GitPullRequest
-            className="obs-metric-icon"
-          />
+          <GitPullRequest className="obs-metric-icon" />
           <span className="obs-metric-label">Open PRs</span>
         </div>
         <div
@@ -622,9 +621,7 @@ function SummaryMetrics({
 
       <div className="obs-metric-card">
         <div className="obs-metric-header">
-          <Clock
-            className="obs-metric-icon"
-          />
+          <Clock className="obs-metric-icon" />
           <span className="obs-metric-label">Avg Merge Time</span>
         </div>
         <div
@@ -892,8 +889,9 @@ function VelocityOverviewChart({ prVelocityData }: { prVelocityData: any }) {
           <div className="obs-card-body">
             <div
               className="obs-metric-value"
-              style={{ fontSize: "2rem", 
-                // color: CHART_COLORS.primary 
+              style={{
+                fontSize: "2rem",
+                // color: CHART_COLORS.primary
               }}
             >
               {summary?.avgTimeToMergeFormatted || "—"}
@@ -925,8 +923,9 @@ function VelocityOverviewChart({ prVelocityData }: { prVelocityData: any }) {
           <div className="obs-card-body">
             <div
               className="obs-metric-value"
-              style={{ fontSize: "2rem", 
-                // color: CHART_COLORS.info 
+              style={{
+                fontSize: "2rem",
+                // color: CHART_COLORS.info
               }}
             >
               {summary?.avgTimeToFirstReviewFormatted || "—"}
@@ -1847,6 +1846,386 @@ function PRDistributionSection({ data }: { data: any }) {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function AlertRulesSection({ repoId }: { repoId: string }) {
+  const {
+    alerts,
+    loading,
+    getAlerts,
+    createAlert,
+    modifyAlert,
+    toggleAlert,
+    deleteAlert,
+  } = useAlertStore();
+  const [localAlerts, setLocalAlerts] = useState<
+    Record<string, { threshold: number; operator: string; isActive: boolean }>
+  >({});
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const alertDefinitions = [
+    {
+      name: "healthAlert",
+      label: "Health Score Alert",
+      description: "Monitor repository health score against defined threshold",
+      min: 0,
+      max: 100,
+      defaultThreshold: 50,
+      unit: " %",
+      icon: Target,
+    },
+    {
+      name: "stalePRs",
+      label: "Stale PRs Alert",
+      description:
+        "Track stale pull requests count based on threshold criteria",
+      min: 0,
+      max: 50,
+      defaultThreshold: 5,
+      unit: " PRs",
+      icon: GitPullRequest,
+    },
+    {
+      name: "codeQuality",
+      label: "Code Quality Alert",
+      description: "Evaluate code quality metrics against threshold conditions",
+      min: 0,
+      max: 100,
+      defaultThreshold: 60,
+      unit: " %",
+      icon: FileCode,
+    },
+    {
+      name: "highRiskFiles",
+      label: "High Risk Files Alert",
+      description: "Monitor high-risk files count based on threshold settings",
+      min: 0,
+      max: 100,
+      defaultThreshold: 10,
+      unit: " files",
+      icon: AlertTriangle,
+    },
+    {
+      name: "technicalDebt",
+      label: "Technical Debt Alert",
+      description: "Track technical debt score against configured threshold",
+      min: 0,
+      max: 100,
+      defaultThreshold: 70,
+      unit: " score",
+      icon: TrendingDown,
+    },
+  ];
+
+  useEffect(() => {
+    if (repoId) {
+      getAlerts(repoId);
+    }
+  }, [repoId, getAlerts]);
+
+  useEffect(() => {
+    const initialState: Record<
+      string,
+      { threshold: number; operator: string; isActive: boolean }
+    > = {};
+    alertDefinitions.forEach((def) => {
+      const existingAlert = alerts.find(
+        (a) => a.name === def.name && a.repoId === repoId
+      );
+      if (existingAlert) {
+        initialState[def.name] = {
+          threshold: existingAlert.threshold,
+          operator: existingAlert.operator,
+          isActive: existingAlert.isActive,
+        };
+      } else {
+        initialState[def.name] = {
+          threshold: def.defaultThreshold,
+          operator: "<",
+          isActive: false,
+        };
+      }
+    });
+    setLocalAlerts(initialState);
+    setHasChanges(false);
+  }, [alerts, repoId]);
+
+  const handleThresholdChange = (alertName: string, newThreshold: number) => {
+    setLocalAlerts((prev) => ({
+      ...prev,
+      [alertName]: { ...prev[alertName], threshold: newThreshold },
+    }));
+    setHasChanges(true);
+  };
+
+  const handleOperatorChange = (alertName: string, newOperator: string) => {
+    setLocalAlerts((prev) => ({
+      ...prev,
+      [alertName]: { ...prev[alertName], operator: newOperator },
+    }));
+    setHasChanges(true);
+  };
+
+  const handleToggle = (alertName: string, isActive: boolean) => {
+    setLocalAlerts((prev) => ({
+      ...prev,
+      [alertName]: { ...prev[alertName], isActive },
+    }));
+    setHasChanges(true);
+  };
+
+  const handleSaveAll = async () => {
+    setIsSaving(true);
+    try {
+      const promises = alertDefinitions.map(async (def) => {
+        const alertState = localAlerts[def.name];
+        if (!alertState) return;
+
+        const existingAlert = alerts.find(
+          (a) => a.name === def.name && a.repoId === repoId
+        );
+
+        if (alertState.isActive && !existingAlert) {
+          await createAlert({
+            repoId,
+            name: def.name,
+            threshold: alertState.threshold,
+            operator: alertState.operator,
+          });
+        } else if (existingAlert) {
+          if (existingAlert.isActive !== alertState.isActive) {
+            await toggleAlert({
+              repoId,
+              name: def.name,
+              boolean: alertState.isActive,
+            });
+          }
+
+          if (
+            existingAlert.threshold !== alertState.threshold ||
+            existingAlert.operator !== alertState.operator
+          ) {
+            await modifyAlert({
+              repoId,
+              name: def.name,
+              threshold: alertState.threshold,
+              operator: alertState.operator,
+            });
+          }
+        }
+      });
+
+      await Promise.all(promises);
+      await getAlerts(repoId);
+      toast.success("Alert settings saved successfully");
+      setHasChanges(false);
+    } catch (error) {
+      console.error("Error saving alerts:", error);
+      toast.error("Failed to save alert settings. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if ((loading && alerts.length === 0)) {
+    return (
+      <div className="obs-section">
+        <div className="obs-card">
+          <div className="obs-card-body">
+            <div className="obs-empty-state">
+              <div
+                style={{ position: "relative", width: "48px", height: "48px" }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "48px",
+                    height: "48px",
+                    border: "4px solid rgba(6, 182, 212, 0.2)",
+                    borderTop: "4px solid #06b6d4",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "8px",
+                    left: "8px",
+                    width: "32px",
+                    height: "32px",
+                    border: "3px solid rgba(6, 182, 212, 0.2)",
+                    borderTop: "3px solid #06b6d4",
+                    borderRadius: "50%",
+                    animation: "spin 0.8s linear infinite reverse",
+                  }}
+                />
+              </div>
+              <h3>Loading alert rules...</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="obs-section">
+      <div className="obs-section-header">
+        <div style={{ flex: 1 }}>
+          <h2 className="obs-section-title">Alert Rules Configuration</h2>
+          <p
+            style={{
+              color: "var(--color-fg-secondary)",
+              fontSize: "0.8125rem",
+              marginTop: "0.25rem",
+            }}
+          >
+            Set up automated alerts to monitor your repository health and
+            metrics
+          </p>
+        </div>
+        <button
+          className="alert-save-btn"
+          onClick={handleSaveAll}
+          disabled={!hasChanges || isSaving}
+        >
+          {isSaving ? (
+            <>
+              <RefreshCw size={16} className="spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <CheckCircle size={16} />
+              Save All Settings
+            </>
+          )}
+        </button>
+      </div>
+
+      <div className="alert-rules-grid">
+        {alertDefinitions.map((def) => {
+          const Icon = def.icon;
+          const alertState = localAlerts[def.name] || {
+            threshold: def.defaultThreshold,
+            operator: "<",
+            isActive: false,
+          };
+          const existingAlert = alerts.find(
+            (a) => a.name === def.name && a.repoId === repoId
+          );
+
+          return (
+            <div key={def.name} className="alert-rule-card">
+              <div className="alert-rule-header">
+                <div className="alert-rule-icon">
+                  <Icon size={20} />
+                </div>
+                <div className="alert-rule-info">
+                  <h3 className="alert-rule-title">{def.label}</h3>
+                  <p className="alert-rule-description">{def.description}</p>
+                </div>
+                <label className="alert-toggle">
+                  <input
+                    type="checkbox"
+                    checked={alertState.isActive}
+                    onChange={(e) => handleToggle(def.name, e.target.checked)}
+                    disabled={loading}
+                  />
+                  <span className="alert-toggle-slider"></span>
+                </label>
+              </div>
+
+              <div className="alert-rule-body">
+                <div className="alert-control-label">
+                  Alert when {def.label} becomes
+                </div>
+                <div className="alert-rule-controls">
+                  <div className="alert-control-row h-fit">
+                    <div className="alert-control-group-inline pt-3.5">
+                      <select
+                        className="alert-operator-select"
+                        value={alertState.operator}
+                        onChange={(e) =>
+                          handleOperatorChange(def.name, e.target.value)
+                        }
+                        disabled={!alertState.isActive || loading}
+                      >
+                        <option value="<">Less than (&lt;)</option>
+                        <option value="<=">Less or equal (≤)</option>
+                        <option value=">">Greater than (&gt;)</option>
+                        <option value=">=">Greater or equal (≥)</option>
+                        <option value="==">Equal to (=)</option>
+                      </select>
+                    </div>
+
+                    <div className="alert-control-group-inline">
+                      <label className="alert-control-label">
+                        Threshold:{" "}
+                        <span className="alert-threshold-value">
+                          {alertState.threshold}
+                          {def.unit}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="alert-slider-wrapper">
+                    <input
+                      type="range"
+                      className="alert-slider !mb-0.5"
+                      min={def.min}
+                      style={{
+                        padding: 0,
+                        marginBottom: 0,
+                      }}
+                      max={def.max}
+                      value={alertState.threshold}
+                      onChange={(e) =>
+                        handleThresholdChange(
+                          def.name,
+                          parseInt(e.target.value)
+                        )
+                      }
+                      disabled={!alertState.isActive || loading}
+                    />
+                    <div className="alert-slider-labels">
+                      <span>
+                        {def.min}
+                        {def.unit}
+                      </span>
+                      <span>
+                        {def.max}
+                        {def.unit}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {existingAlert && existingAlert.lastTriggeredAt && (
+                  <div className="alert-status">
+                    <Clock size={14} />
+                    <span>
+                      Last triggered:{" "}
+                      {new Date(existingAlert.lastTriggeredAt).toLocaleString()}
+                    </span>
+                    <span className="alert-trigger-count">
+                      ({existingAlert.triggerCount}{" "}
+                      {existingAlert.triggerCount === 1 ? "time" : "times"})
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
