@@ -145,6 +145,8 @@ export const useAuthStore = create<AuthStore>()(
           if (currentUserId) {
             localStorage.removeItem(`notification-storage-${currentUserId}`);
           }
+          const { useGitHubStore } = await import("./githubStore");
+          useGitHubStore.getState().resetStore();
           set({ authUser: null, isloggingin: false, justLoggedOut: true });
         }
       },

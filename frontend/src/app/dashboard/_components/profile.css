@@ -7,3 +7,20 @@
     font-size: medium;
     margin-bottom: 0;
 }
+
+.space-y-2::-webkit-scrollbar {
+    width: 4px;
+}
+
+.space-y-2::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.space-y-2::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 2px;
+}
+
+.space-y-2::-webkit-scrollbar-thumb:hover {
+    background: var(--color-fg-secondary);
+}

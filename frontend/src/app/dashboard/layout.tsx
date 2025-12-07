@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { useTeamStore } from "@/store/teamStore";
+// import { useTeamStore } from "@/store/teamStore";
 import { DashboardNavbar } from "./_components/DashboardNavbar";
 import SocketStatus from "@/components/SocketStatus";
 
@@ -19,9 +19,9 @@ export default function DashboardLayout({
   const checkAuth = useAuthStore((s) => s.checkAuth);
   const justLoggedOut = useAuthStore((s) => s.justLoggedOut);
 
-  const teams = useTeamStore((s) => s.teams);
-  const fetchTeams = useTeamStore((s) => s.fetchTeams);
-  const teamsLoaded = useTeamStore((s) => s.teamsLoaded);
+  // const teams = useTeamStore((s) => s.teams);
+  // const fetchTeams = useTeamStore((s) => s.fetchTeams);
+  // const teamsLoaded = useTeamStore((s) => s.teamsLoaded);
 
   const [isInitializing, setIsInitializing] = useState(true);
   const initRef = useRef(false);
@@ -63,9 +63,13 @@ export default function DashboardLayout({
   }, [checkAuth]);
 
   useEffect(() => {
-    if (!authUser || isInitializing || teamsLoaded) return;
-    fetchTeams();
-  }, [authUser, isInitializing, fetchTeams, teamsLoaded]);
+    if (!authUser ||isInitializing 
+      // || teamsLoaded
+    ) return;
+    // fetchTeams();
+  }, [authUser, isInitializing
+    // , fetchTeams, teamsLoaded
+  ]);
 
   useEffect(() => {
     if (!isInitializing && !isLoggingIn && !authUser && !justLoggedOut) {
@@ -101,7 +105,9 @@ export default function DashboardLayout({
 
   return (
     <div className="vercel-dashboard">
-      <DashboardNavbar currentTeam={teams[0]} />
+      <DashboardNavbar 
+      // currentTeam={teams[0]} 
+      />
       <SocketStatus showDetails={false} position="bottom-right" />
       {children}
     </div>

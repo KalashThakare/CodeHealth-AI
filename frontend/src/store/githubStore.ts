@@ -307,7 +307,7 @@ export const useGitHubStore = create<GitHubStore>()(
           isLoading: false,
           error: null,
         });
-        toast.info("GitHub store reset");
+        // toast.info("GitHub store reset");
       },
     }),
     {

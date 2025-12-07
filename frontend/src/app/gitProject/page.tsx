@@ -78,6 +78,21 @@ export default function GitHubImportPage() {
     }
   }, [selectedRepoFromStore]);
 
+  useEffect(() => {
+    if (selectedRepo && repositories.length > 0) {
+      const repoExists = repositories.some(
+        (r) => r.repoId === selectedRepo.repoId
+      );
+      if (!repoExists) {
+        setSelectedRepo(null);
+        selectRepository(null as any);
+      }
+    } else if (selectedRepo && repositories.length === 0) {
+      setSelectedRepo(null);
+      selectRepository(null as any);
+    }
+  }, [repositories, selectedRepo]);
+
   const filteredRepos = repositories.filter(
     (repo) =>
       repo.repoName?.toLowerCase().includes(searchTerm.toLowerCase()) ||

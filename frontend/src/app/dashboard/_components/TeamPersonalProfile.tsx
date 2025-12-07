@@ -1,10 +1,20 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Search, Plus, Check, Github } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Check,
+  Github,
+  HomeIcon,
+  Import,
+  Download,
+} from "lucide-react";
 import { useGitHubStore } from "@/store/githubStore";
 import { useAuthStore } from "@/store/authStore";
 import "./profile.css";
+import { useRouter } from "next/navigation";
+import Home from "@/app/page";
 
 interface Team {
   id: string;
@@ -26,8 +36,10 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
   const [teamSearchQuery, setTeamSearchQuery] = useState("");
   const [projectSearchQuery, setProjectSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const projectsScrollRef = useRef<HTMLDivElement>(null);
 
   const { authUser } = useAuthStore();
+  const { logout } = useAuthStore();
 
   const {
     repositories,
@@ -38,6 +50,8 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
     selectedRepo,
   } = useGitHubStore();
 
+  const router = useRouter();
+
   const userName = authUser?.name?.split(" ")?.[0] || "Your";
   const teams: Team[] = [
     {
@@ -45,12 +59,6 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
       name: `${userName}'s projects`,
       type: "Hobby",
       isActive: true,
-    },
-    {
-      id: "2",
-      name: "Company Projects",
-      type: "Professional",
-      isActive: false,
     },
   ];
 
@@ -109,6 +117,32 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
     }
   }, []);
 
+  useEffect(() => {
+    const projectsScroll = projectsScrollRef.current;
+
+    const handleWheel = (e: WheelEvent) => {
+      const element = e.currentTarget as HTMLDivElement;
+      const isScrollable = element.scrollHeight > element.clientHeight;
+
+      if (isScrollable) {
+        const isAtTop = element.scrollTop === 0;
+        const isAtBottom =
+          element.scrollTop + element.clientHeight >= element.scrollHeight - 1;
+
+        if ((e.deltaY < 0 && !isAtTop) || (e.deltaY > 0 && !isAtBottom)) {
+          e.stopPropagation();
+        }
+      }
+    };
+
+    if (projectsScroll) {
+      projectsScroll.addEventListener("wheel", handleWheel, { passive: false });
+      return () => {
+        projectsScroll.removeEventListener("wheel", handleWheel);
+      };
+    }
+  }, [filteredProjects.length]);
+
   const handleDropdownClick = (e: React.MouseEvent) => {
     e.stopPropagation();
   };
@@ -146,7 +180,7 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                   />
                   <input
                     type="text"
-                    placeholder="Find Team..."
+                    placeholder="Find User..."
                     value={teamSearchQuery}
                     onChange={(e) => setTeamSearchQuery(e.target.value)}
                     className="input flex-1"
@@ -160,7 +194,7 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                   className="text-xs font-semibold uppercase tracking-wider mb-4"
                   style={{ color: "var(--color-fg-secondary)" }}
                 >
-                  Teams
+                  User
                 </h4>
 
                 <div className="space-y-2 mb-4">
@@ -212,10 +246,11 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                 </div>
 
                 <button
-                  className="flex items-center space-x-3 px-3 py-2 w-full rounded-md transition-colors duration-200"
+                  className="flex items-center justify-center space-x-3 px-3 py-2 w-full rounded-md transition-colors duration-200"
                   style={{
-                    color: "var(--color-primary)",
+                    color: "var(--color-fg)",
                     backgroundColor: "transparent",
+                    border: "1px solid var(--color-accent)",
                   }}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.backgroundColor =
@@ -224,16 +259,20 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                   onMouseLeave={(e) =>
                     (e.currentTarget.style.backgroundColor = "transparent")
                   }
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={() => {
+                    logout();
+                    router.replace("/");
+                  }}
                 >
-                  <Plus className="w-4 h-4" />
-                  <span className="text-sm font-medium">Create Team</span>
+                  <span className="text-sm font-medium">
+                    Use another account
+                  </span>
                 </button>
               </div>
             </div>
 
             <div
-              className="hidden md:flex flex-col"
+              className="hidden md:flex flex-col overflow-hidden"
               style={{ backgroundColor: "var(--color-bg)" }}
             >
               <div
@@ -256,14 +295,7 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                 </div>
               </div>
 
-              <div className="flex-1 p-4 overflow-y-auto">
-                <h4
-                  className="text-xs font-semibold uppercase tracking-wider mb-4"
-                  style={{ color: "var(--color-fg-secondary)" }}
-                >
-                  Projects ({repositories.length})
-                </h4>
-
+              <div className="flex-1 p-4 overflow-hidden flex flex-col">
                 {isLoading && (
                   <div className="flex items-center justify-center h-32">
                     <div
@@ -274,7 +306,17 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                 )}
 
                 {!isLoading && filteredProjects.length > 0 && (
-                  <div className="space-y-2">
+                  <div
+                    ref={projectsScrollRef}
+                    className="space-y-2 overflow-y-auto max-h-[45vh] pr-2"
+                    style={{
+                      scrollbarWidth: "thin",
+                      scrollbarColor: "var(--color-border) transparent",
+                    }}
+                    onWheel={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
                     {filteredProjects.map((repo) => (
                       <div
                         key={repo.id}
@@ -289,6 +331,7 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                         onClick={(e) => {
                           e.stopPropagation();
                           selectRepository(repo);
+                          router.push("/gitProject");
                         }}
                         onMouseEnter={(e) =>
                           selectedRepo?.id !== repo.id &&
@@ -314,7 +357,7 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                               {repo.repoName}
                             </div>
                             <div
-                              className="text-xs truncate"
+                              className="text-xs truncate mt-0.5"
                               style={{ color: "var(--color-fg-secondary)" }}
                             >
                               Updated {formatDate(repo.updatedAt)}
@@ -337,13 +380,13 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                   repositories.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-32 text-center">
                       <div
-                        className="text-lg font-bold mb-2"
+                        className="text-lg font-bold mb-1"
                         style={{ color: "var(--color-fg)" }}
                       >
                         No projects, yet!
                       </div>
                       <div
-                        className="text-sm mb-4"
+                        className="text-sm mb-2"
                         style={{ color: "var(--color-fg-secondary)" }}
                       >
                         {githubUser
@@ -351,11 +394,11 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                           : "This team has no projects."}
                       </div>
                       <button
-                        className="flex items-center space-x-2 px-4 py-2 rounded-md transition-all duration-200 hover:opacity-90"
+                        className="flex items-center space-x-2 !px-3 !py-1.5 rounded-md transition-all duration-200 hover:opacity-90"
                         style={{
-                          backgroundColor: "var(--color-primary)",
-                          color: "white",
-                          border: "1px solid var(--color-primary)",
+                          backgroundColor: "var(--color-bg)",
+                          color: "var(--color-fg)",
+                          border: "1px solid var(--color-accent)",
                         }}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -365,6 +408,24 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                         <Plus className="w-4 h-4" />
                         <span className="text-sm font-medium">
                           Create Project
+                        </span>
+                      </button>
+                      <button
+                        className="flex items-center mt-2 space-x-2 !px-3 !py-1.5 rounded-md transition-all duration-200 hover:opacity-90"
+                        style={{
+                          backgroundColor: "var(--color-bg)",
+                          color: "var(--color-fg)",
+                          border: "1px solid var(--color-accent)",
+                        }}
+                        onClick={(e) => {
+                          router.push(
+                            `${process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI}`
+                          );
+                        }}
+                      >
+                        <Download className="w-4 h-4" />
+                        <span className="text-sm font-medium">
+                          import Project
                         </span>
                       </button>
                     </div>

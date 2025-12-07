@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTeamStore } from "@/store/teamStore";
+// import { useTeamStore } from "@/store/teamStore";
 import { useGitHubStore } from "@/store/githubStore";
 import { useUsageStore } from "@/store/usageStore";
 import { useNotificationStore, Notification } from "@/store/notificationStore";
@@ -391,9 +391,9 @@ function AlertsSection({
 export default function ProjectsPage() {
   const router = useRouter();
 
-  const myInvites = useTeamStore((s) => s.myInvites);
-  const fetchMyInvites = useTeamStore((s) => s.fetchMyInvites);
-  const myInvitesLoaded = useTeamStore((s) => s.myInvitesLoaded);
+  // const myInvites = useTeamStore((s) => s.myInvites);
+  // const fetchMyInvites = useTeamStore((s) => s.fetchMyInvites);
+  // const myInvitesLoaded = useTeamStore((s) => s.myInvitesLoaded);
 
   const repositories = useGitHubStore((s) => s.repositories);
   const fetchGitHubRepos = useGitHubStore((s) => s.fetchGitHubRepos);
@@ -433,9 +433,9 @@ export default function ProjectsPage() {
     const fetchData = async () => {
       try {
         const promises = [];
-        if (!myInvitesLoaded) {
-          promises.push(fetchMyInvites());
-        }
+        // if (!myInvitesLoaded) {
+        //   promises.push(fetchMyInvites());
+        // }
         promises.push(fetchGitHubRepos());
         promises.push(fetchUsage());
         promises.push(fetchAlerts());
@@ -447,9 +447,9 @@ export default function ProjectsPage() {
 
     fetchData();
   }, [
-    fetchMyInvites,
+    // fetchMyInvites,
     fetchGitHubRepos,
-    myInvitesLoaded,
+    // myInvitesLoaded,
     fetchUsage,
     fetchAlerts,
   ]);
@@ -552,18 +552,20 @@ export default function ProjectsPage() {
                 : "Connect your GitHub account to import and analyze your repositories."}
             </p>
             {!searchTerm && (
-              <button
-                className="empty-state-btn"
-                onClick={() =>
-                  router.push(
-                    process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI ||
-                      "/gitProject"
-                  )
-                }
-              >
-                <FiPlus size={16} />
-                Import Project
-              </button>
+              <div className="flex flex-col items-center">
+                <button
+                  className="glass-btn mt-2 flex gap-3 justify-center items-center !rounded-xl transition-all"
+                  onClick={() =>
+                    router.push(
+                      process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI ||
+                        "/gitProject"
+                    )
+                  }
+                >
+                  <FiPlus size={16} />
+                  Import Project
+                </button>
+              </div>
             )}
           </div>
         ) : (
