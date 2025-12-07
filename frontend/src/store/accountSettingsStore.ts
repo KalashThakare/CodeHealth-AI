@@ -1,4 +1,6 @@
-import { create } from 'zustand';
+import { create } from "zustand";
+import { axiosInstance } from "@/lib/axios";
+import { toast } from "sonner";
 
 type AccountSettings = {
   displayName: string;
@@ -29,11 +31,11 @@ export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
   fetchAccountSettings: async () => {
     set({ loading: true, error: null });
     try {
-      const response = await fetch('/api/account-settings');
+      const response = await fetch("/api/account-settings");
       const data = await response.json();
       set({ accountSettings: data });
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'An error occurred' });
+      set({ error: err instanceof Error ? err.message : "An error occurred" });
     } finally {
       set({ loading: false });
     }
@@ -42,20 +44,22 @@ export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
   updateDisplayName: async (displayName: string): Promise<void> => {
     set({ loading: true, error: null });
     try {
-      await fetch('/api/account-settings/display-name', {
-        method: 'PUT',
+      await fetch("/api/account-settings/display-name", {
+        method: "PUT",
         body: JSON.stringify({ displayName }),
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       set((state: AccountSettingsStore) => ({
         accountSettings: state.accountSettings
           ? { ...state.accountSettings, displayName }
-          : { displayName, username: '', email: '', phoneNumber: '' },
+          : { displayName, username: "", email: "", phoneNumber: "" },
       }));
     } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : 'An error occurred' });
+      set({
+        error: error instanceof Error ? error.message : "An error occurred",
+      });
     } finally {
       set({ loading: false });
     }
@@ -64,20 +68,22 @@ export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
   updateUsername: async (username: string): Promise<void> => {
     set({ loading: true, error: null });
     try {
-      await fetch('/api/account-settings/username', {
-        method: 'PUT',
+      await fetch("/api/account-settings/username", {
+        method: "PUT",
         body: JSON.stringify({ username }),
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       set((state: AccountSettingsStore) => ({
         accountSettings: state.accountSettings
           ? { ...state.accountSettings, username }
-          : { displayName: '', username, email: '', phoneNumber: '' },
+          : { displayName: "", username, email: "", phoneNumber: "" },
       }));
     } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : 'An error occurred' });
+      set({
+        error: error instanceof Error ? error.message : "An error occurred",
+      });
     } finally {
       set({ loading: false });
     }
@@ -86,20 +92,22 @@ export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
   updateEmail: async (email: string): Promise<void> => {
     set({ loading: true, error: null });
     try {
-      await fetch('/api/account-settings/email', {
-        method: 'PUT',
+      await fetch("/api/account-settings/email", {
+        method: "PUT",
         body: JSON.stringify({ email }),
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       set((state: AccountSettingsStore) => ({
         accountSettings: state.accountSettings
           ? { ...state.accountSettings, email }
-          : { displayName: '', username: '', email, phoneNumber: '' },
+          : { displayName: "", username: "", email, phoneNumber: "" },
       }));
     } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : 'An error occurred' });
+      set({
+        error: error instanceof Error ? error.message : "An error occurred",
+      });
     } finally {
       set({ loading: false });
     }
@@ -108,20 +116,22 @@ export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
   updatePhoneNumber: async (phoneNumber: string): Promise<void> => {
     set({ loading: true, error: null });
     try {
-      await fetch('/api/account-settings/phone-number', {
-        method: 'PUT',
+      await fetch("/api/account-settings/phone-number", {
+        method: "PUT",
         body: JSON.stringify({ phoneNumber }),
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       set((state: AccountSettingsStore) => ({
         accountSettings: state.accountSettings
           ? { ...state.accountSettings, phoneNumber }
-          : { displayName: '', username: '', email: '', phoneNumber },
+          : { displayName: "", username: "", email: "", phoneNumber },
       }));
     } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : 'An error occurred' });
+      set({
+        error: error instanceof Error ? error.message : "An error occurred",
+      });
     } finally {
       set({ loading: false });
     }
@@ -130,12 +140,16 @@ export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
   deleteAccount: async () => {
     set({ loading: true, error: null });
     try {
-      await fetch("/account/delete", {
-        method: "DELETE",
-      });
+      await axiosInstance.delete("/api/account-settings");
       set({ accountSettings: null });
+      toast.success("Account deleted successfully");
     } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : 'An error occurred' });
+      set({
+        error: error instanceof Error ? error.message : "An error occurred",
+      });
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete account"
+      );
     } finally {
       set({ loading: false });
     }
