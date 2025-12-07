@@ -130,8 +130,8 @@ export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
   deleteAccount: async () => {
     set({ loading: true, error: null });
     try {
-      await fetch('/api/account-settings', {
-        method: 'DELETE',
+      await fetch("/account/delete", {
+        method: "DELETE",
       });
       set({ accountSettings: null });
     } catch (error: unknown) {

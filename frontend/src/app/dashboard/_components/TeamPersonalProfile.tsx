@@ -308,7 +308,7 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                 {!isLoading && filteredProjects.length > 0 && (
                   <div
                     ref={projectsScrollRef}
-                    className="space-y-2 overflow-y-auto max-h-[45vh] pr-2"
+                    className="space-y-2 overflow-y-auto max-h-[40vh] pr-2"
                     style={{
                       scrollbarWidth: "thin",
                       scrollbarColor: "var(--color-border) transparent",
