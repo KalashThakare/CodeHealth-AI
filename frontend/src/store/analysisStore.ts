@@ -157,10 +157,10 @@ export interface FullRepoAnalysis {
 interface AnalysisState {
   fullAnalysis: FullRepoAnalysis | null;
 
-  loading: boolean; 
-  loadingAiInsights: boolean; 
+  loading: boolean;
+  loadingAiInsights: boolean;
   error: string | null;
-  aiInsightsError: string | null; 
+  aiInsightsError: string | null;
 
   fetchFullAnalysis: (repoId: string, useCache?: boolean) => Promise<void>;
   fetchAiInsights: (repoId: string) => Promise<any>;
@@ -168,11 +168,11 @@ interface AnalysisState {
 
   clearError: () => void;
   clearAllData: () => void;
+  resetStore: () => void;
 
   exportToCSV: () => string | null;
   exportToPDF: () => void;
 }
-
 
 export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
   fullAnalysis: null,
@@ -301,7 +301,7 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
 
       const response = await axiosAIInstance.get(
         `/analyze/${repoId}/insights`,
-        { timeout: 120000 } 
+        { timeout: 120000 }
       );
 
       if (response.data?.message === "Success" && response.data?.aiInsights) {
@@ -403,6 +403,16 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
     toast.info("All analysis data cleared");
   },
 
+  resetStore: () => {
+    set({
+      fullAnalysis: null,
+      loading: false,
+      loadingAiInsights: false,
+      error: null,
+      aiInsightsError: null,
+    });
+  },
+
   exportToCSV: () => {
     const { fullAnalysis } = get();
 
@@ -454,7 +464,7 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
       return null;
     }
   },
-  
+
   exportToPDF: () => {
     // toast.info("PDF export feature coming soon!");
   },

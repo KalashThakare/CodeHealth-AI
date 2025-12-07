@@ -225,6 +225,7 @@ interface ObservabilityState {
   loadMockData: () => void;
   clearData: () => void;
   clearError: () => void;
+  resetStore: () => void;
 }
 
 export const useObservabilityStore = create<ObservabilityState>()(
@@ -451,7 +452,7 @@ export const useObservabilityStore = create<ObservabilityState>()(
         loading: false,
         error: null,
       });
-      console.log("[ObservabilityStore] Mock data loaded successfully ✅");
+      console.log("[ObservabilityStore] Mock data loaded successfully");
     },
 
     clearData: () => {
@@ -469,5 +470,31 @@ export const useObservabilityStore = create<ObservabilityState>()(
     },
 
     clearError: () => set({ error: null }),
+
+    resetStore: () => {
+      set({
+        trendData: null,
+        pushActivityData: null,
+        heatmapData: null,
+        prVelocityData: null,
+        stalePRsData: null,
+        reviewerData: null,
+        prDistributionData: null,
+        selectedRepoId: null,
+        timeRange: 30,
+        activeSection: "overview",
+        loading: false,
+        loadingStates: {
+          trend: false,
+          pushActivity: false,
+          heatmap: false,
+          prVelocity: false,
+          stalePRs: false,
+          reviewers: false,
+          distribution: false,
+        },
+        error: null,
+      });
+    },
   })
 );

@@ -21,6 +21,7 @@ type AccountSettingsStore = {
   updatePhoneNumber: (phoneNumber: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
   clearError: () => void;
+  resetStore: () => void;
 };
 
 export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
@@ -156,4 +157,12 @@ export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  resetStore: () => {
+    set({
+      accountSettings: null,
+      loading: false,
+      error: null,
+    });
+  },
 }));

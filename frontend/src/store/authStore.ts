@@ -145,8 +145,33 @@ export const useAuthStore = create<AuthStore>()(
           if (currentUserId) {
             localStorage.removeItem(`notification-storage-${currentUserId}`);
           }
+
           const { useGitHubStore } = await import("./githubStore");
+          const { useNotificationStore } = await import("./notificationStore");
+          const { useObservabilityStore } = await import(
+            "./observabilityStore"
+          );
+          const { useAnalysisStore } = await import("./analysisStore");
+          const { useActivityStore } = await import("./activityStore");
+          const { useAccountSettingsStore } = await import(
+            "./accountSettingsStore"
+          );
+          const { useAlertStore } = await import("./alertStore");
+          const { useUsageStore } = await import("./usageStore");
+          const { useTeamStore } = await import("./teamStore");
+          const { useSupportStore } = await import("./supportStore");
+
           useGitHubStore.getState().resetStore();
+          useNotificationStore.getState().resetStore();
+          useObservabilityStore.getState().resetStore();
+          useAnalysisStore.getState().resetStore();
+          useActivityStore.getState().resetStore();
+          useAccountSettingsStore.getState().resetStore();
+          useAlertStore.getState().resetStore();
+          useUsageStore.getState().reset();
+          useTeamStore.getState().reset();
+          useSupportStore.getState().resetStore();
+
           set({ authUser: null, isloggingin: false, justLoggedOut: true });
         }
       },

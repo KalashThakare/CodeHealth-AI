@@ -70,6 +70,7 @@ interface ActivityState {
   error: string | null;
   fetchActivities: () => Promise<void>;
   clearActivities: () => void;
+  resetStore: () => void;
   getStats: () => ActivityStats;
   getGroupedActivities: (filters?: {
     search?: string;
@@ -288,6 +289,14 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
   },
 
   clearActivities: () => set({ activities: [], error: null }),
+
+  resetStore: () => {
+    set({
+      activities: [],
+      loading: false,
+      error: null,
+    });
+  },
 
   getStats: () => {
     const { activities } = get();

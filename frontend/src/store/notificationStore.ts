@@ -63,6 +63,7 @@ interface NotificationStore {
   dismissAllAlerts: () => void;
   getUnreadNotifications: () => Notification[];
   setCurrentUser: (userId: string | null) => void;
+  resetStore: () => void;
 }
 
 const convertBackendNotification = (
@@ -333,6 +334,19 @@ export const useNotificationStore = create<NotificationStore>()((set, get) => ({
   },
 
   getUnreadNotifications: () => get().notifications.filter((n) => !n.read),
+
+  resetStore: () => {
+    set({
+      notifications: [],
+      alerts: [],
+      unreadCount: 0,
+      alertsCount: 0,
+      currentUserId: null,
+      isLoading: false,
+      alertsLoading: false,
+      error: null,
+    });
+  },
 }));
 
 export const useSyncNotificationsWithAuth = () => {
