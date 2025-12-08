@@ -132,3 +132,52 @@ export const getAlert = async(req, res)=>{
         return res.status(500).json({message:"Internal server error", success:false, error});
     }
 }
+
+export const deleteNotification = async (req, res)=>{
+    try {
+        const userId = req.user?.id;
+        const {notificationId} = req.params;
+
+        if(!userId){
+            return res.status(404).json({messahe:"Unauthorised"});
+        }
+
+        if(!notificationId){
+            return res.status(404).json({message:"Please specify notificationId"});
+        }
+
+        const notif = await notification.destroy({
+            where:{
+                userId:userId,
+                id:notificationId
+            }
+        })
+
+        return res.status(200).json({messaage:"Notification deleted successfully", success:true});
+        
+    } catch (error) {
+        console.error('Internal server error', error);
+        return res.status(500).json({message:"Internal server error", success:false});
+    }
+}
+
+export const deleteAll = async(req,res)=>{
+    try {
+        const userId = req.user?.id;
+        if(!userId){
+            return res.status(404).json({message:"Unauthorised"});
+        }
+
+        await notification.destroy({
+            where:{
+                userId:userId,
+                alert:false
+            }
+        })
+
+        return res.status(200).json({message:"Success"});
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({message:"Internal server error", success:false, error});
+    }
+}
