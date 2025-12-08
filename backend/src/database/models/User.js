@@ -44,6 +44,14 @@ const User = sequelize.define("User", {
     type: DataTypes.BIGINT,
     allowNull: true,
   },
+  alternateEmail:{
+    type:DataTypes.STRING,
+    allowNull:true
+  },
+  contactNo:{
+    type:DataTypes.STRING,
+    allowNull:true
+  }
 }, {
   tableName: "users",
   timestamps: true,
