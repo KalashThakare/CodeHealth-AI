@@ -1,4 +1,4 @@
-import { pushActivityCron, backfillPushActivity, prVelocityCron, backfillPRVelocity } from './jobs/index.js';
+import { pushActivityCron, backfillPushActivity, prVelocityCron, backfillPRVelocity, notificationCleanUp } from './jobs/index.js';
 
 //start cron jobs
 export function startCronJobs() {
@@ -10,6 +10,9 @@ export function startCronJobs() {
   //pr cron
   prVelocityCron.start();
   console.log('PR velocity cron job started (runs every 2 hours)');
+
+  notificationCleanUp.start();
+  console.log("Notification cleanup set to start");
 
   
   console.log('All cron jobs are running');
@@ -26,6 +29,9 @@ export function stopCronJobs() {
 
   prVelocityCron.stop();
   console.log('PR velocity cron job stopped');
+
+  notificationCleanUp.stop();
+  console.log("Notification cleanUp stopped");
   
   console.log('All cron jobs stopped');
 }
