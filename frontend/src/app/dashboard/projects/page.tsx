@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 // import { useTeamStore } from "@/store/teamStore";
 import { useGitHubStore } from "@/store/githubStore";
+import { useObservabilityStore } from "@/store/observabilityStore";
 import { useUsageStore } from "@/store/usageStore";
 import { useNotificationStore, Notification } from "@/store/notificationStore";
 import {
@@ -24,6 +25,7 @@ import {
 } from "react-icons/fi";
 import "../dashboard.css";
 import { toast } from "sonner";
+import { CircleX, Settings, X } from "lucide-react";
 
 function MiniSemiCircle({
   value,
@@ -208,6 +210,7 @@ function getAlertSeverity(
   }
   return "info";
 }
+
 function getAlertStyles(severity: "error" | "warning" | "info" | "success") {
   switch (severity) {
     case "error":
@@ -272,6 +275,8 @@ function AlertsSection({
   onDismiss: (id: string) => void;
   onDismissAll: () => void;
 }) {
+  const router = useRouter();
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-6">
@@ -302,25 +307,51 @@ function AlertsSection({
 
   return (
     <div className="flex flex-col gap-2">
-      {alerts.length > 1 && (
-        <div className="flex items-center justify-between mb-1">
+      {alerts.length >= 1 && (
+        <div className="flex items-center pr-4 justify-between mb-1">
           <span
             className="text-xs font-medium"
             style={{ color: "var(--color-fg-secondary)" }}
           >
             {alerts.length} active alert{alerts.length > 1 ? "s" : ""}
           </span>
-          <button
-            onClick={onDismissAll}
-            className="text-xs hover:underline transition-all"
-            style={{ color: "var(--color-accent)" }}
-          >
-            Dismiss all
-          </button>
+          <div className="tooltip-wrapper">
+            <button
+              onClick={() => {
+                useObservabilityStore.getState().setActiveSection("alerts");
+                router.push("/dashboard/observability");
+              }}
+              className="text-xs transition-all"
+              style={{
+                color: "var(--color-fg)",
+                background: "transparent",
+                border: "none",
+                padding: 0,
+              }}
+            >
+              <Settings size={16} />
+            </button>
+            <div className="tooltip-content"
+             style={{
+              color: "var(--color-fg)"
+             }}
+            >
+              Manage alerts and define threshold to receive alerts
+            </div>
+          </div>
         </div>
       )}
 
-      <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1">
+      <div
+        className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1"
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "var(--color-border) transparent",
+        }}
+        onWheel={(e) => {
+          e.stopPropagation();
+        }}
+      >
         {alerts.slice(0, 5).map((alert) => {
           const severity = getAlertSeverity(alert.title);
           const styles = getAlertStyles(severity);
@@ -329,7 +360,7 @@ function AlertsSection({
           return (
             <div
               key={alert.id}
-              className="relative rounded-lg p-3 transition-all hover:opacity-90"
+              className="relative rounded-lg p-2 transition-all hover:opacity-90"
               style={{
                 backgroundColor: styles.bgColor,
                 border: `1px solid ${styles.borderColor}`,
@@ -337,10 +368,18 @@ function AlertsSection({
             >
               <button
                 onClick={() => onDismiss(alert.id)}
-                className="absolute top-2 right-2 p-1 rounded hover:bg-black/10 transition-colors"
+                className="absolute top-2 right-2 transition-colors !border-0"
                 title="Dismiss"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                }}
               >
-                <FiX size={12} style={{ color: "var(--color-fg-secondary)" }} />
+                <CircleX
+                  size={16}
+                  style={{ color: styles.iconColor, border: "none" }}
+                />
               </button>
 
               <div className="flex gap-2.5 pr-5">
@@ -376,14 +415,14 @@ function AlertsSection({
         })}
       </div>
 
-      {alerts.length > 5 && (
+      {/* {alerts.length > 5 && (
         <p
           className="text-xs text-center pt-1"
           style={{ color: "var(--color-fg-tertiary)" }}
         >
           +{alerts.length - 5} more alert{alerts.length - 5 > 1 ? "s" : ""}
         </p>
-      )}
+      )} */}
     </div>
   );
 }
@@ -512,7 +551,14 @@ export default function ProjectsPage() {
             </span>
           )}
         </div>
-        <div className="sidebar-section">
+        <div
+          className="sidebar-section"
+          style={{
+            paddingBlock: "20px",
+            paddingLeft: "15px",
+            paddingRight: "8px",
+          }}
+        >
           <AlertsSection
             alerts={alerts}
             isLoading={alertsLoading}
@@ -530,7 +576,7 @@ export default function ProjectsPage() {
         </div>
       </aside>
 
-      <main className="dashboard-main !gap-4">
+      <main className="dashboard-main">
         <div className="projects-header">
           <h2 className="!text-[15px]">Projects</h2>
         </div>
