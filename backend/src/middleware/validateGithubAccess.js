@@ -16,7 +16,7 @@ export const validateGitHubAppAccess = async (req, res, next) => {
       return res.status(400).json({
         error: 'GITHUB_NOT_CONNECTED',
         message: 'Please connect your GitHub account before installing the GitHub App',
-        action: '/api/auth/github/login', 
+        action: '/auth/github', 
         requiresGitHubConnection: true
       });
     }
@@ -25,7 +25,7 @@ export const validateGitHubAppAccess = async (req, res, next) => {
       return res.status(400).json({
         error: 'INVALID_GITHUB_TOKEN',
         message: 'GitHub access token is missing. Please reconnect your GitHub account',
-        action: '/api/auth/github/login',
+        action: '/auth/github',
         requiresGitHubConnection: true
       });
     }
@@ -43,7 +43,7 @@ export const validateGitHubAppAccess = async (req, res, next) => {
           return res.status(401).json({
             error: 'GITHUB_TOKEN_EXPIRED',
             message: 'Your GitHub connection has expired. Please reconnect your GitHub account',
-            action: '/api/auth/github/login',
+            action: '/auth/github',
             requiresGitHubConnection: true
           });
         }
