@@ -286,7 +286,7 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
         error.message ||
         "Failed to fetch repository analysis";
 
-      toast.error("Failed to load analysis", { description: errorMessage });
+      toast.error("Failed to load analysis make sure the repo is initialized", { description: errorMessage });
       set({ loading: false, error: errorMessage, fullAnalysis: null });
 
       throw error;

@@ -1,14 +1,23 @@
 import React from "react";
-import { useAuthStore } from "@/store/authStore";
+import Image from "next/image";
+import { useTheme } from "@/hooks/useTheme";
 
 export const Logo: React.FC = () => {
-  const { authUser } = useAuthStore();
+  const { isDark } = useTheme();
 
   return (
-    <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-      <span className="text-white font-bold text-xs">
-        {authUser?.name?.charAt(0).toUpperCase() || "U"}
-      </span>
+    <div className="flex items-center justify-center">
+      <Image
+        src={isDark ? "/Logo_Dark.png" : "/Logo_white.png"}
+        alt="Logo"
+        width={36}
+        height={36}
+        style={{
+          objectFit: "cover",
+          borderRadius:"20px",
+          alignContent:"center",
+        }}
+      />
     </div>
   );
 };

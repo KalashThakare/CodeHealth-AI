@@ -212,7 +212,7 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
             className="rounded-full flex flex-row gap-0 border items-center transition-all"
             style={{
               color: "var(--color-fg-secondary)",
-              backgroundColor: "var(--color-bg-secondary",
+              backgroundColor: "var(--color-bg-secondary)",
               borderColor: "var(--color-border)",
             }}
           >

@@ -19,8 +19,8 @@ export const LeftSection: React.FC<LeftSectionProps> = ({
   const { authUser } = useAuthStore();
 
   return (
-    <div className="flex items-center gap-3">
-      <Link href="/dashboard">
+    <div className="flex items-center gap-3 min-h-9">
+      <Link href="/dashboard/projects">
         <Logo />
       </Link>
 
