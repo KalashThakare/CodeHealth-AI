@@ -1,4 +1,8 @@
 import OAuthConnection from "../database/models/OauthConnections.js"
+import dotenv from "dotenv"
+dotenv.config();
+const url = process.env.BACKEND_SERVER
+
 
 export const validateGitHubAppAccess = async (req, res, next) => {
   try {
@@ -16,7 +20,7 @@ export const validateGitHubAppAccess = async (req, res, next) => {
       return res.status(400).json({
         error: 'GITHUB_NOT_CONNECTED',
         message: 'Please connect your GitHub account before installing the GitHub App',
-        action: '/auth/github', 
+        action: `${url}/auth/github`, 
         requiresGitHubConnection: true
       });
     }
@@ -25,7 +29,7 @@ export const validateGitHubAppAccess = async (req, res, next) => {
       return res.status(400).json({
         error: 'INVALID_GITHUB_TOKEN',
         message: 'GitHub access token is missing. Please reconnect your GitHub account',
-        action: '/auth/github',
+        action: `${url}/auth/github`,
         requiresGitHubConnection: true
       });
     }
@@ -43,7 +47,7 @@ export const validateGitHubAppAccess = async (req, res, next) => {
           return res.status(401).json({
             error: 'GITHUB_TOKEN_EXPIRED',
             message: 'Your GitHub connection has expired. Please reconnect your GitHub account',
-            action: '/auth/github',
+            action: `${url}/auth/github`,
             requiresGitHubConnection: true
           });
         }
