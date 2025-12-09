@@ -98,19 +98,19 @@ export const calculateRepoMetrics = async (repoId, branch = 'main') => {
         f.cyclomaticComplexity || 0,
         f.maintainabilityIndex || 0,
         f.halsteadVolume || 0,
-        f.locTotal || 0
+        f.locSource || 0
       ),
     }));
 
     const avgCyclomatic = mean(files.map(f => f.cyclomaticComplexity || 0));
     const avgMaintainability = mean(files.map(f => f.maintainabilityIndex || 0));
     const avgHalstead = mean(files.map(f => f.halsteadVolume || 0));
-    const totalLoc = files.reduce((sum, f) => sum + (f.locTotal || 0), 0);
+    const totalLoc = files.reduce((sum, f) => sum + (f.locSource || 0), 0);
 
     const weighted = (key) =>
       totalLoc > 0
         ? files.reduce(
-            (sum, f) => sum + ((f[key] || 0) * (f.locTotal || 0)) / totalLoc,
+            (sum, f) => sum + ((f[key] || 0) * (f.locSource || 0)) / totalLoc,
             0
           )
         : 0;
@@ -133,7 +133,7 @@ export const calculateRepoMetrics = async (repoId, branch = 'main') => {
       cyclomaticComplexity: f.cyclomaticComplexity,
       maintainabilityIndex: f.maintainabilityIndex,
       halsteadVolume: f.halsteadVolume,
-      locTotal: f.locTotal || 0,
+      locTotal: f.locSource || 0,
       reason: getPriorityReason(f),
     }));
 

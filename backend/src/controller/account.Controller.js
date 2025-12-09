@@ -1,6 +1,7 @@
 import OAuthConnection from "../database/models/OauthConnections.js";
 import User from "../database/models/User.js";
 import BlacklistToken from "../database/models/blacklistToken.js";
+import { uninstallGitHubApp } from "../utils/uninstallGithub.js";
 
 export const deleteAccount = async (req, res) => {
     try {
@@ -18,8 +19,31 @@ export const deleteAccount = async (req, res) => {
         const token = req.token;
 
         if (!token) {
-            console.log("55555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555")
-            return;
+            return res.status(404).json({message:"No token found"});
+        }
+
+        const githubConnection = await OAuthConnection.findOne({
+            where: {
+                userId: userId,
+                provider: 'github'
+            }
+        });
+
+        if (githubConnection?.installationId) {
+            console.log(`Uninstalling GitHub App installation ${githubConnection.installationId} for user ${userId}`);
+
+            try {
+                await uninstallGitHubApp(githubConnection.installationId);
+                console.log(`Successfully uninstalled GitHub App for user ${userId}`);
+            } catch (uninstallError) {
+                console.error(`Failed to uninstall GitHub App for user ${userId}:`, uninstallError);
+
+                return res.status(500).json({ 
+                  message: "Failed to disconnect GitHub App. Please try again or contact support.",
+                  gihubAppUninstallFailure:true 
+                });
+
+            }
         }
 
         await OAuthConnection.destroy({
@@ -50,7 +74,7 @@ export const deleteAccount = async (req, res) => {
 
     } catch (error) {
         console.error("Delete account error:", error);
-        return res.status(500).json({ message: "Internal server error" });
+        return res.status(500).json({ message: "Internal server error", gihubAppUninstallFailure:false });
     }
 }
 
@@ -64,7 +88,7 @@ export const updateName = async (req, res) => {
         }
 
         const [updated] = await User.update(
-            { name:name },
+            { name: name },
             {
                 where: { id: userId }
             }
@@ -97,7 +121,7 @@ export const addAlternateEmail = async (req, res) => {
         }
 
         const [updated] = await User.update(
-            { alternateEmail:alternateEmail },
+            { alternateEmail: alternateEmail },
             {
                 where: {
                     id: userId
@@ -131,10 +155,10 @@ export const addPhoneNumber = async (req, res) => {
         }
 
         const [updated] = await User.update(
-            {contactNo:number},
+            { contactNo: number },
             {
-                where:{
-                    id:userId
+                where: {
+                    id: userId
                 }
             }
         );
@@ -144,8 +168,8 @@ export const addPhoneNumber = async (req, res) => {
         }
 
         return res.status(200).json({
-            success:true,
-            message:"Contact details updated successfully"
+            success: true,
+            message: "Contact details updated successfully"
         });
 
     } catch (error) {

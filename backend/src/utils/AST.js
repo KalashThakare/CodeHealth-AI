@@ -90,58 +90,82 @@ function calculateMaintainabilityIndex(halstead, cc, loc) {
 function calculateLOC(code) {
   const lines = code.split("\n");
   
-  let loc = lines.length; // Total lines
-  let sloc = 0; // Source lines of code (non-empty, non-comment)
-  let cloc = 0; // Comment lines
-  let blank = 0; // Blank lines
+  let loc = lines.length;
+  let sloc = 0;
+  let cloc = 0;
+  let blank = 0;
   
   let inMultiLineComment = false;
   
   for (let line of lines) {
     const trimmed = line.trim();
     
-    // Check for blank lines
+    // Blank line
     if (trimmed === "") {
       blank++;
       continue;
     }
     
-    // Check for multi-line comment start
-    if (trimmed.startsWith("/*")) {
-      inMultiLineComment = true;
-      cloc++;
-      continue;
-    }
+    let hasCode = false;
+    let hasComment = false;
+    let workingLine = trimmed;
     
-    // Check for multi-line comment end
+    // Handle multi-line comments
     if (inMultiLineComment) {
-      cloc++;
-      if (trimmed.includes("*/")) {
+      hasComment = true;
+      const endIdx = workingLine.indexOf("*/");
+      if (endIdx !== -1) {
         inMultiLineComment = false;
+        workingLine = workingLine.substring(endIdx + 2).trim();
+        if (workingLine.length > 0 && !workingLine.startsWith("//")) {
+          hasCode = true;
+        }
       }
-      continue;
+    } else {
+      // Check for multi-line comment start
+      const startIdx = workingLine.indexOf("/*");
+      if (startIdx !== -1) {
+        hasComment = true;
+        // Check if there's code before the comment
+        if (startIdx > 0) {
+          hasCode = true;
+        }
+        
+        const endIdx = workingLine.indexOf("*/", startIdx + 2);
+        if (endIdx !== -1) {
+          // Single-line /* */ comment
+          const after = workingLine.substring(endIdx + 2).trim();
+          if (after.length > 0 && !after.startsWith("//")) {
+            hasCode = true;
+          }
+        } else {
+          // Multi-line comment starts
+          inMultiLineComment = true;
+        }
+      } else if (workingLine.startsWith("//")) {
+        // Single-line comment
+        hasComment = true;
+      } else if (workingLine.includes("//")) {
+        // Code with inline comment
+        hasCode = true;
+        hasComment = true;
+      } else {
+        // Pure code line
+        hasCode = true;
+      }
     }
     
-    // Check for single-line comments
-    if (trimmed.startsWith("//")) {
-      cloc++;
-      continue;
-    }
-    
-    // If we reach here, it's a source line
-    sloc++;
+    if (hasComment) cloc++;
+    if (hasCode) sloc++;
   }
   
-  // Logical LOC (approximate - lines with actual code statements)
-  const lloc = sloc;
-  
   return {
-    loc,      // Total lines
-    sloc,     // Source lines (non-blank, non-comment)
-    lloc,     // Logical lines (statements)
-    cloc,     // Comment lines
-    blank,    // Blank lines
-    multi: cloc // Multi-line comments included in cloc
+    loc,
+    sloc,
+    lloc: sloc, // Approximation
+    cloc,
+    blank,
+    multi: cloc
   };
 }
 
