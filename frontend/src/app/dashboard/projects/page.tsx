@@ -438,6 +438,7 @@ export default function ProjectsPage() {
   const fetchGitHubRepos = useGitHubStore((s) => s.fetchGitHubRepos);
   const githubLoading = useGitHubStore((s) => s.isLoading);
   const selectRepository = useGitHubStore((s) => s.selectRepository);
+  const githubAppRedirect = useGitHubStore((s) => s.githubAppRedirect);
 
   const usageData = useUsageStore((s) => s.usageData);
   const usageLoading = useUsageStore((s) => s.isLoading);
@@ -601,12 +602,7 @@ export default function ProjectsPage() {
               <div className="flex flex-col items-center">
                 <button
                   className="glass-btn mt-2 flex gap-3 justify-center items-center !rounded-xl transition-all"
-                  onClick={() =>
-                    router.push(
-                      process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI ||
-                        "/gitProject"
-                    )
-                  }
+                  onClick={githubAppRedirect}
                 >
                   <FiPlus size={16} />
                   Import Project
@@ -731,9 +727,7 @@ export default function ProjectsPage() {
                             onClick={() => {
                               setOpenOptionsMenu(null);
                               // selectRepository(repo);
-                              router.push(
-                                `${process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI}`
-                              );
+                              githubAppRedirect();
                             }}
                           >
                             Manage

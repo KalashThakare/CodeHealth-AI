@@ -59,6 +59,7 @@ interface GitHubStore {
   resetStore: () => void;
   getRepositoryById: (id: number) => GitHubRepo | undefined;
   checkGitHubTokenStatus: () => Promise<boolean>;
+  githubAppRedirect: () => Promise<void>;
 }
 
 interface GitHubState {
@@ -134,7 +135,6 @@ export const useGitHubStore = create<GitHubStore>()(
             headers: { Authorization: `Bearer ${token}` },
             withCredentials: true,
           });
-          
           const repositories = res.data.map((repo) => ({
             ...repo,
             visibility: repo.private
@@ -289,6 +289,51 @@ export const useGitHubStore = create<GitHubStore>()(
         } catch (error) {
           set({ githubToken: null });
           return false;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      githubAppRedirect: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await axiosInstance.post(
+            "/github/github-app/redirect"
+          );
+
+          if (response.data.redirectUrl) {
+            const redirectUrl = response.data.redirectUrl;
+            console.log("Redirect URL:", redirectUrl);
+            console.log(
+              "Has existing installation:",
+              response.data.hasExistingInstallation
+            );
+            window.location.href = redirectUrl;
+          } else {
+            throw new Error("No redirect URL received from server");
+          }
+        } catch (error: any) {
+          console.error("Failed to get GitHub App redirect:", error);
+          if (error?.response?.data?.requiresGitHubConnection) {
+            const errorMessage =
+              error.response.data.message ||
+              "Please connect your GitHub account first";
+            toast.error(errorMessage);
+            if (error.response.data.action) {
+              setTimeout(() => {
+                window.location.href = error.response.data.action;
+              }, 1500);
+            }
+            return;
+          }
+
+          const errorMessage =
+            error?.response?.data?.message ||
+            error?.message ||
+            "Failed to connect to GitHub App. Please try again.";
+
+          set({ error: errorMessage });
+          toast.error(errorMessage);
         } finally {
           set({ isLoading: false });
         }

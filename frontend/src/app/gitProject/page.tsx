@@ -44,6 +44,7 @@ export default function GitHubImportPage() {
     uninitializeRepository,
     getInitializedCount,
     initializingRepoId,
+    githubAppRedirect,
   } = useGitHubStore();
 
   const {
@@ -125,9 +126,6 @@ export default function GitHubImportPage() {
   const hasAnalysisData = showAnalysisResults && fullAnalysis && selectedRepo;
   const displayAnalysis = fullAnalysis;
 
-  const handleAddNewRepo = () => {
-    router.push(`${process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI}`);
-  };
 
   return (
     <div className="gitproject-page min-h-screen bg-[var(--gp-bg)]">
@@ -178,7 +176,7 @@ export default function GitHubImportPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={handleAddNewRepo}
+                    onClick={githubAppRedirect}
                     className="glassmorphism-button p-1 !rounded-xl transition-all"
                     title="Add new repository"
                   >

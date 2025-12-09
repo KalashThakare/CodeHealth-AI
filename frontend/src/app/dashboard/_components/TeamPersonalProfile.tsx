@@ -48,6 +48,7 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
     fetchGitHubRepos,
     selectRepository,
     selectedRepo,
+    githubAppRedirect,
   } = useGitHubStore();
 
   const router = useRouter();
@@ -417,11 +418,7 @@ const TeamPersonalProfile: React.FC<TeamPersonalProfileProps> = ({
                           color: "var(--color-fg)",
                           border: "1px solid var(--color-accent)",
                         }}
-                        onClick={(e) => {
-                          router.push(
-                            `${process.env.NEXT_PUBLIC_WEB_APP_REDIRECT_URI}`
-                          );
-                        }}
+                        onClick={githubAppRedirect}
                       >
                         <Download className="w-4 h-4" />
                         <span className="text-sm font-medium">
