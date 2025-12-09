@@ -567,3 +567,153 @@ html {
     background: var(--color-card);
   }
 }
+
+/* App Footer Styles - Vercel Style */
+.app-footer {
+  width: 100%;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
+  padding: 0 24px;
+  margin-top: auto;
+}
+
+.app-footer-container {
+  max-width: 1400px;
+  margin-block: 0;
+  margin-inline: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 4.3rem;
+  gap: 40rem;
+}
+
+.app-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.app-footer-logo {
+  display: flex;
+  align-items: center;
+  color: var(--color-fg);
+  transition: color 0.15s ease;
+}
+
+.app-footer-logo:hover {
+  color: var(--color-fg-secondary);
+}
+
+.app-footer-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.app-footer-link {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: var(--color-fg-secondary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+  white-space: nowrap;
+}
+
+.app-footer-link:hover {
+  color: var(--color-fg);
+}
+
+.app-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.app-footer-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-fg-secondary);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3291ff;
+  box-shadow: 0 0 6px rgba(50, 145, 255, 0.5);
+}
+
+.status-text {
+  white-space: nowrap;
+}
+
+.app-footer-theme-switcher {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: var(--color-bg-secondary);
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+}
+
+.theme-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--color-fg-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.theme-btn:hover {
+  color: var(--color-fg);
+}
+
+.theme-btn.active {
+  background: var(--color-bg-tertiary);
+  color: var(--color-fg);
+}
+
+[data-theme="dark"] .theme-btn.active {
+  background: #333333;
+}
+
+/* Responsive styles for app footer */
+@media (max-width: 900px) {
+  .app-footer-nav {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-footer-container {
+    height: auto;
+    padding: 12px 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .app-footer-left {
+    justify-content: center;
+  }
+
+  .app-footer-right {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .app-footer-status {
+    font-size: 12px;
+  }
+}

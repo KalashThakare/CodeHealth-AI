@@ -9,6 +9,7 @@
 }
 
 .observability-container {
+  height: fit-content;
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 2rem;
@@ -191,7 +192,7 @@
   display: grid;
   grid-template-columns: 220px 1fr;
   gap: 3rem;
-  height: 100vh;
+  min-height: 88vh;
 }
 
 @media (max-width: 768px) {

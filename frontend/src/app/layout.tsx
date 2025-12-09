@@ -6,6 +6,7 @@ import "@/app/glass.css";
 import { LenisProvider } from "@/components/ui/LenisProvider";
 import { SocketProvider } from "@/components/SocketProvider";
 import { NotificationSync } from "@/components/NotificationSync";
+import AppFooter from "@/components/AppFooter";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="apple-mobile-web-app-title" content="CodeHealth" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -54,6 +56,7 @@ export default function RootLayout({
             <NotificationSync />
             <Toaster />
             {children}
+            <AppFooter />
           </LenisProvider>
         </SocketProvider>
       </body>
