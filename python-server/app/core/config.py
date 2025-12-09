@@ -3,8 +3,8 @@ from functools import lru_cache
 from pydantic import Field, ConfigDict
 
 class Settings(BaseSettings):
-    PORT: int = Field(8002, env="PORT")
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000"]
+    PORT: int = Field(env="PORT")
+    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8080"]
     model_config = ConfigDict(
         extra="ignore",  
         env_file=".env",   

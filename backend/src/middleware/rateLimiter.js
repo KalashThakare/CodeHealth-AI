@@ -14,8 +14,8 @@ function rateLimiter(redisClient, options = {}) {
       const now = Date.now();
       const windowStart = now - windowMs;
 
-      await redisClient.zRemRangeByScore(key, 0, windowStart);
-      const requestCount = await redisClient.zCard(key);
+      await redisClient.zremrangebyscore(key, 0, windowStart);
+      const requestCount = await redisClient.zcard(key);
 
       if (requestCount >= maxRequests) {
         res.setHeader('X-RateLimit-Limit', maxRequests);
@@ -28,7 +28,7 @@ function rateLimiter(redisClient, options = {}) {
         });
       }
 
-      await redisClient.zAdd(key, { score: now, value: now.toString() });
+      await redisClient.zadd(key, now, now.toString());
       
       await redisClient.expire(key, Math.ceil(windowMs / 1000));
 

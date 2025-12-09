@@ -1,5 +1,6 @@
 import { Project } from "../database/models/project.js";
 import RepoFileMetrics from "../database/models/repoFileMetrics.js";
+import crypto from "crypto"
 
 export const mean = (arr) => {
   if (!arr || arr.length === 0) return 0;
@@ -150,3 +151,13 @@ export function generateRecommendations(reviewers, bottlenecks) {
 
   return recommendations;
 }
+
+export const generateSecureState = (userId) => {
+  const randomBytes = crypto.randomBytes(32).toString('hex');
+  const stateData = {
+    userId,
+    timestamp: Date.now(),
+    nonce: randomBytes
+  };
+  return Buffer.from(JSON.stringify(stateData)).toString('base64');
+};
