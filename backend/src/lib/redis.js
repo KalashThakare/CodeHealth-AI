@@ -1,4 +1,4 @@
-import { Queue, Worker } from "bullmq";
+import { Queue } from "bullmq";
 import IORedis from "ioredis";
 import dotenv from "dotenv";
 dotenv.config();
@@ -12,12 +12,33 @@ export const connection = new IORedis({
   enableReadyCheck: true,
 });
 
-export const webhookQueue = new Queue("webhooks", { connection });
-export const pushAnalysisQueue = new Queue("pushAnalysis", {connection});
-export const pullAnalysisQueue = new Queue("pullAnalysis", {connection});
-export const issuesAnalysisQueue = new Queue("issuesAnalysis", {connection});
-export const fullRepoAnalysisQueue = new Queue("fullRepoAnalysis",{connection});
-export const filesQueue = new Queue("repoFiles",{connection});
-export const pushScanQueue = new Queue("PushScan", {connection});
-// export const scannigQueue = new Queue("scanning", {connection});
+export const queueOptions = {
+  connection,
+  defaultJobOptions: {
+    removeOnComplete: {
+      age: 60 * 10,  
+      count: 50     
+    },
 
+    removeOnFail: {
+      age: 60 * 30,  
+      count: 20
+    },
+
+    attempts: 2,    
+    backoff: {
+      type: "exponential",
+      delay: 1500,
+    },
+
+    stackTraceLimit: 1,
+  },
+};
+
+export const webhookQueue = new Queue("webhooks", queueOptions);
+export const pushAnalysisQueue = new Queue("pushAnalysis", queueOptions);
+export const pullAnalysisQueue = new Queue("pullAnalysis", queueOptions);
+export const issuesAnalysisQueue = new Queue("issuesAnalysis", queueOptions);
+export const fullRepoAnalysisQueue = new Queue("fullRepoAnalysis", queueOptions);
+export const filesQueue = new Queue("repoFiles", queueOptions);
+export const pushScanQueue = new Queue("PushScan", queueOptions);

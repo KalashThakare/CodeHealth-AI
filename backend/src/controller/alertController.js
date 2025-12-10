@@ -168,7 +168,7 @@ export const createAlert = async (req, res) => {
     const userId = req.user?.id;
 
     if (!name || !threshold || !repoId) {
-      return res.status(400).josn({ message: "Fields are missing" });
+      return res.status(400).json({ message: "Fields are missing" });
     }
 
     const alert = await alertRule.findOne({

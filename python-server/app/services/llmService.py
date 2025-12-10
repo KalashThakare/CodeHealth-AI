@@ -63,7 +63,6 @@ import json
 async def parse_llm_response(response: str) -> Dict[str, Any]:
     """Parse LLM response and extract JSON"""
     try:
-        # Try to find JSON in the response
         start_idx = response.find('{')
         end_idx = response.rfind('}') + 1
         
@@ -71,14 +70,12 @@ async def parse_llm_response(response: str) -> Dict[str, Any]:
             json_str = response[start_idx:end_idx]
             return json.loads(json_str)
         else:
-            # If no JSON found, return as plain text
             return {"rawResponse": response}
     except json.JSONDecodeError:
         return {"rawResponse": response}
 
 
 async def call_llm_together(prompt: str, max_tokens: int = 4000) -> str:
-    """Call Together AI API with the given prompt"""
     try:
         response = together_client.chat.completions.create(
             model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",  # strong model for reasoning and summaries
@@ -100,10 +97,7 @@ async def call_llm_together(prompt: str, max_tokens: int = 4000) -> str:
         raise HTTPException(status_code=500, detail=f"Together AI API error: {str(e)}")
     
 async def call_llm_claude(prompt: str, max_tokens: int = 4000) -> str:
-    """
-    Call Gemini 1.5 Flash API asynchronously with the given prompt.
-    Returns the model's text output.
-    """
+    
     headers = {
         "Content-Type": "application/json"
     }
@@ -128,11 +122,9 @@ async def call_llm_claude(prompt: str, max_tokens: int = 4000) -> str:
                 err = data["error"]
                 raise HTTPException(status_code=response.status_code, detail=f"Gemini API error: {err.get('message')}")
 
-        # --- Handle missing candidates (no output) ---
             if "candidates" not in data or not data["candidates"]:
                 raise HTTPException(status_code=500, detail=f"Gemini API returned unexpected response: {data}")
 
-        # --- Extract generated text ---
             return data["candidates"][0]["content"]["parts"][0].get("text", "").strip()
     except HTTPException:
         raise

@@ -153,7 +153,7 @@ export const addAlternateEmail = async (req, res) => {
         )
 
         if (updated == 0) {
-            return res.status(404).josn({ message: "User not found" })
+            return res.status(404).json({ message: "User not found" })
         }
 
         return res.status(200).json({
@@ -173,7 +173,7 @@ export const addPhoneNumber = async (req, res) => {
         const { number } = req.body;
 
         const phoneRegex = /^\+?[0-9]{7,15}$/;
-        if (!phoneRegex.test(phoneNumber)) {
+        if (!phoneRegex.test(number)) {
             return res.status(400).json({ message: "Invalid phone number format" });
         }
 
@@ -187,7 +187,7 @@ export const addPhoneNumber = async (req, res) => {
         );
 
         if (updated == 0) {
-            return res.status(404).josn({ message: "User not found" })
+            return res.status(404).json({ message: "User not found" })
         }
 
         return res.status(200).json({
