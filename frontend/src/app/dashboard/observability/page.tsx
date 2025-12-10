@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Activity,
@@ -1866,6 +1866,9 @@ function AlertRulesSection({ repoId }: { repoId: string }) {
   >({});
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [alertsFetched, setAlertsFetched] = useState(false);
+  const fetchingRef = useRef(false);
+  const currentRepoRef = useRef<string | null>(null);
 
   const alertDefinitions = [
     {
@@ -1922,12 +1925,22 @@ function AlertRulesSection({ repoId }: { repoId: string }) {
   ];
 
   useEffect(() => {
-    if (repoId) {
-      getAlerts(repoId);
+    if (repoId !== currentRepoRef.current) {
+      currentRepoRef.current = repoId;
+      setAlertsFetched(false);
+      fetchingRef.current = false;
     }
-  }, [repoId, getAlerts]);
+    if (repoId && !alertsFetched && !fetchingRef.current) {
+      fetchingRef.current = true;
+      getAlerts(repoId).finally(() => {
+        setAlertsFetched(true);
+        fetchingRef.current = false;
+      });
+    }
+  }, [repoId, alertsFetched, getAlerts]);
 
   useEffect(() => {
+    if (!alertsFetched) return;
     const initialState: Record<
       string,
       { threshold: number; operator: string; isActive: boolean }
@@ -1952,7 +1965,7 @@ function AlertRulesSection({ repoId }: { repoId: string }) {
     });
     setLocalAlerts(initialState);
     setHasChanges(false);
-  }, [alerts, repoId]);
+  }, [alerts, repoId, alertsFetched]);
 
   const handleThresholdChange = (alertName: string, newThreshold: number) => {
     setLocalAlerts((prev) => ({
@@ -2031,7 +2044,7 @@ function AlertRulesSection({ repoId }: { repoId: string }) {
     }
   };
 
-  if ((loading && alerts.length === 0)) {
+  if (loading && alerts.length === 0) {
     return (
       <div className="obs-section">
         <div className="obs-card">
