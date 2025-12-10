@@ -2,32 +2,30 @@
 
 import React, { useState, useEffect } from "react";
 import { useAccountSettingsStore } from "@/store/accountSettingsStore";
+import { useAuthStore } from "@/store/authStore";
 
 export default function SettingsPage() {
   const {
-    accountSettings,
     loading,
     error,
-    fetchAccountSettings,
-    updateDisplayName,
-    updateUsername,
-    updateEmail,
-    updatePhoneNumber,
+    updateName,
+    addAlternateEmail,
+    addPhoneNumber,
     deleteAccount,
     clearError,
   } = useAccountSettingsStore();
 
+  const authUser = useAuthStore((state) => state.authUser);
+
   const [activeSection, setActiveSection] = useState("profile");
   const [formData, setFormData] = useState({
     displayName: "",
-    username: "",
-    email: "",
+    alternateEmail: "",
     phoneNumber: "",
   });
   const [isDirty, setIsDirty] = useState({
     displayName: false,
-    username: false,
-    email: false,
+    alternateEmail: false,
     phoneNumber: false,
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -40,19 +38,14 @@ export default function SettingsPage() {
   ];
 
   useEffect(() => {
-    fetchAccountSettings();
-  }, [fetchAccountSettings]);
-
-  useEffect(() => {
-    if (accountSettings) {
+    if (authUser) {
       setFormData({
-        displayName: accountSettings.displayName || "",
-        username: accountSettings.username || "",
-        email: accountSettings.email || "",
-        phoneNumber: accountSettings.phoneNumber || "",
+        displayName: authUser.name || "",
+        alternateEmail: "",
+        phoneNumber: "",
       });
     }
-  }, [accountSettings]);
+  }, [authUser]);
 
   useEffect(() => {
     if (error) {
@@ -65,40 +58,47 @@ export default function SettingsPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setIsDirty((prev) => ({
       ...prev,
-      [field]: value !== (accountSettings?.[field] || ""),
+      [field]: true,
     }));
   };
 
   const handleSave = async (field: keyof typeof formData) => {
     const value = formData[field].trim();
-    if (!value || value === (accountSettings?.[field] || "")) return;
+    if (!value) return;
 
+    let success = false;
     try {
       switch (field) {
         case "displayName":
-          await updateDisplayName(value);
+          success = await updateName(value);
           break;
-        case "username":
-          await updateUsername(value);
-          break;
-        case "email":
-          await updateEmail(value);
+        case "alternateEmail":
+          success = await addAlternateEmail(value);
           break;
         case "phoneNumber":
-          await updatePhoneNumber(value);
+          success = await addPhoneNumber(value);
           break;
       }
-      setIsDirty((prev) => ({ ...prev, [field]: false }));
+      if (success) {
+        setIsDirty((prev) => ({ ...prev, [field]: false }));
+        if (field !== "displayName") {
+          setFormData((prev) => ({ ...prev, [field]: "" }));
+        }
+      }
     } catch (err) {
       console.error(`Failed to update ${field}:`, err);
     }
   };
 
   const handleCancel = (field: keyof typeof formData) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: accountSettings?.[field] || "",
-    }));
+    if (field === "displayName") {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: authUser?.name || "",
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: "" }));
+    }
     setIsDirty((prev) => ({ ...prev, [field]: false }));
   };
 
@@ -106,8 +106,10 @@ export default function SettingsPage() {
     if (deleteConfirmText !== "DELETE") return;
 
     try {
-      await deleteAccount()
-      window.location.href = "/login";
+      const success = await deleteAccount();
+      if (success) {
+        window.location.href = "/login";
+      }
     } catch (err) {
       console.error("Failed to delete account:", err);
     }
@@ -206,23 +208,14 @@ export default function SettingsPage() {
   };
 
   const validateEmail = (email: string): string | null => {
-    if (!email.trim()) return "Email is required";
+    if (!email.trim()) return null; // Optional field
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email) ? null : "Please enter a valid email address";
   };
 
-  const validateUsername = (username: string): string | null => {
-    if (!username.trim()) return "Username is required";
-    if (username.length < 3) return "Username must be at least 3 characters";
-    const usernameRegex = /^[a-zA-Z0-9_-]+$/;
-    return usernameRegex.test(username)
-      ? null
-      : "Username can only contain letters, numbers, hyphens, and underscores";
-  };
-
   const validatePhoneNumber = (phone: string): string | null => {
-    if (!phone.trim()) return null; 
-    const phoneRegex = /^\+?[\d\s\-\(\)]{10,}$/;
+    if (!phone.trim()) return null; // Optional field
+    const phoneRegex = /^\+?[0-9]{7,15}$/;
     return phoneRegex.test(phone) ? null : "Please enter a valid phone number";
   };
 
@@ -296,17 +289,6 @@ export default function SettingsPage() {
                         description="This is how your name will appear to other users."
                         maxLength={50}
                       />
-
-                      <div className="border-t border-[var(--color-border)] pt-8">
-                        <FormField
-                          field="username"
-                          label="Username"
-                          placeholder="Enter your username"
-                          description="Your unique username for the platform. Can only contain letters, numbers, hyphens, and underscores."
-                          maxLength={30}
-                          validation={validateUsername}
-                        />
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -320,11 +302,11 @@ export default function SettingsPage() {
                     </h2>
                     <div className="space-y-8">
                       <FormField
-                        field="email"
-                        label="Email Address"
+                        field="alternateEmail"
+                        label="Alternate Email Address"
                         type="email"
-                        placeholder="Enter your email address"
-                        description="Your primary email address for notifications and account recovery."
+                        placeholder="Enter an alternate email address"
+                        description="Add an alternate email for notifications and account recovery."
                         validation={validateEmail}
                       />
 

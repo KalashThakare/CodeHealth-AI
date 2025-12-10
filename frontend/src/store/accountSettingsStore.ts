@@ -2,157 +2,135 @@ import { create } from "zustand";
 import { axiosInstance } from "@/lib/axios";
 import { toast } from "sonner";
 
-type AccountSettings = {
-  displayName: string;
-  username: string;
-  email: string;
-  phoneNumber: string;
-};
-
 type AccountSettingsStore = {
-  accountSettings: AccountSettings | null;
   loading: boolean;
   error: string | null;
 
-  fetchAccountSettings: () => Promise<void>;
-  updateDisplayName: (displayName: string) => Promise<void>;
-  updateUsername: (username: string) => Promise<void>;
-  updateEmail: (email: string) => Promise<void>;
-  updatePhoneNumber: (phoneNumber: string) => Promise<void>;
-  deleteAccount: () => Promise<void>;
+  updateName: (name: string) => Promise<boolean>;
+  addAlternateEmail: (alternateEmail: string) => Promise<boolean>;
+  addPhoneNumber: (number: string) => Promise<boolean>;
+  deleteAccount: () => Promise<boolean>;
   clearError: () => void;
   resetStore: () => void;
 };
 
 export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
-  accountSettings: null,
   loading: false,
   error: null,
 
-  fetchAccountSettings: async () => {
+  updateName: async (name: string): Promise<boolean> => {
     set({ loading: true, error: null });
     try {
-      const response = await fetch("/api/account-settings");
-      const data = await response.json();
-      set({ accountSettings: data });
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : "An error occurred" });
+      const response = await axiosInstance.patch("/account/update-name", {
+        name,
+      });
+
+      if (response.data.success) {
+        toast.success("Name updated successfully");
+        return true;
+      } else {
+        const errorMessage = response.data.message || "Failed to update name";
+        set({ error: errorMessage });
+        toast.error(errorMessage);
+        return false;
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to update name";
+      set({ error: errorMessage });
+      toast.error(errorMessage);
+      return false;
     } finally {
       set({ loading: false });
     }
   },
 
-  updateDisplayName: async (displayName: string): Promise<void> => {
+  addAlternateEmail: async (alternateEmail: string): Promise<boolean> => {
     set({ loading: true, error: null });
     try {
-      await fetch("/api/account-settings/display-name", {
-        method: "PUT",
-        body: JSON.stringify({ displayName }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const response = await axiosInstance.patch("/account/add-email", {
+        alternateEmail,
       });
-      set((state: AccountSettingsStore) => ({
-        accountSettings: state.accountSettings
-          ? { ...state.accountSettings, displayName }
-          : { displayName, username: "", email: "", phoneNumber: "" },
-      }));
-    } catch (error: unknown) {
-      set({
-        error: error instanceof Error ? error.message : "An error occurred",
-      });
+
+      if (response.data.success) {
+        toast.success("Alternate email added successfully");
+        return true;
+      } else {
+        const errorMessage =
+          response.data.message || "Failed to add alternate email";
+        set({ error: errorMessage });
+        toast.error(errorMessage);
+        return false;
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to add alternate email";
+      set({ error: errorMessage });
+      toast.error(errorMessage);
+      return false;
     } finally {
       set({ loading: false });
     }
   },
 
-  updateUsername: async (username: string): Promise<void> => {
+  addPhoneNumber: async (number: string): Promise<boolean> => {
     set({ loading: true, error: null });
     try {
-      await fetch("/api/account-settings/username", {
-        method: "PUT",
-        body: JSON.stringify({ username }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const response = await axiosInstance.patch("/account/add-number", {
+        number,
       });
-      set((state: AccountSettingsStore) => ({
-        accountSettings: state.accountSettings
-          ? { ...state.accountSettings, username }
-          : { displayName: "", username, email: "", phoneNumber: "" },
-      }));
-    } catch (error: unknown) {
-      set({
-        error: error instanceof Error ? error.message : "An error occurred",
-      });
+
+      if (response.data.success) {
+        toast.success("Phone number added successfully");
+        return true;
+      } else {
+        const errorMessage =
+          response.data.message || "Failed to add phone number";
+        set({ error: errorMessage });
+        toast.error(errorMessage);
+        return false;
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to add phone number";
+      set({ error: errorMessage });
+      toast.error(errorMessage);
+      return false;
     } finally {
       set({ loading: false });
     }
   },
 
-  updateEmail: async (email: string): Promise<void> => {
+  deleteAccount: async (): Promise<boolean> => {
     set({ loading: true, error: null });
     try {
-      await fetch("/api/account-settings/email", {
-        method: "PUT",
-        body: JSON.stringify({ email }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      set((state: AccountSettingsStore) => ({
-        accountSettings: state.accountSettings
-          ? { ...state.accountSettings, email }
-          : { displayName: "", username: "", email, phoneNumber: "" },
-      }));
-    } catch (error: unknown) {
-      set({
-        error: error instanceof Error ? error.message : "An error occurred",
-      });
-    } finally {
-      set({ loading: false });
-    }
-  },
+      const response = await axiosInstance.delete("/account/delete");
 
-  updatePhoneNumber: async (phoneNumber: string): Promise<void> => {
-    set({ loading: true, error: null });
-    try {
-      await fetch("/api/account-settings/phone-number", {
-        method: "PUT",
-        body: JSON.stringify({ phoneNumber }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      set((state: AccountSettingsStore) => ({
-        accountSettings: state.accountSettings
-          ? { ...state.accountSettings, phoneNumber }
-          : { displayName: "", username: "", email: "", phoneNumber },
-      }));
-    } catch (error: unknown) {
-      set({
-        error: error instanceof Error ? error.message : "An error occurred",
-      });
-    } finally {
-      set({ loading: false });
-    }
-  },
-
-  deleteAccount: async () => {
-    set({ loading: true, error: null });
-    try {
-      await axiosInstance.delete("/account/delete");
-      set({ accountSettings: null });
-      toast.success("Account deleted successfully");
-    } catch (error: unknown) {
-      set({
-        error: error instanceof Error ? error.message : "An error occurred",
-      });
-      toast.error(
-        error instanceof Error ? error.message : "Failed to delete account"
-      );
-    } finally {
-      set({ loading: false });
+      if (response.status === 200) {
+        toast.success("Account deleted successfully");
+        set({ loading: false, error: null });
+        return true;
+      } else {
+        const errorMessage =
+          response.data.message || "Failed to delete account";
+        set({ error: errorMessage, loading: false });
+        toast.error(errorMessage);
+        return false;
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to delete account";
+      set({ error: errorMessage, loading: false });
+      toast.error(errorMessage);
+      return false;
     }
   },
 
@@ -160,7 +138,6 @@ export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
 
   resetStore: () => {
     set({
-      accountSettings: null,
       loading: false,
       error: null,
     });
