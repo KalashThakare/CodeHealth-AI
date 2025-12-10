@@ -3,9 +3,6 @@ from typing import Optional, List, Dict, Any
 from app.services.impact_analyzer import normalize
 
 async def seed_prioritization(req: PushAnalyzeRequest, impact: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Rank refactor candidates by business impact (risk), effort (size), risk of breakage, and dependency.
-    """
     ranked = []
     for f in impact["impactedFiles"]:
         size = f["additions"] + f["deletions"]

@@ -13,10 +13,6 @@ GITHUB_APP_ID = gs.github_app_id
 GITHUB_PRIVATE_KEY = gs.github_private_key
 
 def _prepare_private_key(pem_content: str) -> str:
-    """
-    Prepare and validate the private key for JWT signing.
-    Handles various PEM formats and ensures proper formatting.
-    """
     try:
 
         pem_content = pem_content.strip()
@@ -39,9 +35,6 @@ def _prepare_private_key(pem_content: str) -> str:
         raise ValueError(f"Invalid private key format: {str(e)}")
 
 def _make_app_jwt(app_id: str, pem: str) -> str:
-    """
-    Create a JWT for GitHub App authentication.
-    """
     try:
         # Prepare the private key
         prepared_key = _prepare_private_key(pem)
@@ -59,9 +52,6 @@ def _make_app_jwt(app_id: str, pem: str) -> str:
         raise RuntimeError(f"Failed to create JWT token: {str(e)}")
 
 async def get_installation_token(installation_id: int, *, app_id: Optional[str] = None, pem: Optional[str] = None) -> str:
-    """
-    Get an installation access token for the GitHub App.
-    """
     app_id = app_id or GITHUB_APP_ID
     pem = pem or GITHUB_PRIVATE_KEY
     
@@ -100,9 +90,6 @@ async def get_installation_token(installation_id: int, *, app_id: Optional[str] 
         raise RuntimeError(f"Failed to get installation token: {str(e)}")
 
 def _gh_headers(token: str) -> Dict[str, str]:
-    """
-    Create standard headers for GitHub API requests.
-    """
     return {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",

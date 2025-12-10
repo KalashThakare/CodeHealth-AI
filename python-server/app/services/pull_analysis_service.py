@@ -1,7 +1,5 @@
 async def analyze_pr_opened(files: list[dict]) -> dict:
-    """
-    Analyze opened PR files before merging
-    """
+    
     # Basic metrics
     total_add = sum(f.get("additions", 0) for f in files)
     total_del = sum(f.get("deletions", 0) for f in files)

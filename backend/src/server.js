@@ -26,17 +26,9 @@ const connectToDb = await startApp();
 
 const syncDatabase = async () => {
   try {
-    
     await sequelize.sync({ alter: true })
-
   } catch (error) {
     console.error("Database sync error:", error.message);
-    
-    if (error.name === 'SequelizeForeignKeyConstraintError') {
-      console.error("\n To fix this, run the following SQL in your database:");
-      console.error("   DELETE FROM webhook_events WHERE \"projectId\" NOT IN (SELECT id FROM projects);\n");
-      process.exit(1);
-    }
   }
 };
 
@@ -47,7 +39,7 @@ server.listen(port,()=>{
     startCronJobs();
 })
 
-// const url = await ngrok.connect({ addr: port, authtoken_from_env: true });
-// console.log('ngrok tunnel started at:', url.url ? url.url() : url);
+const url = await ngrok.connect({ addr: port, authtoken_from_env: true });
+console.log('ngrok tunnel started at:', url.url ? url.url() : url);
 
 export default server;
