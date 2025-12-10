@@ -455,6 +455,7 @@ export default function ProjectsPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [openOptionsMenu, setOpenOptionsMenu] = useState<number | null>(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState<number | null>(null);
   const dataFetchRef = useRef(false);
 
   useEffect(() => {
@@ -584,7 +585,12 @@ export default function ProjectsPage() {
           <h2>Projects</h2>
         </div>
 
-        {githubLoading ? (
+        {loadingAnalytics !== null ? (
+          <div className="loading-container">
+            <div className="loading-spinner" />
+            <p className="loading-text">Loading analysis...</p>
+          </div>
+        ) : githubLoading ? (
           <div className="loading-container">
             <div className="loading-spinner" />
             <p className="loading-text">Loading projects...</p>
@@ -622,8 +628,7 @@ export default function ProjectsPage() {
               >
                 <div className="project-card-header mb-2">
                   <div className="flex items-center gap-4">
-                    <div className="project-icon" data-index={index % 10}>
-                      {/* {getProjectIcon(repo.repoName)} */}
+                    <div className="project-icon">
                       <Image
                         src={isDark ? "/Logo_Dark.png" : "/Logo_white.png"}
                         alt="CodeHealth Logo"
@@ -666,7 +671,7 @@ export default function ProjectsPage() {
                     >
                       <button
                         className="activity-btn"
-                        onClick={() => {
+                        onClick={async () => {
                           if (!repo.initialised) {
                             selectRepository(repo);
                             toast.warning(
@@ -677,7 +682,12 @@ export default function ProjectsPage() {
                             );
                             router.push(`/gitProject`);
                           } else {
-                            router.push(`/analytics/${repo.repoId}`);
+                            setLoadingAnalytics(repo.id);
+                            try {
+                              await router.replace(`/analytics/${repo.repoId}`);
+                            } finally {
+                              setLoadingAnalytics(null);
+                            }
                           }
                         }}
                       >
