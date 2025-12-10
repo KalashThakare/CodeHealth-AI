@@ -440,9 +440,9 @@
 }
 
 .projects-header h2 {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
-  color: var(--color-fg-secondary);
+  color: var(--color-fg) !important;
   letter-spacing: -0.01em;
   text-transform: capitalize;
 }

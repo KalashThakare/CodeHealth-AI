@@ -579,7 +579,7 @@ export default function ProjectsPage() {
 
       <main className="dashboard-main">
         <div className="projects-header">
-          <h2 className="!text-[15px]">Projects</h2>
+          <h2>Projects</h2>
         </div>
 
         {githubLoading ? (
