@@ -3,9 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Sun, Moon, Monitor, Laptop, MoonStar } from "lucide-react";
+import { Sun, Laptop, MoonStar } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useTheme } from "@/components/ui/themeToggle";
+import { useTheme as theme } from "@/hooks/useTheme";
+import { useTheme } from "@/components/ui/themeToggle"
 
 export default function AppFooter() {
   const pathname = usePathname();
@@ -15,10 +16,9 @@ export default function AppFooter() {
     setDarkTheme,
     setSystemTheme,
     isLight,
-    isDark,
     isSystem,
-    actualTheme,
   } = useTheme();
+  const { isDark } = theme();
 
   useEffect(() => {
     setMounted(true);
@@ -35,12 +35,8 @@ export default function AppFooter() {
   const navLinks = [
     { href: "/dashboard/projects", label: "Home" },
     { href: "#", label: "Docs", hasDropdown: false },
-    // { href: "#", label: "Knowledge Base" },
-    // { href: "#", label: "Academy" },
-    // { href: "#", label: "SDKs", hasDropdown: true },
     { href: "#", label: "Help" },
     { href: "#", label: "Contact" },
-    // { href: "#", label: "Legal", hasDropdown: true },
   ];
 
   return (
@@ -49,9 +45,7 @@ export default function AppFooter() {
         <div className="app-footer-left">
           <Link href="/dashboard/projects">
             <Image
-              src={
-                actualTheme === "dark" ? "/Logo_Dark.png" : "/Logo_white.png"
-              }
+              src={isDark ? "/Logo_Dark.png" : "/Logo_white.png"}
               alt="CodeHealth Logo"
               width={36}
               height={36}

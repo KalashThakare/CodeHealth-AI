@@ -18,7 +18,6 @@ import {
   FiUsers,
   FiDatabase,
   FiAlertTriangle,
-  FiX,
   FiAlertCircle,
   FiCheckCircle,
   FiInfo,
@@ -26,6 +25,8 @@ import {
 import "../dashboard.css";
 import { toast } from "sonner";
 import { CircleX, Settings, X } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
+import Image from "next/image";
 
 function MiniSemiCircle({
   value,
@@ -331,10 +332,11 @@ function AlertsSection({
             >
               <Settings size={16} />
             </button>
-            <div className="tooltip-content"
-             style={{
-              color: "var(--color-fg)"
-             }}
+            <div
+              className="tooltip-content"
+              style={{
+                color: "var(--color-fg)",
+              }}
             >
               Manage alerts and define threshold to receive alerts
             </div>
@@ -429,7 +431,7 @@ function AlertsSection({
 
 export default function ProjectsPage() {
   const router = useRouter();
-
+  const { isDark } = useTheme();
   // const myInvites = useTeamStore((s) => s.myInvites);
   // const fetchMyInvites = useTeamStore((s) => s.fetchMyInvites);
   // const myInvitesLoaded = useTeamStore((s) => s.myInvitesLoaded);
@@ -621,7 +623,13 @@ export default function ProjectsPage() {
                 <div className="project-card-header mb-2">
                   <div className="flex items-center gap-4">
                     <div className="project-icon" data-index={index % 10}>
-                      {getProjectIcon(repo.repoName)}
+                      {/* {getProjectIcon(repo.repoName)} */}
+                      <Image
+                        src={isDark ? "/Logo_Dark.png" : "/Logo_white.png"}
+                        alt="CodeHealth Logo"
+                        width={40}
+                        height={40}
+                      />
                     </div>
 
                     <div className="project-info">

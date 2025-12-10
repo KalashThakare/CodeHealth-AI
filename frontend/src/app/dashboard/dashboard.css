@@ -490,6 +490,8 @@
 .project-icon {
   width: 40px;
   height: 40px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   display: flex;
   align-items: center;
