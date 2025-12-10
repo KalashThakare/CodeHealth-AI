@@ -160,7 +160,8 @@ PullRequestAnalysis.belongsTo(Project, {
 
 User.hasMany(OAuthConnection, { 
   foreignKey: 'userId',
-  as: 'oauthConnections' 
+  as: 'oauthConnections',
+  onDelete:'CASCADE',
 });
 
 OAuthConnection.belongsTo(User, { 

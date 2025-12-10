@@ -19,6 +19,9 @@ import notification from "../database/models/notification.js";
 import { where } from "sequelize";
 import activity from "../database/models/activity.js";
 import { handlePullRequestReview } from "../services/handlers/prReview.handler.js";
+import { generateSecureState, validateState } from "../utils/functions.js";
+import dotenv from "dotenv"
+dotenv.config();
 
 function eventToJobName(event) {
   switch (event) {
@@ -149,6 +152,93 @@ export const getGitHubUser = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch user profile" });
   }
 };
+
+export const manageGithubAppCallback = async(req,res)=>{
+  try {
+    const { installation_id, setup_action, state } = req.query;
+    
+    console.log('GitHub App Callback received:', { 
+      installation_id, 
+      setup_action, 
+      state,
+      fullUrl: req.originalUrl 
+    });
+    
+    if (!state) {
+      console.error('No state parameter received');
+      return res.redirect(`${process.env.FRONTEND_URL}/dashboard?error=missing_state`);
+    }
+    
+    // Validate state
+    const stateData = validateState(state);
+    if (!stateData) {
+      console.error('Invalid or expired state');
+      return res.redirect(`${process.env.FRONTEND_URL}/dashboard?error=invalid_state`);
+    }
+    
+    console.log('State validated for user:', stateData.userId);
+    
+    if (installation_id && setup_action === 'install') {
+      const [updatedRows] = await OAuthConnection.update(
+        { installationId: installation_id },
+        { 
+          where: { 
+            userId: stateData.userId, 
+            provider: 'github' 
+          } 
+        }
+      );
+      
+      if (updatedRows === 0) {
+        console.error(`No GitHub OAuth connection found.`);
+        return res.redirect(`${process.env.FRONTEND_URL}/dashboard?error=no_github_connection`);
+      }
+      
+      console.log(`GitHub App installed! User: ${stateData.userId}, Installation ID: ${installation_id}`);
+      return res.redirect(`${process.env.FRONTEND_URL}/gitProject?installation=success`);
+    }
+
+    if (setup_action === 'update') {
+      console.log(`GitHub App updated for user ${stateData.userId}`);
+      return res.redirect(`${process.env.FRONTEND_URL}/dashboard?installation=updated`);
+    }
+
+    console.log('No specific action, redirecting to dashboard');
+    res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+    
+  } catch (error) {
+    console.error('GitHub App callback error:', error);
+    res.redirect(`${process.env.FRONTEND_URL}/dashboard?error=installation_failed`);
+  }
+}
+
+export const manageRedirect = async (req, res) => {
+    try {
+      const state = generateSecureState(req.user.id);
+      const appSlug = process.env.GITHUB_APP_SLUG
+
+      let redirectUrl;
+      
+      if (req.existingInstallation && req.existingInstallation.isValid) {
+        const installationId = req.existingInstallation.installationId;
+        redirectUrl = `https://github.com/settings/installations/${installationId}?state=${state}`;
+      } else {
+        redirectUrl = `https://github.com/apps/${appSlug}/installations/new?state=${state}`;
+      }
+      
+      // console.log('Redirect URL:', redirectUrl);
+    
+    return res.status(200).json({ 
+      redirectUrl,
+      hasExistingInstallation: !!req.existingInstallation
+    });
+      
+    } catch (error) {
+      console.error(error)
+      return res.status(500).json({message:"Internal server error"});
+    }
+    
+  }
 
 export const githubWebhookController = async (req, res) => {
   try {

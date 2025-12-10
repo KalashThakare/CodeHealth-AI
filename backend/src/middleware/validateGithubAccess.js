@@ -1,7 +1,11 @@
 import OAuthConnection from "../database/models/OauthConnections.js"
 import dotenv from "dotenv"
+import { generateSecureState} from "../utils/functions.js";
+import { createAppAuth } from "@octokit/auth-app";
 dotenv.config();
 const url = process.env.BACKEND_SERVER
+const appSlug = process.env.GITHUB_APP_SLUG
+
 
 
 export const validateGitHubAppAccess = async (req, res, next) => {
@@ -120,29 +124,31 @@ export const requireGitHubInstallation = async (req, res, next) => {
     }
 
     if (!githubConnection.installationId) {
+      const state = generateSecureState(user.id);
       return res.status(400).json({
         error: 'NO_INSTALLATION',
         message: 'GitHub App is not installed. Please install the app first',
         requiresInstallation: true,
-        installUrl: process.env.WEB_APP_REDIRECT_URI
+        installUrl: `https://github.com/apps/${appSlug}/installations/new?state=${state}`
       });
     }
 
-    // Verify installation is still valid
     const isValid = await verifyGitHubInstallation(
       githubConnection.installationId,
       githubConnection.accessToken
     );
 
     if (!isValid) {
-      // Clear invalid installation
+
       await githubConnection.update({ installationId: null });
+
+      const state = generateSecureState(user.id);
       
       return res.status(400).json({
         error: 'INSTALLATION_INVALID',
         message: 'GitHub App installation is no longer valid. Please reinstall',
         requiresInstallation: true,
-        installUrl: process.env.WEB_APP_REDIRECT_URI
+        installUrl: `https://github.com/apps/${appSlug}/installations/new?state=${state}`
       });
     }
 
@@ -158,20 +164,41 @@ export const requireGitHubInstallation = async (req, res, next) => {
   }
 };
 
-async function verifyGitHubInstallation(installationId, accessToken) {
+async function verifyGitHubInstallation(installationId) {
   try {
-    // Check if installation exists and is accessible
+    // Create JWT 
+    const auth = createAppAuth({
+      appId: process.env.APP_ID,
+      privateKey: process.env.GITHUB_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    });
+
+    // Get app authentication
+    const appAuthentication = await auth({ type: "app" });
+
     const response = await fetch(
-      `https://api.github.com/user/installations/${installationId}/repositories`,
+      `https://api.github.com/app/installations/${installationId}`,
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${appAuthentication.token}`,
           'Accept': 'application/vnd.github.v3+json'
         }
       }
     );
 
-    return response.ok;
+    if (!response.ok) {
+      console.log(`Installation ${installationId} check failed: ${response.status}`);
+      return false;
+    }
+
+    const installation = await response.json();
+    
+    if (installation.suspended_at) {
+      console.log(`Installation ${installationId} is suspended`);
+      return false;
+    }
+
+    console.log(`Installation ${installationId} is valid`);
+    return true;
 
   } catch (error) {
     console.error('Error verifying GitHub installation:', error);

@@ -574,6 +574,9 @@ export const uninitializeRepo = async (req, res) => {
 
     await repo.update({ initialised: "false" })
 
+    const cacheKey = `metrics:repo:${repoId}`;
+    await connection.del(cacheKey);
+
     const fullName = repo.fullName;
     const [owner, repoName] = fullName.split("/");
 

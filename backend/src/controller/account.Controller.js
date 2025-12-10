@@ -1,6 +1,8 @@
 import OAuthConnection from "../database/models/OauthConnections.js";
 import User from "../database/models/User.js";
 import BlacklistToken from "../database/models/blacklistToken.js";
+import { Project } from "../database/models/project.js";
+import { connection } from "../lib/redis.js";
 import { uninstallGitHubApp } from "../utils/uninstallGithub.js";
 
 export const deleteAccount = async (req, res) => {
@@ -45,6 +47,27 @@ export const deleteAccount = async (req, res) => {
 
             }
         }
+
+        const userProjects = await Project.findAll({
+            where: {
+                userId: userId
+            },
+            attributes: ['repoId']
+        });
+
+        if (userProjects.length > 0) {
+            const cacheKeys = userProjects.map(project => `metrics:repo:${project.repoId}`);
+            if (cacheKeys.length > 0) {
+                await connection.del(...cacheKeys);
+            }
+        }
+
+        await Project.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
 
         await OAuthConnection.destroy({
             where: {

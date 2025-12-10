@@ -161,3 +161,17 @@ export const generateSecureState = (userId) => {
   };
   return Buffer.from(JSON.stringify(stateData)).toString('base64');
 };
+
+export const validateState = (encodedState, maxAge = 600000) => {
+  try {
+    const decoded = JSON.parse(Buffer.from(encodedState, 'base64').toString());
+    
+    if (Date.now() - decoded.timestamp > maxAge) {
+      return null;
+    }
+    
+    return decoded;
+  } catch (error) {
+    return null;
+  }
+};
