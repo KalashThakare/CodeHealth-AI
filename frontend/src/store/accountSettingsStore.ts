@@ -11,6 +11,7 @@ type AccountSettingsStore = {
   addPhoneNumber: (number: string) => Promise<boolean>;
   deleteAccount: () => Promise<boolean>;
   clearError: () => void;
+  manageGithubPermissions: () => Promise<boolean>;
   resetStore: () => void;
 };
 
@@ -99,6 +100,21 @@ export const useAccountSettingsStore = create<AccountSettingsStore>((set) => ({
         error.response?.data?.message ||
         error.message ||
         "Failed to add phone number";
+      set({ error: errorMessage });
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  manageGithubPermissions: async (): Promise<boolean> => {
+    set({ loading: true, error: null });
+    try {
+      return true;
+    } catch (err) {
+      const errorMessage =
+        (err as any)?.message || "Failed to manage GitHub permissions";
       set({ error: errorMessage });
       toast.error(errorMessage);
       return false;

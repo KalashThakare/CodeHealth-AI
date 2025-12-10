@@ -1,8 +1,113 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useAccountSettingsStore } from "@/store/accountSettingsStore";
 import { useAuthStore } from "@/store/authStore";
+
+const FormField = ({
+  field,
+  label,
+  type = "text",
+  placeholder,
+  description,
+  maxLength,
+  validation,
+  value,
+  isDirty,
+  loading,
+  onInputChange,
+  onSave,
+  onCancel,
+}: {
+  field: string;
+  label: string;
+  type?: string;
+  placeholder: string;
+  description: string;
+  maxLength?: number;
+  validation?: (value: string) => string | null;
+  value: string;
+  isDirty: boolean;
+  loading: boolean;
+  onInputChange: (value: string) => void;
+  onSave: () => Promise<boolean>;
+  onCancel: () => void;
+}) => {
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const router = useRouter();
+
+  const handleSaveWithValidation = async () => {
+    if (validation) {
+      const error = validation(value);
+      setValidationError(error);
+      if (error) return;
+    }
+    const success = await onSave();
+    try {
+      if (success) {
+        if (router && typeof router.refresh === "function") {
+          router.refresh();
+        } else if (typeof window !== "undefined") {
+          window.location.reload();
+        }
+      }
+    } catch (err) {
+      console.error("Failed to refresh after save:", err);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium mb-2">{label}</label>
+        <div className="space-y-2">
+          <input
+            type={type}
+            value={value}
+            onChange={(e) => {
+              onInputChange(e.target.value);
+              if (validationError) {
+                setValidationError(null);
+              }
+            }}
+            placeholder={placeholder}
+            maxLength={maxLength}
+            className="w-full px-4 py-3 rounded-lg border transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+            style={{
+              background: "var(--color-bg-secondary)",
+              borderColor: validationError ? "#ef4444" : "var(--color-border)",
+              color: "var(--color-fg)",
+            }}
+          />
+          {validationError && (
+            <p className="text-xs text-red-400">{validationError}</p>
+          )}
+          <p className="text-xs opacity-60">{description}</p>
+        </div>
+      </div>
+
+      {isDirty && (
+        <div className="flex gap-3">
+          <button
+            onClick={handleSaveWithValidation}
+            disabled={loading}
+            className="glass-btn glass-btn-primary px-4 py-2 rounded-lg font-medium text-sm transition-all disabled:opacity-50"
+          >
+            {loading ? "Saving..." : "Save Changes"}
+          </button>
+          <button
+            onClick={onCancel}
+            className="glass-btn glass-btn-secondary px-4 py-2 rounded-lg font-medium text-sm"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function SettingsPage() {
   const {
@@ -11,6 +116,7 @@ export default function SettingsPage() {
     updateName,
     addAlternateEmail,
     addPhoneNumber,
+    manageGithubPermissions,
     deleteAccount,
     clearError,
   } = useAccountSettingsStore();
@@ -54,53 +160,88 @@ export default function SettingsPage() {
     }
   }, [error, clearError]);
 
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setIsDirty((prev) => ({
-      ...prev,
-      [field]: true,
-    }));
-  };
-
-  const handleSave = async (field: keyof typeof formData) => {
-    const value = formData[field].trim();
-    if (!value) return;
-
-    let success = false;
-    try {
-      switch (field) {
-        case "displayName":
-          success = await updateName(value);
-          break;
-        case "alternateEmail":
-          success = await addAlternateEmail(value);
-          break;
-        case "phoneNumber":
-          success = await addPhoneNumber(value);
-          break;
-      }
-      if (success) {
-        setIsDirty((prev) => ({ ...prev, [field]: false }));
-        if (field !== "displayName") {
-          setFormData((prev) => ({ ...prev, [field]: "" }));
-        }
-      }
-    } catch (err) {
-      console.error(`Failed to update ${field}:`, err);
-    }
-  };
-
-  const handleCancel = (field: keyof typeof formData) => {
-    if (field === "displayName") {
-      setFormData((prev) => ({
+  const handleInputChange = useCallback(
+    (field: keyof typeof formData, value: string) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      setIsDirty((prev) => ({
         ...prev,
-        [field]: authUser?.name || "",
+        [field]: true,
       }));
-    } else {
-      setFormData((prev) => ({ ...prev, [field]: "" }));
+    },
+    []
+  );
+
+  const handleSave = useCallback(
+    async (field: keyof typeof formData): Promise<boolean> => {
+      const value = formData[field].trim();
+      if (!value) return false;
+
+      let success = false;
+      try {
+        switch (field) {
+          case "displayName":
+            success = await updateName(value);
+            break;
+          case "alternateEmail":
+            success = await addAlternateEmail(value);
+            break;
+          case "phoneNumber":
+            success = await addPhoneNumber(value);
+            break;
+        }
+        if (success) {
+          if (field === "displayName") {
+            const currentAuthUser = useAuthStore.getState().authUser;
+            if (currentAuthUser) {
+              useAuthStore.setState({
+                authUser: { ...currentAuthUser, name: value },
+              });
+            }
+          }
+          setIsDirty((prev) => ({ ...prev, [field]: false }));
+          if (field !== "displayName") {
+            setFormData((prev) => ({ ...prev, [field]: "" }));
+          }
+        }
+        return success;
+      } catch (err) {
+        console.error(`Failed to update ${field}:`, err);
+        return false;
+      }
+      return false;
+    },
+    [formData, updateName, addAlternateEmail, addPhoneNumber]
+  );
+
+  const handleCancel = useCallback(
+    (field: keyof typeof formData) => {
+      if (field === "displayName") {
+        setFormData((prev) => ({
+          ...prev,
+          [field]: authUser?.name || "",
+        }));
+      } else {
+        setFormData((prev) => ({ ...prev, [field]: "" }));
+      }
+      setIsDirty((prev) => ({ ...prev, [field]: false }));
+    },
+    [authUser]
+  );
+
+  const handleManageGithubPermissions = useCallback(async () => {
+    const redirectUrl =
+      (process.env.NEXT_PUBLIC_GITHUB_PERMISSION_URL as string) ||
+      "/github/permissions";
+    try {
+      await manageGithubPermissions();
+    } catch (err) {
+      console.error("Failed to manage GitHub permissions:", err);
+    } finally {
+      if (typeof window !== "undefined") {
+        window.location.href = redirectUrl;
+      }
     }
-    setIsDirty((prev) => ({ ...prev, [field]: false }));
-  };
+  }, [manageGithubPermissions]);
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== "DELETE") return;
@@ -116,95 +257,6 @@ export default function SettingsPage() {
 
     setShowDeleteConfirm(false);
     setDeleteConfirmText("");
-  };
-
-  const FormField = ({
-    field,
-    label,
-    type = "text",
-    placeholder,
-    description,
-    maxLength,
-    validation,
-  }: {
-    field: keyof typeof formData;
-    label: string;
-    type?: string;
-    placeholder: string;
-    description: string;
-    maxLength?: number;
-    validation?: (value: string) => string | null;
-  }) => {
-    const [validationError, setValidationError] = useState<string | null>(null);
-
-    const handleValidation = (value: string) => {
-      if (validation) {
-        const error = validation(value);
-        setValidationError(error);
-        return !error;
-      }
-      return true;
-    };
-
-    const handleSaveWithValidation = async () => {
-      const isValid = handleValidation(formData[field]);
-      if (isValid) {
-        await handleSave(field);
-      }
-    };
-
-    return (
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-2">{label}</label>
-          <div className="space-y-2">
-            <input
-              type={type}
-              value={formData[field]}
-              onChange={(e) => {
-                handleInputChange(field, e.target.value);
-                if (validationError) {
-                  handleValidation(e.target.value);
-                }
-              }}
-              onBlur={() => handleValidation(formData[field])}
-              placeholder={placeholder}
-              maxLength={maxLength}
-              className="w-full px-4 py-3 rounded-lg border transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-              style={{
-                background: "var(--color-bg-secondary)",
-                borderColor: validationError
-                  ? "#ef4444"
-                  : "var(--color-border)",
-                color: "var(--color-fg)",
-              }}
-            />
-            {validationError && (
-              <p className="text-xs text-red-400">{validationError}</p>
-            )}
-            <p className="text-xs opacity-60">{description}</p>
-          </div>
-        </div>
-
-        {isDirty[field] && !validationError && (
-          <div className="flex gap-3">
-            <button
-              onClick={handleSaveWithValidation}
-              disabled={loading}
-              className="glass-btn glass-btn-primary px-4 py-2 rounded-lg font-medium text-sm transition-all disabled:opacity-50"
-            >
-              {loading ? "Saving..." : "Save Changes"}
-            </button>
-            <button
-              onClick={() => handleCancel(field)}
-              className="glass-btn glass-btn-secondary px-4 py-2 rounded-lg font-medium text-sm"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
-      </div>
-    );
   };
 
   const validateEmail = (email: string): string | null => {
@@ -288,7 +340,27 @@ export default function SettingsPage() {
                         placeholder="Enter your display name"
                         description="This is how your name will appear to other users."
                         maxLength={50}
+                        value={formData.displayName}
+                        isDirty={isDirty.displayName}
+                        loading={loading}
+                        onInputChange={(value) =>
+                          handleInputChange("displayName", value)
+                        }
+                        onSave={() => handleSave("displayName")}
+                        onCancel={() => handleCancel("displayName")}
                       />
+                      <div className="pt-2">
+                        <button
+                          onClick={handleManageGithubPermissions}
+                          disabled={loading}
+                          className="glass-btn px-4 py-2 rounded-lg font-medium text-sm"
+                          style={{
+                            background:"transparent"
+                          }}
+                        >
+                          Manage GitHub Permissions
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -308,6 +380,14 @@ export default function SettingsPage() {
                         placeholder="Enter an alternate email address"
                         description="Add an alternate email for notifications and account recovery."
                         validation={validateEmail}
+                        value={formData.alternateEmail}
+                        isDirty={isDirty.alternateEmail}
+                        loading={loading}
+                        onInputChange={(value) =>
+                          handleInputChange("alternateEmail", value)
+                        }
+                        onSave={() => handleSave("alternateEmail")}
+                        onCancel={() => handleCancel("alternateEmail")}
                       />
 
                       <div className="border-t border-[var(--color-border)] pt-8">
@@ -318,6 +398,14 @@ export default function SettingsPage() {
                           placeholder="Enter your phone number"
                           description="Optional. Used for account security and notifications."
                           validation={validatePhoneNumber}
+                          value={formData.phoneNumber}
+                          isDirty={isDirty.phoneNumber}
+                          loading={loading}
+                          onInputChange={(value) =>
+                            handleInputChange("phoneNumber", value)
+                          }
+                          onSave={() => handleSave("phoneNumber")}
+                          onCancel={() => handleCancel("phoneNumber")}
                         />
                       </div>
                     </div>
