@@ -57,10 +57,9 @@ interface NotificationStore {
   addNotification: (notification: Omit<Notification, "id" | "read">) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
-  clearNotification: (id: string) => void;
-  clearAllNotifications: () => void;
-  dismissAlert: (id: string) => void;
-  dismissAllAlerts: () => void;
+  clearNotification: (id: string) => Promise<void>;
+  clearAllNotifications: () => Promise<void>;
+  dismissAlert: (id: string) => Promise<void>;
   getUnreadNotifications: () => Notification[];
   setCurrentUser: (userId: string | null) => void;
   resetStore: () => void;
@@ -273,63 +272,77 @@ export const useNotificationStore = create<NotificationStore>()((set, get) => ({
 
   markAllAsRead: () => get().markAllAsReadBackend(),
 
-  clearNotification: (id) => {
-    set((state) => {
-      const notification = state.notifications.find((n) => n.id === id);
-      const wasUnread = notification && !notification.read;
-      return {
-        notifications: state.notifications.filter((n) => n.id !== id),
-        unreadCount: wasUnread
-          ? Math.max(0, state.unreadCount - 1)
-          : state.unreadCount,
-      };
-    });
+  clearNotification: async (id) => {
+    const { currentUserId, notifications } = get();
+    const notification = notifications.find((n) => n.id === id);
+    if (!notification) return;
+
+    const wasUnread = !notification.read;
+
+    set((state) => ({
+      notifications: state.notifications.filter((n) => n.id !== id),
+      unreadCount: wasUnread
+        ? Math.max(0, state.unreadCount - 1)
+        : state.unreadCount,
+    }));
+
+    if (notification.isFromBackend && currentUserId) {
+      try {
+        await axiosInstance.delete(`/notifications/${id}/delete`);
+      } catch (error) {
+        console.error("Failed to delete notification:", error);
+        set((state) => ({
+          notifications: [notification, ...state.notifications].sort(
+            (a, b) =>
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          ),
+          unreadCount: wasUnread ? state.unreadCount + 1 : state.unreadCount,
+        }));
+      }
+    }
   },
 
-  clearAllNotifications: () => set({ notifications: [], unreadCount: 0 }),
+  clearAllNotifications: async () => {
+    const { currentUserId, notifications } = get();
+    if (notifications.length === 0) return;
 
-  dismissAlert: (id: string) => {
+    const originalNotifications = [...notifications];
+    const originalUnreadCount = get().unreadCount;
+    set({ notifications: [], unreadCount: 0 });
+    if (currentUserId) {
+      try {
+        await axiosInstance.delete("/notifications/deleteall");
+      } catch (error) {
+        console.error("Failed to delete all notifications:", error);
+        set({
+          notifications: originalNotifications,
+          unreadCount: originalUnreadCount,
+        });
+      }
+    }
+  },
+
+  dismissAlert: async (id: string) => {
     const { alerts, currentUserId } = get();
     const alert = alerts.find((a) => a.id === id);
     if (!alert) return;
-
     set((state) => ({
       alerts: state.alerts.filter((a) => a.id !== id),
       alertsCount: Math.max(0, state.alertsCount - 1),
     }));
-
     if (alert.isFromBackend && currentUserId) {
-      axiosInstance.patch(`/notifications/${id}/read`).catch((error) => {
+      try {
+        await axiosInstance.delete(`/notifications/${id}/delete`);
+      } catch (error) {
         console.error("Failed to dismiss alert:", error);
         set((state) => ({
-          alerts: [alert, ...state.alerts],
+          alerts: [alert, ...state.alerts].sort(
+            (a, b) =>
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          ),
           alertsCount: state.alertsCount + 1,
         }));
-      });
-    }
-  },
-
-  dismissAllAlerts: () => {
-    const { alerts, currentUserId } = get();
-    if (alerts.length === 0) return;
-
-    const originalAlerts = [...alerts];
-    const originalCount = alerts.length;
-
-    set({ alerts: [], alertsCount: 0 });
-
-    if (currentUserId) {
-      const backendAlertIds = originalAlerts
-        .filter((a) => a.isFromBackend)
-        .map((a) => a.id);
-      Promise.all(
-        backendAlertIds.map((id) =>
-          axiosInstance.patch(`/notifications/${id}/read`)
-        )
-      ).catch((error) => {
-        console.error("Failed to dismiss all alerts:", error);
-        set({ alerts: originalAlerts, alertsCount: originalCount });
-      });
+      }
     }
   },
 
