@@ -6,7 +6,7 @@ import sequelize from "./database/db.js";
 import cors from "cors"
 import { receiveFeedbackController } from "./controller/feedback&review.Controller.js";
 //Routes
-import OAuth from "./routes/OAuth.routes.js"
+import OAuth from "./routes/OAuth.routes.js";
 import githubRoutes from "./routes/githubRoutes.js";
 import Auth from "../src/routes/authRoutes.js"
 import teamRoutes from "./routes/teamRoutes.js";
@@ -83,7 +83,5 @@ app.use("/activity", activityRoutes)
 app.use("/observability", observabilityRoutes);
 
 app.use("/alertrule", alertRoutes)
-
-console.log("added a check line");
 
 export default app;

@@ -217,6 +217,12 @@ export async function triggerBackgroundAnalysis(repoId) {
     const distributions = await calculateDistributions(parsedRepoId);
     const healthScore = await calculateRepoHealthScore(parsedRepoId);
 
+    console.log(`[Background] Metrics calculated:`, {
+      totalLOC: repoMetrics.totalLOC,
+      totalFiles: repoMetrics.totalFiles,
+      avgCyclomaticComplexity: repoMetrics.avgCyclomaticComplexity
+    });
+
     const [updatedAnalysis] = await RepositoryAnalysis.upsert(
       {
         repoId: parsedRepoId,
@@ -313,10 +319,10 @@ export async function triggerBackgroundAnalysis(repoId) {
 
     console.log(`[Background] Analysis completed for repo ${parsedRepoId}`);
 
-    triggerAlertScan(parsedRepoId, repo.userId).catch((error)=>{
+    triggerAlertScan(parsedRepoId, repo.userId).catch((error) => {
       console.log("error trigger alert scan", error)
     });
-    
+
   } catch (error) {
     console.error(`[Background] Analysis failed for repo ${repoId}:`, error);
 

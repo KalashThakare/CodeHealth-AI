@@ -663,17 +663,17 @@ ASTworker.on("completed", async (job) => {
       
       local remaining = redis.call('DECR', jobsKey)
       
-      if remaining == 0 then
+      -- Trigger analysis if counter hits 0 or goes negative
+      if remaining <= 0 then
         local lockSet = redis.call('SET', lockKey, '1', 'NX', 'EX', 300)
         if lockSet then
+          redis.call('DEL', jobsKey)  -- Clean up counter immediately
           return 1  -- This process should trigger analysis
         else
           return 0  -- Lock already exists, another process is handling it
         end
-      elseif remaining > 0 then
-        return 2  -- More jobs remaining
       else
-        return -1 -- Counter went negative
+        return 2  -- More jobs remaining
       end
     `;
     
@@ -705,7 +705,6 @@ ASTworker.on("completed", async (job) => {
           });
           
           // Cleanup
-          await connection.del(repoJobsKey);
           await connection.del(lockKey);
         } catch (error) {
           console.error(`[ast] Background analysis failed for repo ${repoId}:`, error);

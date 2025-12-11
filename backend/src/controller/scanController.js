@@ -114,7 +114,7 @@ export const initialiseAnalysis = async(req,res)=>{
 }
 
 export const enqueueBatch = async (req, res) => {
-  const { files, repoId, branch } = req.body;
+  const { files, repoId, branch, isPushEvent = false } = req.body;
   if (!Array.isArray(files)) {
     return res.status(400).json({ message: "Invalid response" });
   }
@@ -130,9 +130,18 @@ export const enqueueBatch = async (req, res) => {
 
   // DON'T modify counter - it's already initialized
   const repoJobsKey = `analysis:jobs:${repoId}`;
-  const currentCount = await connection.get(repoJobsKey);
+
+  if (isPushEvent) {
+    const currentCount = await connection.get(repoJobsKey);
+    const newCount = await connection.incrby(repoJobsKey, jobs.length);
+    await connection.expire(repoJobsKey, 3600);
+    
+    console.log(`[enqueueBatch] Push event: Adding ${jobs.length} JS/TS files for repo ${repoId}, current counter: ${currentCount}, new counter: ${newCount}`);
+  } else {
+    const currentCount = await connection.get(repoJobsKey);
+    console.log(`[enqueueBatch] Initial analysis: Adding ${jobs.length} JS/TS files for repo ${repoId}, counter remains: ${currentCount}`);
+  }
   
-  console.log(`[enqueueBatch] Adding ${jobs.length} JS/TS files for repo ${repoId}, current counter: ${currentCount}`);
 
   await filesQueue.addBulk(jobs);
 

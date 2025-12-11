@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { createAppAuth } from "@octokit/auth-app";
 
 dotenv.config();
 
