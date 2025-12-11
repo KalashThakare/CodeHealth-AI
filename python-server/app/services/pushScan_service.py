@@ -50,8 +50,7 @@ async def ScanFiles(req: PushScanPayload) -> PushScanResponse:
                     except Exception as e:
                         print(f"Error analyzing {path}: {str(e)}")
                         continue
-                
-                # Send Python analysis results in batch
+
                 if analysis:
                     try:
                         # Convert Pydantic models to dicts for JSON serialization

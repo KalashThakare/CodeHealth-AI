@@ -1,3 +1,4 @@
+import RepositoryAnalysis from "../../database/models/analysis.js";
 import { RepoPushEvent } from "../../database/models/repoAnalytics.js";
 import { pushAnalysisQueue } from "../../lib/redis.js";
 import { pushScanQueue } from "../../lib/redis.js";
@@ -33,7 +34,7 @@ export async function handlePush(payload) {
 
       return { skipped: true, reason: "branch-policy", branch, defaultBranch };
     }
-
+    
     const added = new Set();
     const removed = new Set();
     const modified = new Set();
@@ -72,6 +73,28 @@ export async function handlePush(payload) {
       if(res){
         console.log("Success fully deleted the files from database", res);
       }
+    }
+
+    try {
+      const repoAnalysis = await RepositoryAnalysis.findOne({ where: { repoId } });
+      
+      if (repoAnalysis) {
+        await RepositoryAnalysis.update({
+          totalCommits: (repoAnalysis.totalCommits || 0) + commits.length,
+          lastCommit: new Date(headCommit?.timestamp || Date.now())
+        });
+        
+        console.log("[RepositoryAnalysis] Updated commit count:", {
+          repoId,
+          previousCount: repoAnalysis.totalCommits || 0,
+          newCommits: commits.length,
+          totalCommits: (repoAnalysis.totalCommits || 0) + commits.length
+        });
+      } else {
+        console.log("[RepositoryAnalysis] No analysis record found for repoId:", repoId);
+      }
+    } catch (error) {
+      console.error("[RepositoryAnalysis] Error updating commit count:", error);
     }
 
     await RepoPushEvent.create({
