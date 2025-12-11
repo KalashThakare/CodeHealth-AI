@@ -34,7 +34,7 @@ export async function handlePush(payload) {
 
       return { skipped: true, reason: "branch-policy", branch, defaultBranch };
     }
-    
+
     const added = new Set();
     const removed = new Set();
     const modified = new Set();
@@ -79,7 +79,7 @@ export async function handlePush(payload) {
       const repoAnalysis = await RepositoryAnalysis.findOne({ where: { repoId } });
       
       if (repoAnalysis) {
-        await RepositoryAnalysis.update({
+        await repoAnalysis.update({
           totalCommits: (repoAnalysis.totalCommits || 0) + commits.length,
           lastCommit: new Date(headCommit?.timestamp || Date.now())
         });
