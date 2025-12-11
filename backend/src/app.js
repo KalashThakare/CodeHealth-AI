@@ -84,4 +84,6 @@ app.use("/observability", observabilityRoutes);
 
 app.use("/alertrule", alertRoutes)
 
+console.log("added a check line");
+
 export default app;
