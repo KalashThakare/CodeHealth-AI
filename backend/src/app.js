@@ -56,7 +56,6 @@ export async function startApp() {
   }
 }
 
-
 app.use("/auth",OAuth);
 
 app.use("/manual-auth",Auth);

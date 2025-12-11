@@ -23,10 +23,7 @@ router = APIRouter(prefix="/v2", tags=["llmInsights"])
 
 @router.post("/api/analyze")
 async def analyze(request: AnalysisRequest):
-    """
-    Main analysis endpoint
-    Receives data from Node.js server and returns AI-powered insights
-    """
+  
     try:
         insight_type = request.insightType or "all"
         
