@@ -55,7 +55,7 @@ export const PushAnalysisWorker = new Worker(
     try {
       const url = process.env.ANALYSIS_INTERNAL_URL + "/v1/internal/analysis/run";
       const { data } = await axios.post(url, runPayload, {
-        timeout: 10_000,
+        timeout: 120_000, 
         signal: controller.signal,
       });
 
@@ -77,12 +77,12 @@ export const PushAnalysisWorker = new Worker(
 PushAnalysisWorker.on("ready", () => console.log("[push] worker ready"));
 PushAnalysisWorker.on("error", err => console.error("[push] worker error", err));
 PushAnalysisWorker.on("failed", (job, err) => console.error(`[push] job failed ${job?.id}`, err));
-PushAnalysisWorker.on("completed", async(job) => {
-  if(job?.data && io){
-    const {repoId} = job.data;
+PushAnalysisWorker.on("completed", async (job) => {
+  if (job?.data && io) {
+    const { repoId } = job.data;
     const repo = await Project.findOne({
-      where:{
-        repoId:repoId
+      where: {
+        repoId: repoId
       }
     })
     triggerAlertScan(repoId, repo.userId);
@@ -655,7 +655,7 @@ ASTworker.on("completed", async (job) => {
 
     const repoJobsKey = `analysis:jobs:${repoId}`;
     const lockKey = `analysis:lock:${repoId}`;
-    
+
     // Use a Lua script for atomic decrement and check
     const luaScript = `
       local jobsKey = KEYS[1]
@@ -676,7 +676,7 @@ ASTworker.on("completed", async (job) => {
         return 2  -- More jobs remaining
       end
     `;
-    
+
     try {
       const result = await connection.eval(
         luaScript,
@@ -684,16 +684,16 @@ ASTworker.on("completed", async (job) => {
         repoJobsKey,
         lockKey
       );
-      
+
       console.log(`[ast] Repo ${repoId}: result=${result}`);
 
       if (result === 1) {
         // This process won the race - trigger analysis
         console.log(`[ast] All files processed for repo ${repoId}, triggering background analysis`);
-        
+
         try {
           await triggerBackgroundAnalysis(repoId);
-          
+
           io.to(`user:${userId}`).emit('analysis_complete', {
             success: true,
             repoId,
@@ -703,12 +703,12 @@ ASTworker.on("completed", async (job) => {
             message: 'Repository analysis completed successfully',
             timestamp: new Date().toISOString()
           });
-          
+
           // Cleanup
           await connection.del(lockKey);
         } catch (error) {
           console.error(`[ast] Background analysis failed for repo ${repoId}:`, error);
-          
+
           io.to(`user:${userId}`).emit('analysis_complete', {
             success: false,
             repoId,
@@ -718,7 +718,7 @@ ASTworker.on("completed", async (job) => {
             error: error.message,
             timestamp: new Date().toISOString()
           });
-          
+
           await connection.del(lockKey);
         }
       } else if (result === 0) {
