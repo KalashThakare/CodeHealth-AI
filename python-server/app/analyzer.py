@@ -7,7 +7,7 @@ from app.llm_prompts import (
     build_refactoring_prompt
 )
 from pydantic import BaseModel, Field
-from .services.llmService import call_llm_claude, call_llm_openai, parse_llm_response
+from .services.llmService import call_llm_claude, call_llm_openai, parse_llm_response, call_llm_claude2
 from .schemas.analysis_model import RefactorPriorityFile, RepoMetrics, RepoHealthScore, CommitAnalysis, Distributions
 
 async def analyze_refactoring_opportunities(files_data: List[RefactorPriorityFile], metrics: RepoMetrics) -> List[Dict[str, Any]]:
@@ -40,7 +40,7 @@ async def generate_architectural_recommendations(
     health_score: RepoHealthScore, 
     commit_analysis: CommitAnalysis
 ) -> Dict[str, Any]:
-    """Generate architectural recommendations using AI"""
+    
     prompt = build_architectural_prompt(metrics, health_score, commit_analysis)
     llm_response = await call_llm_claude(prompt, max_tokens=7000)
     parsed = await parse_llm_response(llm_response)
@@ -145,10 +145,18 @@ Format as JSON:
 }}
 """
     
-    llm_response = await call_llm_claude(prompt, max_tokens=6000)
+    llm_response = await call_llm_claude2(prompt, max_tokens=6000)
     parsed = await parse_llm_response(llm_response)
     
     return {
-        "recommendations": parsed.get("architecturalRecommendations", []),
-        "strategy": parsed.get("overallStrategy", "")
-    }
+    "status": parsed.get("status"),
+    "executiveSummary": parsed.get("executiveSummary"),
+    "keyFindings": parsed.get("keyFindings", []),
+    "criticalPriorities": parsed.get("criticalPriorities", []),
+    "immediateActions": parsed.get("immediateActions", []),
+    "roadmap": parsed.get("roadmap", {}),
+    "successMetrics": parsed.get("successMetrics", []),
+    "resourceRequirements": parsed.get("resourceRequirements", ""),
+    "riskAssessment": parsed.get("riskAssessment", "")
+}
+

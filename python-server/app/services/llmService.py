@@ -13,8 +13,11 @@ llm = LLMSettings()
 
 together_client = Together(api_key=llm.together_api_key)
 gemini_api_key = llm.gemini_api_key 
-GEMINI_MODEL = "gemini-2.0-flash-lite"
+gemini_api_key2 = llm.gemini_api_key2 
+GEMINI_MODEL = "gemini-2.5-flash-lite"
+GEMINI_MODEL2 = "gemini-2.5-flash"
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1/models/{GEMINI_MODEL}:generateContent"
+GEMINI_API_URL2 = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL2}:generateContent"
 # anthropic_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 # openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -113,6 +116,41 @@ async def call_llm_claude(prompt: str, max_tokens: int = 4000) -> str:
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(
                 f"{GEMINI_API_URL}?key={gemini_api_key}",
+                headers=headers,
+                json=payload
+            )
+            data = response.json()
+
+            if "error" in data:
+                err = data["error"]
+                raise HTTPException(status_code=response.status_code, detail=f"Gemini API error: {err.get('message')}")
+
+            if "candidates" not in data or not data["candidates"]:
+                raise HTTPException(status_code=500, detail=f"Gemini API returned unexpected response: {data}")
+
+            return data["candidates"][0]["content"]["parts"][0].get("text", "").strip()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gemini API error: {str(e)}")
+    
+async def call_llm_claude2(prompt: str, max_tokens: int = 4000) -> str:
+    
+    headers = {
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.3,
+            "maxOutputTokens": max_tokens
+        }
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{GEMINI_API_URL2}?key={gemini_api_key2}",
                 headers=headers,
                 json=payload
             )
