@@ -1,4 +1,5 @@
 import RepositoryAnalysis from "../../database/models/analysis.js";
+import { Project } from "../../database/models/project.js";
 import { RepoPushEvent } from "../../database/models/repoAnalytics.js";
 import { pushAnalysisQueue } from "../../lib/redis.js";
 import { pushScanQueue } from "../../lib/redis.js";
@@ -119,6 +120,19 @@ export async function handlePush(payload) {
     const ScanJob = await pushScanQueue.add("Scan", ScanJobData,{
       jobId:safeScanJobId
     })
+
+    const repository = await Project.findOne({
+      where:{
+        repoId:repoId,
+        initialised:true
+      }
+    })
+
+    await repository.update({ 
+      initialised: true,
+      analysisStatus: 'processing',
+      analysisStartedAt: new Date()
+    });
 
     console.log("[pushScan] enqueue request", { ScanJobData });
 

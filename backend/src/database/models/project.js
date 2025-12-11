@@ -17,7 +17,20 @@ export const Project = sequelize.define(
     repoName: { type: DataTypes.STRING, allowNull: false },
     repoUrl: { type: DataTypes.STRING, allowNull: false },
     private:{type: DataTypes.BOOLEAN, allowNull:true},
-    initialised:{type:DataTypes.BOOLEAN, allowNull:false, defaultValue:false}
+    initialised:{type:DataTypes.BOOLEAN, allowNull:false, defaultValue:false},
+    analysisStatus: {
+      type: DataTypes.ENUM('idle', 'processing', 'completed', 'failed'),
+      allowNull: false,
+      defaultValue: 'idle'
+    },
+    analysisStartedAt: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    analysisCompletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
   },
   {
     tableName: "projects",
@@ -25,6 +38,8 @@ export const Project = sequelize.define(
     indexes: [
       { fields: ["installationId"] },
       { unique: false, fields: ["userId", "repoName"] },
+      { fields: ["analysisStatus"] },
+      { fields: ["userId", "analysisStatus"] } 
     ],
   }
 );

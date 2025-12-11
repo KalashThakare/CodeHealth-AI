@@ -290,6 +290,11 @@ export async function triggerBackgroundAnalysis(repoId) {
       }
     })
 
+    await repo.update({ 
+      analysisStatus: 'completed',
+      analysisCompletedAt: new Date()
+    });
+
     io.to(`user:${repo.userId}`).emit('notification', {
       type: "analysis",
       success: true,
@@ -325,21 +330,21 @@ export async function triggerBackgroundAnalysis(repoId) {
 
   } catch (error) {
     console.error(`[Background] Analysis failed for repo ${repoId}:`, error);
-
-    io.to(`user:${repo.userId}`).emit('notification', {
-      type: "analysis",
-      success: false,
-      repoId,
-      repoName: repo.fullName,
-      message: `Repository analysis failed for repo: ${repo.fullName}`,
-      timestamp: new Date().toISOString()
-    })
-
-    // await notification.create({
-    //   userId:repo.userId,
-    //   title:"Ananlysis failed",
-    //   message:`Repository analysis failed for repo: ${repo.fullName}`
-    // })
+    
+    const repo = await Project.findOne({ where: { repoId } });
+    if (repo) {
+      await repo.update({ analysisStatus: 'failed' });
+      
+      io.to(`user:${repo.userId}`).emit('notification', {
+        type: "analysis",
+        success: false,
+        repoId,
+        repoName: repo.fullName,
+        status: 'failed',
+        message: `Repository analysis failed for repo: ${repo.fullName}`,
+        timestamp: new Date().toISOString()
+      });
+    }
 
     throw error;
   }

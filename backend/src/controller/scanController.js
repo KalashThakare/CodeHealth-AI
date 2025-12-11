@@ -48,7 +48,11 @@ export const Analyse_repo = async (req, res) => {
       });
     }
 
-    await repo.update({ initialised: true });
+    await repo.update({ 
+      initialised: true,
+      analysisStatus: 'processing',
+      analysisStartedAt: new Date()
+    });
 
     const fullName = repo.fullName;
     const [owner, repoName] = fullName.split("/");
@@ -79,7 +83,7 @@ export const Analyse_repo = async (req, res) => {
       message: "Initialization successful. Analysis in progress.",
       data: {
         jobId: result.jobId,
-        status: "queued",
+        status: "processing",
         repoId: repo.repoId,
         estimatedWaitTime: "2-5 minutes",
       },
