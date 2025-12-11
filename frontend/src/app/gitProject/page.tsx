@@ -126,7 +126,6 @@ export default function GitHubImportPage() {
   const hasAnalysisData = showAnalysisResults && fullAnalysis && selectedRepo;
   const displayAnalysis = fullAnalysis;
 
-
   return (
     <div className="gitproject-page min-h-screen bg-[var(--gp-bg)]">
       <DashboardNavbar />
@@ -146,14 +145,18 @@ export default function GitHubImportPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <FiAlertCircle className="text-error" size={20} />
-                <span>{githubError || analysisError}</span>
+                <span>
+                  {analysisError
+                    ? `${analysisError}. Make sure the repo is initialized successfully`
+                    : githubError ?? null}
+                </span>
               </div>
               <button
                 onClick={() => {
                   clearGithubError();
                   clearAnalysisError();
                 }}
-                className="p-2 rounded-lg hover:bg-[var(--gp-bg-secondary)] transition-colors"
+                className="p-2 glass-btn rounded-lg hover:bg-[var(--gp-bg-secondary)] transition-colors"
               >
                 <FiX size={20} />
               </button>
