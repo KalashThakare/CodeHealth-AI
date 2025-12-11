@@ -27,7 +27,6 @@ async def analyze(request: AnalysisRequest):
     try:
         insight_type = request.insightType or "all"
         
-        # Extract data
         metrics = request.result
         commit_analysis = request.commitAnalysis
         health_score = request.repoHealthScore
