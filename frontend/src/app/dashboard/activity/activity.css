@@ -9,13 +9,13 @@
 }
 
 .activity-container {
-  max-width: 1100px;
-  margin: 0 auto;
+  margin-inline: 4rem;
 }
 
 .activity-header {
   padding-top: 1.15rem;
   padding-bottom: 1.15rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .activity-header h1 {
@@ -34,9 +34,11 @@
 }
 
 .activity-main {
-  display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 3rem;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
 }
 
 @media (max-width: 768px) {
@@ -49,7 +51,9 @@
 .activity-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  align-items: center;
+  gap: 2rem;
+  margin-block: 2.5rem;
 }
 
 .filter-section {
@@ -239,6 +243,9 @@
 .activity-content-area {
   flex: 1;
   min-width: 0;
+  min-height: 78vh;
+  border-left: 1px solid var(--color-border);
+  padding-inline: 3rem;
 }
 
 .activity-list {

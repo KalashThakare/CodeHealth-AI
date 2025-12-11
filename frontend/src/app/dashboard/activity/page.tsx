@@ -112,19 +112,16 @@ export default function ActivityPage() {
   );
 
   return (
-    
-    <div className="">
-      <div className="activity-header border-b border-white/15">
-          <header className="activity-header">
-        <div className="activity-container">
-          <h1>Activity</h1>
-        </div>
+    <>
+      <header className="activity-header">
+          <div className="activity-container">
+            <h1 className="pl-3">Activity</h1>
+          </div>
       </header>
-        </div>
       <div className="activity-container">
         <div className="activity-main">
-          <aside className="activity-sidebar border-r border-white/15">
-            <div className="filter-section pr-8 pt-8">
+          <div className="activity-sidebar">
+            <div className="filter-section">
               <span className="filter-section-title">Filters</span>
               <div className="filter-dropdown" ref={timeDropdownRef}>
                 <button
@@ -163,7 +160,7 @@ export default function ActivityPage() {
               </div>
             </div>
 
-            <div className="filter-section pr-8">
+            <div className="filter-section">
               <span className="filter-section-title">Type</span>
               <div className="filter-type-list">
                 {TYPE_FILTERS.map((filter) => {
@@ -184,28 +181,13 @@ export default function ActivityPage() {
                 })}
               </div>
             </div>
-          </aside>
+          </div>
 
           <div className="activity-content-area">
-            {/* <div className="search-container">
-              <div className="search-input-wrapper">
-                <div className="search-icon">
-                  <Search />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Find..."
-                  className="search-input"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div> */}
-
             {loading && activities.length === 0 ? (
               <LoadingSkeleton />
             ) : error ? (
-              <div className="error-state">
+              <div className="error-state mt-12">
                 <AlertCircle />
                 <h3>Failed to load activities</h3>
                 <p>{error}</p>
@@ -215,14 +197,17 @@ export default function ActivityPage() {
                   type="button"
                 >
                   <div className="flex !items-center !justify-center gap-2">
-                    <div className="!flex pt-3 !items-center !justify-center"><RefreshCw size={16}/></div>
+                    <div className="!flex pt-3 !items-center !justify-center">
+                      <RefreshCw size={16} />
+                    </div>
                     <span>Try Again</span>
                   </div>
-                  
                 </button>
               </div>
             ) : Object.keys(groupedActivities).length > 0 ? (
-              <div className={`activity-list ${loading ? "refreshing" : "pt-8"}`}>
+              <div
+                className={`activity-list ${loading ? "refreshing" : "pt-8"}`}
+              >
                 {Object.entries(groupedActivities).map(
                   ([month, monthActivities]) => (
                     <div key={month} className="activity-month-group">
@@ -262,6 +247,6 @@ export default function ActivityPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
