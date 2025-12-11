@@ -269,12 +269,12 @@ function AlertsSection({
   alerts,
   isLoading,
   onDismiss,
-  onDismissAll,
+  // onDismissAll,
 }: {
   alerts: Notification[];
   isLoading: boolean;
   onDismiss: (id: string) => void;
-  onDismissAll: () => void;
+  // onDismissAll: () => void;
 }) {
   const router = useRouter();
 
@@ -450,7 +450,7 @@ export default function ProjectsPage() {
   const alertsLoading = useNotificationStore((s) => s.alertsLoading);
   const alertsCount = useNotificationStore((s) => s.alertsCount);
   const dismissAlert = useNotificationStore((s) => s.dismissAlert);
-  const dismissAllAlerts = useNotificationStore((s) => s.dismissAllAlerts);
+  // const dismissAllAlerts = useNotificationStore((s) => s.dismissAllAlerts);
   const fetchAlerts = useNotificationStore((s) => s.fetchAlerts);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -567,7 +567,7 @@ export default function ProjectsPage() {
             alerts={alerts}
             isLoading={alertsLoading}
             onDismiss={dismissAlert}
-            onDismissAll={dismissAllAlerts}
+            // onDismissAll={dismissAllAlerts}
           />
         </div>
 
