@@ -367,7 +367,7 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
 
       <div
         ref={scrollContainerRef}
-        className="overflow-y-auto flex-1"
+        className="overflow-y-auto flex-1 no-scrollbar"
         style={{ maxHeight: "360px" }}
       >
         {notifications.length === 0 ? (

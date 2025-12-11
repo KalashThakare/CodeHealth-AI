@@ -399,6 +399,31 @@ html {
   transition: all 0.2s ease;
 }
 
+.no-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+.no-scrollbar::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+.no-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.no-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+[data-theme="dark"] .no-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+}
+[data-theme="dark"] .no-scrollbar {
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
 [data-theme="light"] .glassmorphism-navbar {
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(8px);
