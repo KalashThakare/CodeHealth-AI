@@ -6,7 +6,7 @@ import { importProjectsLimit } from "../config/rateLimiters.js";
 
 const router = express.Router();
 
-router.get("/repos",protectRoute, requireGitHubInstallation, ListRepos); 
+router.get("/repos",protectRoute, ListRepos); 
 router.get("/user", getGitHubUser);
 router.get('/permissions', manageGitHubScopes);
 router.get('/token-status', tokenStatus);
