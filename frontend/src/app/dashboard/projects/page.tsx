@@ -370,7 +370,7 @@ function AlertsSection({
             >
               <button
                 onClick={() => onDismiss(alert.id)}
-                className="absolute top-2 right-2 transition-colors !border-0"
+                className="absolute top-2 right-2 transition-colors border-0!"
                 title="Dismiss"
                 style={{
                   background: "transparent",
@@ -385,7 +385,7 @@ function AlertsSection({
               </button>
 
               <div className="flex gap-2.5 pr-5">
-                <div className="flex-shrink-0 mt-0.5">
+                <div className="shrink-0 mt-0.5">
                   <IconComponent
                     size={14}
                     style={{ color: styles.iconColor }}
@@ -609,7 +609,7 @@ export default function ProjectsPage() {
             {!searchTerm && (
               <div className="flex flex-col items-center">
                 <button
-                  className="glass-btn mt-2 flex gap-3 justify-center items-center !rounded-xl transition-all"
+                  className="glass-btn mt-2 flex gap-3 justify-center items-center rounded-xl! transition-all"
                   onClick={githubAppRedirect}
                 >
                   <FiPlus size={16} />
@@ -699,7 +699,7 @@ export default function ProjectsPage() {
                       </div>
                     </div>
                     <div
-                      className="relative !bg-none"
+                      className="relative bg-none!"
                       onClick={(e) => e.stopPropagation()}
                       style={{
                         background: "transparent",
@@ -707,7 +707,7 @@ export default function ProjectsPage() {
                       }}
                     >
                       <button
-                        className="more-options-btn !bg-none"
+                        className="more-options-btn bg-none!"
                         style={{
                           background: "transparent",
                           border: "var(--color-accent)",
@@ -729,7 +729,7 @@ export default function ProjectsPage() {
                           }}
                         >
                           <button
-                            className="w-fit !text-left !border-0 !px-2 !py-1 !text-sm !hover:bg-opacity-80 transition-colors !rounded-xl"
+                            className="w-fit text-left! border-0! px-2! py-1! text-sm! !hover:bg-opacity-80 transition-colors rounded-xl!"
                             style={{
                               color: "var(--color-fg)",
                               backgroundColor: "transparent",
