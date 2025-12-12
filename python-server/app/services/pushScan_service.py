@@ -3,6 +3,10 @@ from app.services.github_auth import get_installation_token
 from app.services.github_api import fetch_changed_files_code
 from app.services.scanning import analysisClass
 import aiohttp
+import os
+from dotenv import load_dotenv
+load_dotenv()
+BACKEND_URL=os.getenv('EXPRESS_URL')
 
 
 async def ScanFiles(req: PushScanPayload) -> PushScanResponse:
@@ -60,7 +64,7 @@ async def ScanFiles(req: PushScanPayload) -> PushScanResponse:
                         ]
                         
                         async with session.post(
-                            "http://localhost:8080/scanning/python-batch",
+                            f"{BACKEND_URL}/scanning/python-batch",
                             json={
                                 "Metrics": serialized_analysis,
                                 "repoId": req.repoId,
@@ -78,7 +82,7 @@ async def ScanFiles(req: PushScanPayload) -> PushScanResponse:
             if js_files:
                 try:
                     async with session.post(
-                        "http://localhost:8080/scanning/enqueue-batch",
+                        f"{BACKEND_URL}/scanning/enqueue-batch",
                         json={
                             "files": js_files,
                             "repoId": req.repoId,

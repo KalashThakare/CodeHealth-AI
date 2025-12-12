@@ -5,6 +5,9 @@ import User from "../database/models/User.js";
 import { sendAlertMail } from "../lib/mail/noodemailer.js";
 import { getRepoMetrics, isInCooldown, evaluateCondition } from "../utils/alertHelperFunctions.js";
 import { createAlertNotification } from "../utils/alertNotificationHelper.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 
 export async function triggerAlertScan(repoId, userId) {
@@ -100,7 +103,7 @@ export async function triggerAlertScan(repoId, userId) {
               threshold: condition.threshold,
               operator: condition.operator,
               triggeredAt: newTrigger.triggeredAt,
-              dashboardLink: 'http://localhost:3000/dashboard/projects'
+              dashboardLink: `${process.env.FRONTEND_URL}/dashboard/projects`
             })
 
             const title = `Alert Triggered: ${condition.name}`;
