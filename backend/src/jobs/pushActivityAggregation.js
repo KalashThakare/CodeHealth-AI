@@ -124,7 +124,7 @@ export async function aggregateRepoActivity(repoId, startDate, endDate) {
  * Backfill historical data for last 30 days
  */
 export async function backfillPushActivity(days = 30) {
-  console.log(`🔄 Backfilling push activity for last ${days} days...`);
+  console.log(`Backfilling push activity for last ${days} days...`);
   
   try {
     const projects = await Project.findAll({
