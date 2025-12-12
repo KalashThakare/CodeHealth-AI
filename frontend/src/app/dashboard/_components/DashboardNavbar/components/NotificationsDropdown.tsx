@@ -320,14 +320,14 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
       >
         <div className="flex items-center gap-2">
           <h3
-            className="!font-semibold !text-lg"
+            className="font-semibold! text-lg!"
             style={{ color: "var(--color-fg)" }}
           >
             Notifications
           </h3>
           {unreadCount > 0 && (
             <span
-              className="!px-2 !py-0.5 !text-xs !font-semibold !rounded-full"
+              className="px-2! py-0.5! text-xs! font-semibold! rounded-full!"
               style={{
                 backgroundColor: "var(--color-accent)",
                 color: "white",
@@ -344,7 +344,7 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="!text-xs !hover:opacity-80 !transition-opacity"
+                  className="text-xs! !hover:opacity-80 transition-opacity!"
                   style={{ color: "var(--color-accent)" }}
                 >
                   Mark all read
@@ -352,7 +352,7 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
               )}
               <button
                 onClick={clearAllNotifications}
-                className="!p-2 !hover:opacity-80 !transition-opacity"
+                className="p-2! !hover:opacity-80 transition-opacity!"
                 title="Clear all"
               >
                 <Trash2
@@ -415,7 +415,7 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
                 )}
 
                 <div className="flex gap-3 pl-3">
-                  <div className="!flex-shrink-0 !mt-1">
+                  <div className="shrink-0! mt-1!">
                     {getNotificationIcon(
                       notification.type,
                       notification.success
@@ -425,8 +425,8 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <h4
-                        className={`!text-sm !font-medium ${
-                          !notification.read ? "!font-semibold" : ""
+                        className={`text-sm! font-medium! ${
+                          !notification.read ? "font-semibold!" : ""
                         }`}
                         style={{ color: "var(--color-fg)" }}
                       >
@@ -438,14 +438,14 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
                           e.stopPropagation();
                           clearNotification(notification.id);
                         }}
-                        className="opacity-0 group-hover:opacity-100 !transition-opacity !p-1 !hover:bg-red-100 dark:!hover:bg-red-900/20 !rounded"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity! p-1! !hover:bg-red-100 dark:!hover:bg-red-900/20 rounded!"
                       >
                         <X className="w-3 h-3 text-red-500" />
                       </button>
                     </div>
 
                     <p
-                      className="!text-sm !mt-1"
+                      className="text-sm! mt-1!"
                       style={{ color: "var(--color-fg-secondary)" }}
                     >
                       {notification.message}

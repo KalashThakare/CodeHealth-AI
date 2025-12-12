@@ -2193,7 +2193,7 @@ function AlertRulesSection({ repoId }: { repoId: string }) {
                   <div className="alert-slider-wrapper">
                     <input
                       type="range"
-                      className="alert-slider !mb-0.5"
+                      className="alert-slider mb-0.5!"
                       min={def.min}
                       style={{
                         padding: 0,

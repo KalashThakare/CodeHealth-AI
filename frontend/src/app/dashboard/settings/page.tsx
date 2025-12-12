@@ -74,7 +74,7 @@ const FormField = ({
             }}
             placeholder={placeholder}
             maxLength={maxLength}
-            className="w-full px-4 py-3 rounded-lg border transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+            className="w-full px-4 py-3 rounded-lg border transition-all focus:outline-none focus:ring-2 focus:ring-(--color-primary) focus:border-transparent"
             style={{
               background: "var(--color-bg-secondary)",
               borderColor: validationError ? "#ef4444" : "var(--color-border)",
@@ -390,7 +390,7 @@ export default function SettingsPage() {
                         onCancel={() => handleCancel("alternateEmail")}
                       />
 
-                      <div className="border-t border-[var(--color-border)] pt-8">
+                      <div className="border-t border-(--color-border) pt-8">
                         <FormField
                           field="phoneNumber"
                           label="Phone Number"
@@ -421,14 +421,14 @@ export default function SettingsPage() {
                     </h2>
 
                     <div
-                      className="rounded-xl p-6 border-1"
+                      className="rounded-xl p-6 border"
                       style={{
                         border: "1px solid var(--color-border)",
                       }}
                     >
                       <div className="flex items-start gap-4">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-lg !text-red-400 mb-2">
+                          <h3 className="font-semibold text-lg text-red-400! mb-2">
                             Delete Account
                           </h3>
                           <p className="text-sm opacity-70 mb-4">
