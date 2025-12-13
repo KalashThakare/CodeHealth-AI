@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import "./gitProject.css";
 import { DashboardNavbar } from "../dashboard/_components/DashboardNavbar";
+import Link from "next/link";
 
 export default function GitHubImportPage() {
   const router = useRouter();
@@ -127,14 +128,14 @@ export default function GitHubImportPage() {
   const displayAnalysis = fullAnalysis;
 
   return (
-    <div className="gitproject-page min-h-screen bg-[var(--gp-bg)]">
+    <div className="gitproject-page min-h-screen bg-(--gp-bg)">
       <DashboardNavbar />
       <div className="max-w-7xl mx-auto p-4">
         <header className="mb-6">
-          <h1 className="text-2xl font-bold text-[var(--gp-fg)] mb-1">
+          <h1 className="text-2xl font-bold text-(--gp-fg) mb-1">
             GitHub Repository Analysis
           </h1>
-          <p className="text-sm text-[var(--gp-fg-secondary)]">
+          <p className="text-sm text-(--gp-fg-secondary)">
             Select a repository to analyze code health metrics with AI-powered
             insights
           </p>
@@ -156,7 +157,7 @@ export default function GitHubImportPage() {
                   clearGithubError();
                   clearAnalysisError();
                 }}
-                className="p-2 glass-btn rounded-lg hover:bg-[var(--gp-bg-secondary)] transition-colors"
+                className="p-2 glass-btn rounded-lg hover:bg-(--gp-bg-secondary) transition-colors"
               >
                 <FiX size={20} />
               </button>
@@ -169,18 +170,18 @@ export default function GitHubImportPage() {
             <div className="apple-card">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base font-semibold text-[var(--gp-fg)] flex items-center gap-2">
+                  <h2 className="text-base font-semibold text-(--gp-fg) flex items-center gap-2">
                     <FiGithub size={18} />
                     Repositories
                   </h2>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--gp-bg-secondary)] text-[var(--gp-fg-secondary)]">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-(--gp-bg-secondary) text-(--gp-fg-secondary)">
                     {initializedCount}/2 active
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={githubAppRedirect}
-                    className="glassmorphism-button p-1 !rounded-xl transition-all"
+                    className="glassmorphism-button p-1 rounded-xl! transition-all"
                     title="Add new repository"
                   >
                     <FiPlus size={18} />
@@ -188,7 +189,7 @@ export default function GitHubImportPage() {
                   <button
                     onClick={fetchGitHubRepos}
                     disabled={githubLoading}
-                    className="glassmorphism-button p-1 !rounded-xl transition-all disabled:opacity-50"
+                    className="glassmorphism-button p-1 rounded-xl! transition-all disabled:opacity-50"
                     title="Refresh repositories"
                   >
                     <FiRefreshCw
@@ -201,7 +202,7 @@ export default function GitHubImportPage() {
 
               <div className="relative mb-3">
                 <FiSearch
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--gp-fg-secondary)]"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-(--gp-fg-secondary)"
                   size={16}
                 />
                 <input
@@ -209,7 +210,7 @@ export default function GitHubImportPage() {
                   placeholder="Search repositories..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 !m-0 text-sm text-center"
+                  className="w-full pl-9 pr-3 py-1.5 m-0! text-sm text-center"
                 />
               </div>
 
@@ -221,7 +222,7 @@ export default function GitHubImportPage() {
                 ) : filteredRepos.length === 0 ? (
                   <div className="empty-state">
                     <FiGithub className="empty-state-icon" />
-                    <p className="text-[var(--gp-fg-secondary)]">
+                    <p className="text-(--gp-fg-secondary)">
                       No repositories found
                     </p>
                   </div>
@@ -255,7 +256,7 @@ export default function GitHubImportPage() {
                               </span>
                             )}
                             {isInitialized && (
-                              <span className="text-[var(--terminal-success)] flex items-center gap-1">
+                              <span className="text-(--terminal-success) flex items-center gap-1">
                                 • Initialized
                               </span>
                             )}
@@ -272,7 +273,7 @@ export default function GitHubImportPage() {
                           }}
                           disabled={isLoading}
                           className={`glassmorphism-button px-2 py-1 text-xs whitespace-nowrap flex items-center gap-1 ${
-                            isInitialized ? "!text-[var(--terminal-error)]" : ""
+                            isInitialized ? "text-(--terminal-error)!" : ""
                           }`}
                         >
                           {isLoading ? (
@@ -301,19 +302,19 @@ export default function GitHubImportPage() {
               <div className="apple-card py-8">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
                   <div className="col-span-1 w-full flex items-center justify-center">
-                    <div className="w-20 h-20 rounded-xl bg-[var(--gp-bg-secondary)] flex items-center justify-center">
+                    <div className="w-20 h-20 rounded-xl bg-(--gp-bg-secondary) flex items-center justify-center">
                       <FiGithub
                         size={40}
-                        className="text-[var(--gp-fg-secondary)] opacity-50"
+                        className="text-(--gp-fg-secondary) opacity-50"
                       />
                     </div>
                   </div>
 
                   <div className="col-span-1 md:col-span-3 text-center md:text-left">
-                    <h3 className="text-lg font-semibold text-[var(--gp-fg)] mb-2">
+                    <h3 className="text-lg font-semibold text-(--gp-fg) mb-2">
                       Select a Repository
                     </h3>
-                    <p className="text-sm text-[var(--gp-fg-secondary)] leading-relaxed">
+                    <p className="text-sm text-(--gp-fg-secondary) leading-relaxed">
                       Choose a repository from the list to check its code health
                       analysis. Our AI-powered system will provide comprehensive
                       insights into code quality, maintainability, and technical
@@ -326,14 +327,14 @@ export default function GitHubImportPage() {
               <div className="apple-card">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[var(--gp-bg-secondary)] flex items-center justify-center font-bold text-base text-[var(--gp-fg)] neon-glow-subtle">
+                    <div className="w-10 h-10 rounded-lg bg-(--gp-bg-secondary) flex items-center justify-center font-bold text-base text-(--gp-fg) neon-glow-subtle">
                       {selectedRepo.repoName[0]?.toUpperCase() || "R"}
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold text-[var(--gp-fg)]">
+                      <h3 className="text-base font-semibold text-(--gp-fg)">
                         {selectedRepo.repoName}
                       </h3>
-                      <div className="flex items-center gap-2.5 text-xs text-[var(--gp-fg-secondary)] mt-0.5">
+                      <div className="flex items-center gap-2.5 text-xs text-(--gp-fg-secondary) mt-0.5">
                         <span className="flex items-center gap-1">
                           <FiGitBranch size={12} />
                           {selectedRepo.defaultBranch || "main"}
@@ -352,14 +353,14 @@ export default function GitHubImportPage() {
                       </div>
                     </div>
                   </div>
-                  <a
+                  <Link
                     href={selectedRepo.repoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="glassmorphism-button p-2 rounded-lg transition-all"
                   >
                     <FiExternalLink size={16} />
-                  </a>
+                  </Link>
                 </div>
 
                 <div className="flex gap-2 flex-wrap">
@@ -384,7 +385,7 @@ export default function GitHubImportPage() {
                   </button>
                 </div>
                 {hasAnalysisData && (
-                  <div className="w-full mt-2 flex justify-center items-center !bg-transparent">
+                  <div className="w-full mt-2 flex justify-center items-center bg-transparent!">
                     <button
                       onClick={() => {
                         setAnalytics(true);
@@ -433,11 +434,11 @@ function AnalysisResults({ repo, analysis }: { repo: any; analysis: any }) {
 
   return (
     <div className="apple-card space-y-4 animate-fadeIn z-10">
-      <div className="pb-3 border-b border-[var(--gp-border)]">
-        <h3 className="text-base font-semibold text-[var(--gp-fg)] mb-2">
+      <div className="pb-3 border-b border-(--gp-border)">
+        <h3 className="text-base font-semibold text-(--gp-fg) mb-2">
           Analysis Results
         </h3>
-        <div className="flex items-center gap-3 text-xs text-[var(--gp-fg-secondary)]">
+        <div className="flex items-center gap-3 text-xs text-(--gp-fg-secondary)">
           <span className="flex items-center gap-1">
             <FiCode size={14} />
             {totalFiles} files
@@ -481,7 +482,7 @@ function AnalysisResults({ repo, analysis }: { repo: any; analysis: any }) {
 
       {Object.keys(componentScores).length > 0 && (
         <div className="card">
-          <h4 className="font-medium text-[var(--gp-fg)] text-sm mb-3">
+          <h4 className="font-medium text-(--gp-fg) text-sm mb-3">
             Health Score Breakdown
           </h4>
           <div className="space-y-2.5">
@@ -511,7 +512,7 @@ function AnalysisResults({ repo, analysis }: { repo: any; analysis: any }) {
 
       {refactorFiles.length > 0 && (
         <div>
-          <h4 className="font-medium text-[var(--gp-fg)] text-sm mb-2 flex items-center gap-1.5">
+          <h4 className="font-medium text-(--gp-fg) text-sm mb-2 flex items-center gap-1.5">
             <FiAlertTriangle className="text-warning" size={14} />
             High Priority Files ({refactorFiles.length})
           </h4>
@@ -535,7 +536,7 @@ function AnalysisResults({ repo, analysis }: { repo: any; analysis: any }) {
 
       {totalCommits > 0 && (
         <div className="card">
-          <h4 className="font-medium text-[var(--gp-fg)] text-sm mb-2.5">
+          <h4 className="font-medium text-(--gp-fg) text-sm mb-2.5">
             Commit Activity
           </h4>
           <div className="grid grid-cols-2 gap-3 text-xs">
@@ -636,7 +637,7 @@ function DefaultAnalysisInfo() {
 
   return (
     <div className="apple-card animate-fadeIn z-10">
-      <h3 className="text-base font-semibold text-[var(--gp-fg)] mb-2">
+      <h3 className="text-base font-semibold text-(--gp-fg) mb-2">
         About Code Health Analysis
       </h3>
       <p className="text-sm text-secondary leading-relaxed mb-2">
@@ -646,8 +647,8 @@ function DefaultAnalysisInfo() {
 
       <div className="grid grid-cols-2 gap-0 mb-1">
         {features.map((item, idx) => (
-          <div key={idx} className="card !p-4 !m-1">
-            <div className="font-medium text-[var(--gp-fg)] text-xs mb-1">
+          <div key={idx} className="card p-4! m-1!">
+            <div className="font-medium text-(--gp-fg) text-xs mb-1">
               {item.title}
             </div>
             <div className="text-xs text-secondary leading-snug">
@@ -672,7 +673,7 @@ function DefaultAnalysisInfo() {
         </div>
       </div>
 
-      <div className="alert alert-info !m-0">
+      <div className="alert alert-info m-0!">
         <p className="text-xs font-medium mb-0.5">
           <strong>Pro Tip:</strong> Best Practices
         </p>

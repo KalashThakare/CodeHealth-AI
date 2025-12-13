@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useSupportStore, SupportCase } from "@/store/supportStore";
 import "./support.css";
+import Link from "next/link";
 
 type TabType = "All" | "Open" | "Closed";
 type SortType = "Last Updated" | "Created Date";
@@ -152,14 +153,14 @@ export default function SupportClient() {
             <h1>Support Center</h1>
             <p>
               Create and view support cases for your projects.{" "}
-              <a
+              <Link
                 href="https://docs.codehealth.ai/support"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Learn more
                 <ExternalLink className="external-icon" />
-              </a>
+              </Link>
             </p>
           </div>
           <button
@@ -448,7 +449,7 @@ export default function SupportClient() {
         <div className="support-resources">
           <h3 className="resources-title">Resources</h3>
           <div className="resources-grid">
-            <a
+            <Link
               href="https://docs.codehealth.ai"
               target="_blank"
               rel="noopener noreferrer"
@@ -464,9 +465,9 @@ export default function SupportClient() {
                 </h4>
                 <p>Explore guides, tutorials, and API references</p>
               </div>
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="https://github.com/codehealth-ai/discussions"
               target="_blank"
               rel="noopener noreferrer"
@@ -482,9 +483,9 @@ export default function SupportClient() {
                 </h4>
                 <p>Join discussions and get help from the community</p>
               </div>
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="https://status.codehealth.ai"
               target="_blank"
               rel="noopener noreferrer"
@@ -500,7 +501,7 @@ export default function SupportClient() {
                 </h4>
                 <p>Check system status and incident reports</p>
               </div>
-            </a>
+            </Link>
           </div>
         </div>
       </div>
