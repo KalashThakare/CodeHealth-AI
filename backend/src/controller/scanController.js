@@ -108,11 +108,9 @@ export const initialiseAnalysis = async(req,res)=>{
   console.log(`[initializeAnalysis] Received request for repo ${repoId} with ${totalFiles} files`);
   
   try {
-    // Store the total files count in Redis with repo-specific key
     const redisKey = `analysisPooler:${repoId}:totalFiles`;
     await connection.set(redisKey, totalFiles);
-    
-    // Start the polling mechanism
+
     startAnalysisPolling(repoId, totalFiles);
     
     return res.status(200).json({
