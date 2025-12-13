@@ -1,5 +1,5 @@
 import { Project } from "../database/models/project.js";
-import { handleAnalyse } from "../services/handlers/analyse.handler.js";
+import { fullRepoAnalyse} from "../services/handlers/analyse.handler.js";
 import { connection, filesQueue } from "../lib/redis.js";
 import PushAnalysisMetrics from "../database/models/pushAnalysisMetrics.js";
 import RepoFileMetrics from "../database/models/repoFileMetrics.js";
@@ -9,6 +9,7 @@ import RepoMetadata from "../database/models/repoMedata.js";
 import { triggerBackgroundAnalysis } from "./analysisController.js";
 import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
 import activity from "../database/models/activity.js";
+import { startAnalysisPolling } from "../services/pooling.Service.js";
 
 export const Analyse_repo = async (req, res) => {
   try {
@@ -77,7 +78,7 @@ export const Analyse_repo = async (req, res) => {
       requestedBy: null,
     };
 
-    const result = await handleAnalyse(payload);
+    const result = await fullRepoAnalyse(payload);
     console.log(result);
     return res.status(200).json({
       message: "Initialization successful. Analysis in progress.",
@@ -104,21 +105,35 @@ export const initialiseAnalysis = async(req,res)=>{
     return res.status(400).json({ message: "repoId and totalFiles are required" });
   }
   
-  const repoJobsKey = `analysis:jobs:${repoId}`;
-  await connection.set(repoJobsKey, totalFiles, 'EX', 3600);
+  console.log(`[initializeAnalysis] Received request for repo ${repoId} with ${totalFiles} files`);
   
-  console.log(`[initializeAnalysis] Initialized counter for repo ${repoId} with ${totalFiles} files`);
-  
-  return res.status(200).json({
-    success: true,
-    message: `Analysis initialized for ${totalFiles} files`,
-    repoId,
-    totalFiles
-  });
+  try {
+    // Store the total files count in Redis with repo-specific key
+    const redisKey = `analysisPooler:${repoId}:totalFiles`;
+    await connection.set(redisKey, totalFiles);
+    
+    // Start the polling mechanism
+    startAnalysisPolling(repoId, totalFiles);
+    
+    return res.status(200).json({
+      success: true,
+      message: `Analysis initialized for ${totalFiles} files`,
+      repoId,
+      totalFiles
+    });
+  } catch (error) {
+    console.error(`[initializeAnalysis] Error: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to initialize analysis",
+      error: error.message
+    });
+  }
 }
 
 export const enqueueBatch = async (req, res) => {
   const { files, repoId, branch, isPushEvent = false } = req.body;
+  
   if (!Array.isArray(files)) {
     return res.status(400).json({ message: "Invalid response" });
   }
@@ -132,20 +147,11 @@ export const enqueueBatch = async (req, res) => {
     },
   }));
 
-  // DON'T modify counter - it's already initialized
-  const repoJobsKey = `analysis:jobs:${repoId}`;
-
   if (isPushEvent) {
-    const currentCount = await connection.get(repoJobsKey);
-    const newCount = await connection.incrby(repoJobsKey, jobs.length);
-    await connection.expire(repoJobsKey, 3600);
-    
-    console.log(`[enqueueBatch] Push event: Adding ${jobs.length} JS/TS files for repo ${repoId}, current counter: ${currentCount}, new counter: ${newCount}`);
+    console.log(`[enqueueBatch] Push event: Adding ${jobs.length} JS/TS files for repo ${repoId}`);
   } else {
-    const currentCount = await connection.get(repoJobsKey);
-    console.log(`[enqueueBatch] Initial analysis: Adding ${jobs.length} JS/TS files for repo ${repoId}, counter remains: ${currentCount}`);
+    console.log(`[enqueueBatch] Initial analysis: Adding ${jobs.length} JS/TS files for repo ${repoId}`);
   }
-  
 
   await filesQueue.addBulk(jobs);
 
@@ -257,11 +263,7 @@ export const collectePythonMetrics = async (req, res) => {
 
     if (!repo) return res.status(404).json({ message: "No repository found" });
 
-    // DON'T increment - counter is already initialized by initializeAnalysis
-    const repoJobsKey = `analysis:jobs:${repoId}`;
-    const currentCount = await connection.get(repoJobsKey);
-    
-    console.log(`[collectePythonMetrics] Processing ${Metrics.length} Python files for repo ${repoId}, current counter: ${currentCount}`);
+    console.log(`[collectePythonMetrics] Processing ${Metrics.length} Python files for repo ${repoId}`);
 
     const records = Metrics.map((metric) => {
       const avgComplexity =
@@ -326,94 +328,29 @@ export const collectePythonMetrics = async (req, res) => {
       `Successfully saved ${savedRecords.length} file metrics to database`
     );
 
-    // Decrement counter and check if we should trigger analysis
-    const lockKey = `analysis:lock:${repoId}`;
+    // Trigger analysis after saving metrics
+    console.log(`[collectePythonMetrics] Triggering background analysis for repo ${repoId}`);
     
-    const luaScript = `
-      local jobsKey = KEYS[1]
-      local lockKey = KEYS[2]
-      local decrementBy = tonumber(ARGV[1])
+    try {
+      await triggerBackgroundAnalysis(repoId);
       
-      local remaining = redis.call('DECRBY', jobsKey, decrementBy)
+      return res.status(200).json({
+        success: true,
+        message: `Successfully saved ${savedRecords.length} file metrics and completed analysis`,
+        count: savedRecords.length,
+        analysisTriggered: true,
+      });
+    } catch (error) {
+      console.error('[collectePythonMetrics] Background analysis failed:', error);
       
-      if remaining == 0 then
-        local lockSet = redis.call('SET', lockKey, 'python', 'NX', 'EX', 300)
-        if lockSet then
-          return 1  -- This process should trigger analysis
-        else
-          return 0  -- Lock already exists
-        end
-      elseif remaining > 0 then
-        return 2  -- More jobs remaining
-      else
-        return -1 -- Counter went negative
-      end
-    `;
-    
-    const result = await connection.eval(
-      luaScript,
-      2,
-      repoJobsKey,
-      lockKey,
-      savedRecords.length.toString()
-    );
-    
-    console.log(`[collectePythonMetrics] Repo ${repoId}: result=${result}, remaining after processing ${savedRecords.length} Python files`);
-
-    if (result === 1) {
-      // All files processed, trigger analysis
-      console.log(`[collectePythonMetrics] All files processed for repo ${repoId}, triggering background analysis`);
-      
-      try {
-        await triggerBackgroundAnalysis(repoId);
-        
-        // Cleanup
-        await connection.del(repoJobsKey);
-        await connection.del(lockKey);
-        
-        return res.status(200).json({
-          success: true,
-          message: `Successfully saved ${savedRecords.length} file metrics and completed analysis`,
-          count: savedRecords.length,
-          analysisTriggered: true,
-        });
-      } catch (error) {
-        console.error('[collectePythonMetrics] Background analysis failed:', error);
-        await connection.del(lockKey);
-        
-        return res.status(500).json({
-          message: "Failed to complete repository analysis",
-          filesProcessed: savedRecords.length,
-          error: error.message,
-        });
-      }
-    } else if (result === 0) {
-      console.log(`[collectePythonMetrics] Analysis already triggered by another process for repo ${repoId}`);
-    } else if (result === 2) {
-      console.log(`[collectePythonMetrics] More files remaining for repo ${repoId}`);
-    } else if (result === -1) {
-      console.warn(`[collectePythonMetrics] Counter went negative for repo ${repoId} - possible race condition`);
+      return res.status(500).json({
+        message: "Failed to complete repository analysis",
+        filesProcessed: savedRecords.length,
+        error: error.message,
+      });
     }
-
-    return res.status(200).json({
-      success: true,
-      message: `Successfully saved ${savedRecords.length} file metrics`,
-      count: savedRecords.length,
-      analysisTriggered: false,
-    });
   } catch (error) {
     console.error("Error collecting Python metrics:", error);
-    
-    // Decrement counter on error to avoid blocking analysis
-    try {
-      const repoJobsKey = `analysis:jobs:${repoId}`;
-      if (Metrics && Metrics.length > 0) {
-        await connection.decrby(repoJobsKey, Metrics.length);
-        console.log(`[collectePythonMetrics] Decremented counter by ${Metrics.length} due to error`);
-      }
-    } catch (redisError) {
-      console.error("Failed to decrement counter on error:", redisError);
-    }
     
     return res.status(500).json({
       success: false,

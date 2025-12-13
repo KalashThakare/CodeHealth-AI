@@ -69,27 +69,35 @@ export async function handlePush(payload) {
     const modifiedArray = Array.from(modified);
     const removedArray = Array.from(removed);
 
-    if(removedArray.length != 0){
+    if (removedArray.length != 0) {
       const res = await removeFiles(repoId, removedArray);
-      if(res){
+      if (res) {
         console.log("Success fully deleted the files from database", res);
       }
     }
 
     try {
       const repoAnalysis = await RepositoryAnalysis.findOne({ where: { repoId } });
-      
+
       if (repoAnalysis) {
+        const previousCount = repoAnalysis.totalCommits || 0;
+        const newTotal = previousCount + commits.length;
+
+        // Update the record
         await repoAnalysis.update({
-          totalCommits: (repoAnalysis.totalCommits || 0) + commits.length,
+          totalCommits: newTotal,
           lastCommit: new Date(headCommit?.timestamp || Date.now())
         });
-        
+
+        // Reload to verify the update
+        await repoAnalysis.reload();
+
         console.log("[RepositoryAnalysis] Updated commit count:", {
           repoId,
-          previousCount: repoAnalysis.totalCommits || 0,
+          previousCount,
           newCommits: commits.length,
-          totalCommits: (repoAnalysis.totalCommits || 0) + commits.length
+          totalCommits: repoAnalysis.totalCommits, // Use the reloaded value
+          verified: repoAnalysis.totalCommits === newTotal
         });
       } else {
         console.log("[RepositoryAnalysis] No analysis record found for repoId:", repoId);
@@ -115,24 +123,12 @@ export async function handlePush(payload) {
     const scanJobId = `scan-${repoId}-${headCommit?.id || Date.now()}`;
     const safeScanJobId = scanJobId.replace(/[^\w.-]/g, "_");
 
-    const ScanJobData = {repoId, repo, installationId, commitSha, branch, added:addedArray, modified:modifiedArray};
+    const ScanJobData = { repoId, repo, installationId, commitSha, branch, added: addedArray, modified: modifiedArray };
 
-    const ScanJob = await pushScanQueue.add("Scan", ScanJobData,{
-      jobId:safeScanJobId
+    const ScanJob = await pushScanQueue.add("Scan", ScanJobData, {
+      jobId: safeScanJobId
     })
 
-    const repository = await Project.findOne({
-      where:{
-        repoId:repoId,
-        initialised:true
-      }
-    })
-
-    await repository.update({ 
-      initialised: true,
-      analysisStatus: 'processing',
-      analysisStartedAt: new Date()
-    });
 
     console.log("[pushScan] enqueue request", { ScanJobData });
 

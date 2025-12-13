@@ -14,6 +14,7 @@ export const connection = new IORedis({
 
 export const queueOptions = {
   connection,
+  sharedConnection: true,
   defaultJobOptions: {
     removeOnComplete: {
       age: 60 * 10,  

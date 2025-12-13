@@ -2,8 +2,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Any, Optional
 import os
-from together import Together
-from anthropic import Anthropic
 from openai import OpenAI
 from ..schemas.llmSchema import LLMSettings
 import httpx
@@ -11,7 +9,6 @@ from fastapi import HTTPException
 
 llm = LLMSettings()
 
-together_client = Together(api_key=llm.together_api_key)
 gemini_api_key = llm.gemini_api_key 
 gemini_api_key2 = llm.gemini_api_key2 
 GEMINI_MODEL = "gemini-2.5-flash-lite"
@@ -77,27 +74,6 @@ async def parse_llm_response(response: str) -> Dict[str, Any]:
     except json.JSONDecodeError:
         return {"rawResponse": response}
 
-
-async def call_llm_together(prompt: str, max_tokens: int = 4000) -> str:
-    try:
-        response = together_client.chat.completions.create(
-            model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",  # strong model for reasoning and summaries
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a senior software engineer specializing in repository health, code metrics, and technical debt analysis."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            temperature=0.3,
-            max_tokens=max_tokens
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Together AI API error: {str(e)}")
     
 async def call_llm_claude(prompt: str, max_tokens: int = 4000) -> str:
     

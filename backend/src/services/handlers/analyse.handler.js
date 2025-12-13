@@ -1,74 +1,83 @@
-import { fullRepoAnalysisQueue } from "../../lib/redis.js";
+import axios from "axios";
 
-export async function handleAnalyse(payload){
+const DEADLINE_MS = 300000; // 5 minutes
 
-    try {
-        const repoId = payload.repoId;
-        const owner = payload.owner;
-        const repoName = payload.repoName;
-        const fullName = `${owner}/${repoName}`;
-        const defaultBranch = payload.defaultBranch || "main";
-        const installationId = payload.installationId;
-        const requestedBy = payload.requestedBy || "manual";
+export async function fullRepoAnalyse(payload) {
+  try {
+    const repoId = payload.repoId;
+    const owner = payload.owner;
+    const repoName = payload.repoName;
+    const fullName = `${owner}/${repoName}`;
+    const defaultBranch = payload.defaultBranch || "main";
+    const installationId = payload.installationId;
+    const requestedBy = payload.requestedBy || "manual";
+    const requestedAt = payload.requestedAt || new Date().toISOString();
 
-        console.log("[analyse] enqueue request", { 
-            repoId, 
-            fullName, 
-            branch: defaultBranch, 
-            installationId,
-            requestedBy 
-        });
+    console.log("[analyse] processing request", {
+      repoId,
+      fullName,
+      branch: defaultBranch,
+      installationId,
+      requestedBy,
+    });
 
-        const jobData = {
-            repoId,
-            owner,
-            repoName,
-            fullName,
-            defaultBranch,
-            installationId,
-            requestedBy,
-            requestedAt: new Date().toISOString()
-        };
-
-        const baseId = `analysis-${fullName}-${defaultBranch}-${Date.now()}`;
-        const safeId = baseId.replace(/[^\w.-]/g, "_");
-
-        const job = await fullRepoAnalysisQueue.add("fullRepoAnalysis", jobData, {
-            jobId: safeId,
-            attempts: 3,
-            backoff: 'exponential',
-            removeOnComplete: 10,
-            removeOnFail: 5,
-            timeout: 300000 
-        });
-
-        const state = await job.getState();
-        const counts = await fullRepoAnalysisQueue.getJobCounts();
-
-        console.log("[analyse] enqueued", { 
-            id: job.id, 
-            state, 
-            counts,
-            repoId,
-            fullName
-        });
-
-        return { 
-            enqueued: true, 
-            id: job.id, 
-            state, 
-            repoId,
-            fullName,
-            branch: defaultBranch 
-        };
-
-    } catch (error) {
-        console.error("[analyse] enqueue error", error);
-        return { 
-            enqueued: false, 
-            error: String(error),
-            repoId: payload.repoId || null 
-        };
+    if (!repoId || !owner || !repoName || !fullName || !defaultBranch || !installationId) {
+      throw new Error(
+        `Invalid payload: repoId=${repoId} owner=${owner} repoName=${repoName} fullName=${fullName} defaultBranch=${defaultBranch} installationId=${installationId}`
+      );
     }
 
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort("deadline"), DEADLINE_MS);
+
+    try {
+      const url = `${process.env.ANALYSIS_INTERNAL_URL}/v1/internal/analysis/full-repo`;
+      const runPayload = {
+        repoId,
+        owner,
+        repoName,
+        fullName,
+        branch: defaultBranch,
+        installationId,
+        requestedBy,
+        requestedAt,
+      };
+
+      console.log("[analyse] dispatching to internal service", { url, repoId, fullName });
+
+      const { data } = await axios.post(url, runPayload, {
+        timeout: Math.min(DEADLINE_MS - 1000, 290000),
+        signal: controller.signal,
+      });
+
+      console.log("[analyse] completed", {
+        repoId,
+        fullName,
+        score: data?.score,
+        runId: data?.runId,
+      });
+
+      return {
+        ok: true,
+        repoId,
+        fullName,
+        branch: defaultBranch,
+        requestedBy,
+        score: data?.score ?? null,
+        summary: data?.message ?? null,
+        findings: data?.findings ?? null,
+        runId: data?.runId ?? null,
+      };
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch (error) {
+    console.error("[analyse] error", error);
+    return {
+      ok: false,
+      error: String(error),
+      repoId: payload.repoId || null,
+      fullName: payload.owner && payload.repoName ? `${payload.owner}/${payload.repoName}` : null,
+    };
+  }
 }

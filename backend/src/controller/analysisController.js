@@ -290,19 +290,19 @@ export async function triggerBackgroundAnalysis(repoId) {
       }
     })
 
-    await repo.update({ 
-      analysisStatus: 'completed',
-      analysisCompletedAt: new Date()
-    });
+    // await repo.update({ 
+    //   analysisStatus: 'completed',
+    //   analysisCompletedAt: new Date()
+    // });
 
-    io.to(`user:${repo.userId}`).emit('notification', {
-      type: "analysis",
-      success: true,
-      repoId,
-      repoName: repo.fullName,
-      message: `Repository analysis completed successfully for repo: ${repo.fullName}`,
-      timestamp: new Date().toISOString()
-    })
+    // io.to(`user:${repo.userId}`).emit('notification', {
+    //   type: "analysis",
+    //   success: true,
+    //   repoId,
+    //   repoName: repo.fullName,
+    //   message: `Repository analysis completed successfully for repo: ${repo.fullName}`,
+    //   timestamp: new Date().toISOString()
+    // })
 
     const velocityTrendValue = isNaN(commitAnalysis.velocity?.trend) ? null : commitAnalysis.velocity?.trend;
 
@@ -316,17 +316,17 @@ export async function triggerBackgroundAnalysis(repoId) {
       codeQuality: healthScore.componentScores.codeQuality
     })
 
-    await notification.create({
-      userId: repo.userId,
-      title: "Analysis",
-      message: `Repository analysis completed successfully for repo: ${repo.fullName}`
-    })
+    // await notification.create({
+    //   userId: repo.userId,
+    //   title: "Analysis",
+    //   message: `Repository analysis completed successfully for repo: ${repo.fullName}`
+    // })
 
     console.log(`[Background] Analysis completed for repo ${parsedRepoId}`);
 
-    triggerAlertScan(parsedRepoId, repo.userId).catch((error) => {
-      console.log("error trigger alert scan", error)
-    });
+    // triggerAlertScan(parsedRepoId, repo.userId).catch((error) => {
+    //   console.log("error trigger alert scan", error)
+    // });
 
   } catch (error) {
     console.error(`[Background] Analysis failed for repo ${repoId}:`, error);
