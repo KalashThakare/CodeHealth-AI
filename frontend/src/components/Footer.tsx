@@ -2,11 +2,11 @@ import { Twitter, Github, Linkedin } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="bg-(--color-bg-secondary) border-t border-[var(--color-border)]">
+    <footer className="bg-(--color-bg-secondary) border-t border-(--color-border)">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           <div className="sm:col-span-2 lg:col-span-2">
-            <h3 className="text-xl sm:text-2xl font-bold text-[var(--color-fg)] mb-3 sm:mb-4">
+            <h3 className="text-xl sm:text-2xl font-bold text-(--color-fg) mb-3 sm:mb-4">
               CodeHealth<span className="text-[var(--color-primary)]">AI</span>
             </h3>
             <p className="text-sm sm:text-base text-[var(--color-fg-secondary)] mb-4 sm:mb-6 max-w-md">

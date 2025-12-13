@@ -62,7 +62,7 @@ export default function Navbar() {
             <div className="flex items-baseline space-x-6 lg:space-x-8">
               <Link
                 href="#features"
-                className="text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors text-sm lg:text-base"
+                className="text-(--color-fg-secondary) hover:text-(--color-fg) transition-colors text-sm lg:text-base"
               >
                 Features
               </Link>
