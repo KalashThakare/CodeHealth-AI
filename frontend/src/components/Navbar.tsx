@@ -52,7 +52,7 @@ export default function Navbar() {
           <div className="shrink-0 flex items-center">
             <h1 className="text-xl sm:text-2xl font-bold text-(--color-fg)">
               CodeHealth
-              <span className="text-[var(--color-primary)] neon-glow-subtle ml-1">
+              <span className="text-(--color-primary) neon-glow-subtle ml-1">
                 AI
               </span>
             </h1>
