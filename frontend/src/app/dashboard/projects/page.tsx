@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { CircleX, Settings, X } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import Image from "next/image";
+import Link from "next/link";
 
 function MiniSemiCircle({
   value,
@@ -269,8 +270,8 @@ function AlertsSection({
   alerts,
   isLoading,
   onDismiss,
-  // onDismissAll,
-}: {
+}: // onDismissAll,
+{
   alerts: Notification[];
   isLoading: boolean;
   onDismiss: (id: string) => void;
@@ -452,6 +453,9 @@ export default function ProjectsPage() {
   const dismissAlert = useNotificationStore((s) => s.dismissAlert);
   // const dismissAllAlerts = useNotificationStore((s) => s.dismissAllAlerts);
   const fetchAlerts = useNotificationStore((s) => s.fetchAlerts);
+  const recentPreview = useGitHubStore((s) => s.recentPreview);
+  const fetchRecentPreview = useGitHubStore((s) => s.fetchRecentPreview);
+  const recentPreviewLoading = useGitHubStore((s) => s.recentPreviewLoading);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [openOptionsMenu, setOpenOptionsMenu] = useState<number | null>(null);
@@ -482,6 +486,7 @@ export default function ProjectsPage() {
         promises.push(fetchGitHubRepos());
         promises.push(fetchUsage());
         promises.push(fetchAlerts());
+        promises.push(fetchRecentPreview());
         await Promise.all(promises);
       } catch (error) {
         console.error("Error fetching projects data:", error);
@@ -573,10 +578,57 @@ export default function ProjectsPage() {
 
         <div className="sidebar-section-title">Recent Previews</div>
         <div className="sidebar-section">
-          <div>
-            Preview deployments that you have recently visited or created will
-            appear here.
-          </div>
+          {recentPreviewLoading ? (
+            <div className="flex items-center gap-2">
+              <div
+                className="loading-spinner"
+                style={{ width: 16, height: 16 }}
+              />
+              <p
+                className="text-xs"
+                style={{ color: "var(--color-fg-secondary)" }}
+              >
+                Loading recent preview...
+              </p>
+            </div>
+          ) : recentPreview &&
+            (recentPreview.repoName || recentPreview.fullName) ? (
+            <div className="glass-card p-3 rounded-xl"
+            style={{ backgroundColor: "var(--color-bg-secondary)" }}
+            >
+              <div className="flex items-start px-5">
+                <div className="flex-1">
+                  <div
+                    className="text-sm font-medium"
+                    style={{ color: "var(--color-fg)" }}
+                  >
+                    {recentPreview.repoName || recentPreview.fullName}
+                  </div>
+                  <div
+                    className="text-xs mt-1"
+                    style={{ color: "var(--color-fg-secondary)" }}
+                  >
+                    {recentPreview.fullName}
+                  </div>
+                  {recentPreview.analysisCompletedAt && (
+                    <div
+                      className="text-xs mt-1"
+                      style={{ color: "var(--color-fg-tertiary)" }}
+                    >
+                      {new Date(
+                        recentPreview.analysisCompletedAt
+                      ).toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-(--color-fg-secondary)">
+              Analysis that you have recently done, will appear
+              here.
+            </div>
+          )}
         </div>
       </aside>
 
@@ -640,7 +692,7 @@ export default function ProjectsPage() {
                     <div className="project-info">
                       <div className="project-name">{repo.repoName}</div>
                       <div className="flex items-center gap-2">
-                        <a
+                        <Link
                           href={repo.repoUrl}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -648,7 +700,7 @@ export default function ProjectsPage() {
                           onClick={(e) => e.stopPropagation()}
                         >
                           <FiExternalLink size={10} />
-                        </a>
+                        </Link>
                         <span className="visibility-badge">
                           {repo.visibility === "private" ? (
                             <>

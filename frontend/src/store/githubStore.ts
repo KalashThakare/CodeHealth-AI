@@ -37,12 +37,22 @@ interface RepositoryAnalysis {
   analyzed_at: string;
 }
 
+interface RecentPreview {
+  repoId?: number | null;
+  fullName: string | null;
+  repoName: string | null;
+  analysisCompletedAt: string | null;
+  userId?: number | null;
+}
+
 interface GitHubStore {
   githubToken: string | null;
   githubUser: GitHubUser | null;
   repositories: GitHubRepo[];
   selectedRepo: GitHubRepo | null;
   analysisHistory: RepositoryAnalysis[];
+  recentPreview: RecentPreview | null;
+  recentPreviewLoading: boolean;
   isLoading: boolean;
   error: string | null;
   initializingRepoId: number | null;
@@ -60,6 +70,7 @@ interface GitHubStore {
   getRepositoryById: (id: number) => GitHubRepo | undefined;
   checkGitHubTokenStatus: () => Promise<boolean>;
   githubAppRedirect: () => Promise<void>;
+  fetchRecentPreview: () => Promise<RecentPreview | null>;
 }
 
 interface GitHubState {
@@ -72,6 +83,7 @@ interface GitHubState {
 
   fetchGitHubUser: () => Promise<void>;
   fetchGitHubRepos: () => Promise<void>;
+  fetchRecentPreview: () => Promise<RecentPreview | null>;
   clearError: () => void;
 }
 
@@ -83,6 +95,8 @@ export const useGitHubStore = create<GitHubStore>()(
       repositories: [],
       selectedRepo: null,
       analysisHistory: [],
+      recentPreview: null,
+      recentPreviewLoading: false,
       isLoading: false,
       error: null,
       initializingRepoId: null,
@@ -155,6 +169,43 @@ export const useGitHubStore = create<GitHubStore>()(
             isLoading: false,
           });
           toast.error(errorMessage);
+        }
+      },
+
+      fetchRecentPreview: async (): Promise<RecentPreview | null> => {
+        set({ recentPreviewLoading: true });
+        try {
+          const res = await axiosInstance.get<{
+            success?: boolean;
+            fullName?: string;
+            repoName?: string;
+            analysisCompletedAt?: string;
+            userId?: number;
+            message?: string;
+          }>("/dashboard/recentPreview");
+
+          if (res.data && (res.data.success || res.data.fullName)) {
+            const preview: RecentPreview = {
+              repoId: (res.data as any).repoId || null,
+              fullName: res.data.fullName || null,
+              repoName: res.data.repoName || null,
+              analysisCompletedAt: res.data.analysisCompletedAt || null,
+              userId: res.data.userId || null,
+            };
+            set({ recentPreview: preview, recentPreviewLoading: false });
+            return preview;
+          }
+
+          set({ recentPreview: null, recentPreviewLoading: false });
+          return null;
+        } catch (error: any) {
+          const errorMessage =
+            error?.response?.data?.message ||
+            error?.message ||
+            "Failed to fetch recent preview";
+          set({ recentPreviewLoading: false });
+          toast.error(errorMessage);
+          return null;
         }
       },
 
