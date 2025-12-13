@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FaGoogle, FaGithub } from "react-icons/fa";
 import { DashboardThemeToggle } from "@/components/ui/DashboardThemeToggle";
+import Link from "next/link";
 
 export default function SignUpClient() {
   const [name, setName] = useState("");
@@ -216,19 +217,19 @@ export default function SignUpClient() {
               }}
             >
               By creating an account, you agree to our{" "}
-              <a
+              <Link
                 href="#"
                 style={{ color: "var(--color-link)", fontWeight: 500 }}
               >
                 Terms of Service
-              </a>{" "}
+              </Link>{" "}
               and{" "}
-              <a
+              <Link
                 href="#"
                 style={{ color: "var(--color-link)", fontWeight: 500 }}
               >
                 Privacy Policy
-              </a>
+              </Link>
             </p>
           </div>
 
@@ -236,7 +237,7 @@ export default function SignUpClient() {
             <span style={{ color: "var(--color-fg)", fontSize: "1rem" }}>
               Already have an account?{" "}
             </span>
-            <a
+            <Link
               href="/login"
               style={{
                 color: "var(--color-link)",
@@ -244,7 +245,7 @@ export default function SignUpClient() {
               }}
             >
               Log In
-            </a>
+            </Link>
           </div>
         </div>
       </div>

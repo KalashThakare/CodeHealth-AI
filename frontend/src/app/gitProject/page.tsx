@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import "./gitProject.css";
 import { DashboardNavbar } from "../dashboard/_components/DashboardNavbar";
+import Link from "next/link";
 
 export default function GitHubImportPage() {
   const router = useRouter();
@@ -352,14 +353,14 @@ export default function GitHubImportPage() {
                       </div>
                     </div>
                   </div>
-                  <a
+                  <Link
                     href={selectedRepo.repoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="glassmorphism-button p-2 rounded-lg transition-all"
                   >
                     <FiExternalLink size={16} />
-                  </a>
+                  </Link>
                 </div>
 
                 <div className="flex gap-2 flex-wrap">

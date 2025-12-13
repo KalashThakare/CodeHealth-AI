@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
 import "@/app/glass.css";
+import Link from "next/link";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -59,30 +60,30 @@ export default function Navbar() {
 
           <div className="hidden md:block">
             <div className="flex items-baseline space-x-6 lg:space-x-8">
-              <a
+              <Link
                 href="#features"
                 className="text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors text-sm lg:text-base"
               >
                 Features
-              </a>
-              <a
+              </Link>
+              <Link
                 href="#pricing"
                 className="text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors text-sm lg:text-base"
               >
                 Pricing
-              </a>
-              <a
+              </Link>
+              <Link
                 href="#docs"
                 className="text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors text-sm lg:text-base"
               >
                 Docs
-              </a>
-              <a
+              </Link>
+              <Link
                 href="#contact"
                 className="text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors text-sm lg:text-base"
               >
                 Contact
-              </a>
+              </Link>
             </div>
           </div>
 
@@ -170,34 +171,34 @@ export default function Navbar() {
             className="md:hidden glass-card mt-2 border-t border-[var(--color-border)]/30"
           >
             <div className="px-2 pt-2 pb-3 space-y-1">
-              <a
+              <Link
                 href="#features"
                 onClick={() => setIsMenuOpen(false)}
                 className="block px-3 py-2 text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors rounded-md"
               >
                 Features
-              </a>
-              <a
+              </Link>
+              <Link
                 href="#pricing"
                 onClick={() => setIsMenuOpen(false)}
                 className="block px-3 py-2 text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors rounded-md"
               >
                 Pricing
-              </a>
-              <a
+              </Link>
+              <Link
                 href="#docs"
                 onClick={() => setIsMenuOpen(false)}
                 className="block px-3 py-2 text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors rounded-md"
               >
                 Docs
-              </a>
-              <a
+              </Link>
+              <Link
                 href="#contact"
                 onClick={() => setIsMenuOpen(false)}
                 className="block px-3 py-2 text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors rounded-md"
               >
                 Contact
-              </a>
+              </Link>
 
               <div className="flex space-x-4 px-3 py-2 border-t border-[var(--color-border)] mt-2 pt-4">
                 <button

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FaGoogle, FaGithub } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { DashboardThemeToggle } from "@/components/ui/DashboardThemeToggle";
+import Link from "next/link";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -219,7 +220,7 @@ export default function LoginClient() {
             <span style={{ color: "var(--color-fg)", fontSize: "1rem" }}>
               Don't have an account?{" "}
             </span>
-            <a
+            <Link
               href="/signup"
               style={{
                 color: "var(--color-link)",
@@ -227,7 +228,7 @@ export default function LoginClient() {
               }}
             >
               Sign Up
-            </a>
+            </Link>
           </div>
         </div>
       </div>

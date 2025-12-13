@@ -8,6 +8,7 @@ import {
   Github,
   AlertCircle,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function OAuthCallbackClient() {
   const router = useRouter();
@@ -232,13 +233,13 @@ export default function OAuthCallbackClient() {
           style={{ color: "var(--color-fg-muted)" }}
         >
           Having trouble?{" "}
-          <a
+          <Link
             href="/dashboard/support"
             className="underline hover:no-underline"
             style={{ color: "var(--color-primary)" }}
           >
             Contact Support
-          </a>
+          </Link>
         </p>
       </div>
     </div>
