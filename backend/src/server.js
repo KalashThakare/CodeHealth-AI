@@ -8,15 +8,16 @@ import "./database/models/association.js"
 import {Server} from "socket.io";
 import { initSocket } from "./socket.js";
 //cronJobs
-import { startCronJobs, stopCronJobs } from "./cron.js";
+import { startCronJobs} from "./cron.js";
 
 
 const server = http.createServer(app);
 const port = process.env.PORT;
+const frontendUrl = process.env.FRONTEND_URL
 
 export const io = new Server(server,{
   cors:{
-    origin:"http://localhost:3000"
+    origin:frontendUrl || "http://localhost:3000"
   }
 })
 
