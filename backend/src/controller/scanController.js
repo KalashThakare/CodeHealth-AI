@@ -1,5 +1,5 @@
 import { Project } from "../database/models/project.js";
-import { fullRepoAnalyse} from "../services/handlers/analyse.handler.js";
+import { fullRepoAnalyse } from "../services/handlers/analyse.handler.js";
 import { connection, filesQueue } from "../lib/redis.js";
 import PushAnalysisMetrics from "../database/models/pushAnalysisMetrics.js";
 import RepoFileMetrics from "../database/models/repoFileMetrics.js";
@@ -50,7 +50,7 @@ export const Analyse_repo = async (req, res) => {
       });
     }
 
-    await repo.update({ 
+    await repo.update({
       initialised: true,
       analysisStatus: 'processing',
       analysisStartedAt: new Date()
@@ -66,8 +66,8 @@ export const Analyse_repo = async (req, res) => {
     }
 
     await activity.create({
-        userId:userId,
-        activity:`${owner} initialised a repo ${repoName}`
+      userId: userId,
+      activity: `${owner} initialised a repo ${repoName}`
     })
 
     const payload = {
@@ -79,12 +79,16 @@ export const Analyse_repo = async (req, res) => {
       requestedBy: null,
     };
 
-    const result = await fullRepoAnalyse(payload);
-    console.log(result);
+    setImmediate(() => {
+      fullRepoAnalyse(payload)
+        .then(res => console.log("Analysis started:", res.jobId))
+        .catch(console.error);
+    });
+
+
     return res.status(200).json({
       message: "Initialization successful. Analysis in progress.",
       data: {
-        jobId: result.jobId,
         status: "processing",
         repoId: repo.repoId,
         estimatedWaitTime: "2-5 minutes",
@@ -99,21 +103,21 @@ export const Analyse_repo = async (req, res) => {
   }
 };
 
-export const initialiseAnalysis = async(req,res)=>{
+export const initialiseAnalysis = async (req, res) => {
   const { repoId, totalFiles } = req.body;
-  
+
   if (!repoId || !totalFiles) {
     return res.status(400).json({ message: "repoId and totalFiles are required" });
   }
-  
+
   console.log(`[initializeAnalysis] Received request for repo ${repoId} with ${totalFiles} files`);
-  
+
   try {
     const redisKey = `analysisPooler:${repoId}:totalFiles`;
     await connection.set(redisKey, totalFiles);
 
     startAnalysisPolling(repoId, totalFiles);
-    
+
     return res.status(200).json({
       success: true,
       message: `Analysis initialized for ${totalFiles} files`,
@@ -134,7 +138,15 @@ export const initialiseAnalysis = async(req,res)=>{
 
 export const enqueueBatch = async (req, res) => {
   const { files, repoId, branch, isPushEvent = false } = req.body;
-  
+
+  console.log('[enqueueBatch] Received request:', {
+    filesCount: files?.length,
+    repoId,
+    branch,
+    isPushEvent,
+    firstFile: files?.[0] // Log first file structure
+  });
+
   if (!Array.isArray(files)) {
     return res.status(400).json({ message: "Invalid response" });
   }
@@ -156,7 +168,7 @@ export const enqueueBatch = async (req, res) => {
       repoId: repoId,
       branch: branch,
       project: {
-        userId: project.userId,  
+        userId: project.userId,
         id: project.id
       }
     },
@@ -168,7 +180,12 @@ export const enqueueBatch = async (req, res) => {
     console.log(`[enqueueBatch] Initial analysis: Adding ${jobs.length} JS/TS files for repo ${repoId}`);
   }
 
+  console.log('[enqueueBatch] Adding jobs to queue:', jobs.length);
+
   const resp = await filesQueue.addBulk(jobs);
+
+  console.log('[enqueueBatch] Jobs added successfully:', resp.length);
+  console.log('[enqueueBatch] Job IDs:', resp.map(j => j.id));
 
   if (resp && io) {  // Check if io exists
     io.to(`user:${project.userId}`).emit('analysis_update', {
@@ -183,7 +200,7 @@ export const enqueueBatch = async (req, res) => {
       timestamp: new Date().toISOString()
     });
   }
-  
+
   res.send({ added: jobs.length });
 };
 
@@ -298,11 +315,11 @@ export const collectePythonMetrics = async (req, res) => {
       const avgComplexity =
         metric.cyclomatic && metric.cyclomatic.length > 0
           ? Math.round(
-              metric.cyclomatic.reduce(
-                (sum, item) => sum + (item.complexity || 0),
-                0
-              ) / metric.cyclomatic.length
-            )
+            metric.cyclomatic.reduce(
+              (sum, item) => sum + (item.complexity || 0),
+              0
+            ) / metric.cyclomatic.length
+          )
           : null;
 
       return {
@@ -359,10 +376,10 @@ export const collectePythonMetrics = async (req, res) => {
 
     // Trigger analysis after saving metrics
     console.log(`[collectePythonMetrics] Triggering background analysis for repo ${repoId}`);
-    
+
     try {
       await triggerBackgroundAnalysis(repoId, repo.userId);
-      
+
       return res.status(200).json({
         success: true,
         message: `Successfully saved ${savedRecords.length} file metrics and completed analysis`,

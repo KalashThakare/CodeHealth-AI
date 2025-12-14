@@ -17,85 +17,142 @@ dotenv.config();
 const CONCURRENCY = Number(process.env.ANALYSIS_CONCURRENCY || 4);
 const DEADLINE_MS = Number(process.env.ANALYSIS_DEADLINE_MS || 15 * 60 * 1000);
 
-export const PushAnalysisWorker = new Worker(
-  "pushAnalysis",
-  async job => {
-    console.log("[push] worker received job", { id: job.id, name: job.name });
+// export const PushAnalysisWorker = new Worker(
+//   "pushAnalysis",
+//   async job => {
+//     console.log("[push] worker received job", { id: job.id, name: job.name });
 
-    if (job.name !== "analysis.push") {
-      return { skipped: true, reason: "unknown-job", name: job.name };
-    }
+//     if (job.name !== "analysis.push") {
+//       return { skipped: true, reason: "unknown-job", name: job.name };
+//     }
 
-    const { repo, repoId, branch, headCommit, installationId, commits, pusher } = job.data || {};
-    if (!repo || !branch || !installationId) {
-      throw new Error(`Invalid job data: repo=${repo} branch=${branch} installationId=${installationId}`);
-    }
+//     const { repo, repoId, branch, headCommit, installationId, commits, pusher } = job.data || {};
+//     if (!repo || !branch || !installationId) {
+//       throw new Error(`Invalid job data: repo=${repo} branch=${branch} installationId=${installationId}`);
+//     }
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort("deadline"), DEADLINE_MS);
+//     const controller = new AbortController();
+//     // Make sure DEADLINE_MS is longer than axios timeout
+//     const timer = setTimeout(() => {
+//       console.log(`[push] job ${job.id} deadline reached, aborting`);
+//       controller.abort("deadline");
+//     }, DEADLINE_MS);
 
-    const runPayload = {
-      repoFullName: repo,
-      repoId,
-      installationId,
-      branch,
-      headCommitSha: headCommit?.id ?? headCommit?.sha ?? null,
-      pushedBy: pusher,
-      commitCount: Array.isArray(commits) ? commits.length : 0,
-      commits: (commits || []).map(c => ({
-        id: c.id,
-        message: c.message,
-        author: c.author?.username || c.author?.name,
-        added: c.added,
-        removed: c.removed,
-        modified: c.modified,
-      })),
-    };
+//     const runPayload = {
+//       repoFullName: repo,
+//       repoId,
+//       installationId,
+//       branch,
+//       headCommitSha: headCommit?.id ?? headCommit?.sha ?? null,
+//       pushedBy: pusher,
+//       commitCount: Array.isArray(commits) ? commits.length : 0,
+//       commits: (commits || []).map(c => ({
+//         id: c.id,
+//         message: c.message,
+//         author: c.author?.username || c.author?.name,
+//         added: c.added,
+//         removed: c.removed,
+//         modified: c.modified,
+//       })),
+//     };
 
-    try {
-      const url = process.env.ANALYSIS_INTERNAL_URL + "/v1/internal/analysis/run";
-      const { data } = await axios.post(url, runPayload, {
-        timeout: 120_000,
-        signal: controller.signal,
-      });
+//     try {
+//       const url = process.env.ANALYSIS_INTERNAL_URL + "/v1/internal/analysis/run";
+      
+//       console.log(`[push] sending request to ${url} for job ${job.id}`, {
+//         repo,
+//         branch,
+//         commitCount: runPayload.commitCount
+//       });
 
-      return {
-        ok: true,
-        repo,
-        branch,
-        headCommitSha: headCommit?.id ?? headCommit?.sha ?? null,
-        score: data?.score ?? null,
-        summary: data?.message ?? null,
-      };
-    } finally {
-      clearTimeout(timer);
-    }
-  },
-  { connection, concurrency: CONCURRENCY }
-);
+//       const { data } = await axios.post(url, runPayload, {
+//         timeout: 120_000,
+//         signal: controller.signal,
+//         headers: {
+//           'Content-Type': 'application/json'
+//         }
+//       });
 
-PushAnalysisWorker.on("ready", () => console.log("[push] worker ready"));
-PushAnalysisWorker.on("error", err => console.error("[push] worker error", err));
-PushAnalysisWorker.on("failed", (job, err) => console.error(`[push] job failed ${job?.id}`, err));
-PushAnalysisWorker.on("completed", async (job) => {
-  if (job?.data && io) {
-    const { repoId } = job.data;
-    const repo = await Project.findOne({
-      where: {
-        repoId: repoId
-      }
-    })
-    triggerAlertScan(repoId, repo.userId);
-  }
-  console.log(`[push] job completed ${job.id}`)
-});
+//       console.log(`[push] received response for job ${job.id}`, {
+//         score: data?.score,
+//         hasMessage: !!data?.message
+//       });
 
-const events = new QueueEvents("pushAnalysis", { connection });
-events.on("waiting", ({ jobId }) => console.log("[push] waiting", jobId));
-events.on("active", ({ jobId }) => console.log("[push] active", jobId));
-events.on("completed", ({ jobId }) => console.log("[push] completed", jobId));
-events.on("failed", ({ jobId, failedReason }) => console.error("[push] failed", jobId, failedReason));
+//       return {
+//         ok: true,
+//         repo,
+//         branch,
+//         headCommitSha: headCommit?.id ?? headCommit?.sha ?? null,
+//         score: data?.score ?? null,
+//         summary: data?.message ?? null,
+//       };
+//     } catch (error) {
+//       // Log detailed error information
+//       console.error(`[push] request failed for job ${job.id}`, {
+//         repo,
+//         branch,
+//         error: error.message,
+//         code: error.code,
+//         response: error.response?.data,
+//         status: error.response?.status
+//       });
 
+//       // Re-throw to let BullMQ handle retries
+//       throw error;
+//     } finally {
+//       clearTimeout(timer);
+//     }
+//   },
+//   { 
+//     connection, 
+//     concurrency: CONCURRENCY,
+//     // Add retry configuration
+//     settings: {
+//       attempts: 3, // Retry failed jobs up to 3 times
+//       backoff: {
+//         type: 'exponential',
+//         delay: 5000 // Start with 5 second delay, doubles each retry
+//       }
+//     }
+//   }
+// );
+
+// PushAnalysisWorker.on("ready", () => console.log("[push] worker ready"));
+// PushAnalysisWorker.on("error", err => console.error("[push] worker error", err));
+// PushAnalysisWorker.on("failed", (job, err) => {
+//   console.error(`[push] job failed ${job?.id}`, {
+//     attemptsMade: job?.attemptsMade,
+//     error: err.message,
+//     stack: err.stack
+//   });
+// });
+
+// PushAnalysisWorker.on("completed", async (job) => {
+//   console.log(`[push] job completed ${job.id}`);
+  
+//   if (job?.data) {
+//     const { repoId } = job.data;
+//     try {
+//       const repo = await Project.findOne({
+//         where: { repoId }
+//       });
+      
+//       if (repo) {
+//         triggerAlertScan(repoId, repo.userId);
+//       } else {
+//         console.warn(`[push] repo not found for repoId ${repoId}`);
+//       }
+//     } catch (error) {
+//       console.error(`[push] error in completed handler for job ${job.id}`, error);
+//     }
+//   }
+// });
+
+// const events = new QueueEvents("pushAnalysis", { connection });
+// events.on("waiting", ({ jobId }) => console.log("[push] waiting", jobId));
+// events.on("active", ({ jobId }) => console.log("[push] active", jobId));
+// events.on("completed", ({ jobId }) => console.log("[push] completed", jobId));
+// events.on("failed", ({ jobId, failedReason }) => console.error("[push] failed", jobId, failedReason));
 
 
 export const pullAnalysisWorker = new Worker(

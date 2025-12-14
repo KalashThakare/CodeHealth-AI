@@ -86,7 +86,8 @@ async def ScanFiles(req: PushScanPayload) -> PushScanResponse:
                         json={
                             "files": js_files,
                             "repoId": req.repoId,
-                            "isPushEvent":True
+                            "isPushEvent":True,
+                            "branch":req.branch
                         }
                     ) as resp:
                         result = await resp.json()

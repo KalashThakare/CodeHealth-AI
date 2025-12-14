@@ -1,9 +1,8 @@
 import RepositoryAnalysis from "../../database/models/analysis.js";
-import { Project } from "../../database/models/project.js";
+import Commit from "../../database/models/commitsMetadata.js";
 import { RepoPushEvent } from "../../database/models/repoAnalytics.js";
-import { pushAnalysisQueue } from "../../lib/redis.js";
-import { pushScanQueue } from "../../lib/redis.js";
-import { removeFiles } from "../../utils/functions.js";
+import { processPushAnalysis, processPushScan } from "../push.Service.js";
+
 
 export async function handlePush(payload) {
   try {
@@ -31,7 +30,6 @@ export async function handlePush(payload) {
         branch,
         pushedAt: new Date(payload.head_commit?.timestamp || Date.now()),
       });
-
 
       return { skipped: true, reason: "branch-policy", branch, defaultBranch };
     }
@@ -72,31 +70,57 @@ export async function handlePush(payload) {
     if (removedArray.length != 0) {
       const res = await removeFiles(repoId, removedArray);
       if (res) {
-        console.log("Success fully deleted the files from database", res);
+        console.log("Successfully deleted the files from database", res);
       }
     }
 
     try {
-      const repoAnalysis = await RepositoryAnalysis.findOne({ where: { repoId } });
+      const commitRecords = commits.map(commit => ({
+        repoId: repoId,
+        branch: branch,
+        sha: commit.id,
+        message: commit.message || '',
+        authorName: commit.author?.name || commit.author?.username || 'unknown',
+        authorEmail: commit.author?.email || 'unknown@example.com',
+        authorDate: new Date(commit.timestamp || Date.now()),
+        committerName: commit.committer?.name || commit.committer?.username || commit.author?.name || 'unknown',
+        committerDate: new Date(commit.timestamp || Date.now()),
+      }));
+
+      const createdCommits = await Commit.bulkCreate(commitRecords, {
+        updateOnDuplicate: ['message', 'branch', 'authorDate', 'committerDate'], 
+        ignoreDuplicates: false 
+      });
+
+      console.log("[Commit] Stored commits:", {
+        repoId,
+        branch,
+        commitsStored: createdCommits.length,
+        totalCommits: commits.length
+      });
+    } catch (error) {
+      console.error("[Commit] Error storing commits:", error);
+    }
+
+    try {
+      const repoAnalysis = await RepositoryAnalysis.findOne({ where: { repoId: repoId } });
 
       if (repoAnalysis) {
         const previousCount = repoAnalysis.totalCommits || 0;
         const newTotal = previousCount + commits.length;
 
-        // Update the record
         await repoAnalysis.update({
           totalCommits: newTotal,
           lastCommit: new Date(headCommit?.timestamp || Date.now())
         });
 
-        // Reload to verify the update
         await repoAnalysis.reload();
 
         console.log("[RepositoryAnalysis] Updated commit count:", {
           repoId,
           previousCount,
           newCommits: commits.length,
-          totalCommits: repoAnalysis.totalCommits, // Use the reloaded value
+          totalCommits: repoAnalysis.totalCommits,
           verified: repoAnalysis.totalCommits === newTotal
         });
       } else {
@@ -125,13 +149,15 @@ export async function handlePush(payload) {
 
     const ScanJobData = { repoId, repo, installationId, commitSha, branch, added: addedArray, modified: modifiedArray };
 
-    const ScanJob = await pushScanQueue.add("Scan", ScanJobData, {
-      jobId: safeScanJobId
-    })
+    try {
+      const scanResult = await processPushScan(ScanJobData);
 
+      console.log("[push] Scan completed", { repoId, scanResult });
+    } catch (scanError) {
+      console.error("[push] Scan failed", { repoId, error: scanError.message });
+    }
 
     console.log("[pushScan] enqueue request", { ScanJobData });
-
 
     const jobData = { repo, repoId, branch, headCommit, installationId, commits, pusher };
 
@@ -144,18 +170,17 @@ export async function handlePush(payload) {
 
     const safeId = baseId.replace(/[^\w.-]/g, "_");
 
-    const job = await pushAnalysisQueue.add("analysis.push", jobData, {
-      jobId: safeId,
-    });
-
-    const state = await job.getState();
-    const counts = await pushAnalysisQueue.getJobCounts();
-
-    console.log("[push] enqueued", { id: job.id, state, counts });
-
-    return { enqueued: true, id: job.id, state, repo, branch, headCommit: headCommit?.id ?? null };
+    try {
+      const pushAnalysis = await processPushAnalysis(jobData);
+      console.log(pushAnalysis);
+    } catch (error) {
+      console.error("[push] Ananlysis failed", { repoId, error: scanError.message });
+    }
+    
+    
   } catch (error) {
     console.error("[push] enqueue error", error);
     return { enqueued: false, error: String(error) };
   }
 }
+
