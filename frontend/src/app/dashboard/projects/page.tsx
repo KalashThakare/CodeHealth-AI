@@ -502,11 +502,17 @@ export default function ProjectsPage() {
     fetchAlerts,
   ]);
 
-  const filteredRepositories = repositories.filter(
-    (repo) =>
-      repo.repoName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      repo.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRepositories = repositories
+    .filter(
+      (repo) =>
+        repo.repoName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        repo.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (a.initialised && !b.initialised) return -1;
+      if (!a.initialised && b.initialised) return 1;
+      return 0;
+    });
 
   const handleProjectClick = (repo: any) => {
     console.log("Selecting and navigating to project:", repo.fullName);
@@ -593,8 +599,9 @@ export default function ProjectsPage() {
             </div>
           ) : recentPreview &&
             (recentPreview.repoName || recentPreview.fullName) ? (
-            <div className="glass-card p-3 rounded-xl"
-            style={{ backgroundColor: "var(--color-bg-secondary)" }}
+            <div
+              className="glass-card p-3 rounded-xl"
+              style={{ backgroundColor: "var(--color-bg-secondary)" }}
             >
               <div className="flex items-start px-5">
                 <div className="flex-1">
@@ -625,8 +632,7 @@ export default function ProjectsPage() {
             </div>
           ) : (
             <div className="text-sm text-(--color-fg-secondary)">
-              Analysis that you have recently done, will appear
-              here.
+              Analysis that you have recently done, will appear here.
             </div>
           )}
         </div>
