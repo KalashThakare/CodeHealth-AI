@@ -10,6 +10,7 @@ import { triggerBackgroundAnalysis } from "./analysisController.js";
 import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
 import activity from "../database/models/activity.js";
 import { startAnalysisPolling } from "../services/pooling.Service.js";
+import { io } from "../server.js";
 
 export const Analyse_repo = async (req, res) => {
   try {
@@ -136,12 +137,26 @@ export const enqueueBatch = async (req, res) => {
     return res.status(400).json({ message: "Invalid response" });
   }
 
+  const project = await Project.findOne({
+    where: {
+      repoId: repoId
+    }
+  });
+
+  if (!project) {
+    return res.status(404).json({ message: "Project not found" });
+  }
+
   const jobs = files.map((file) => ({
     name: file.path,
     data: {
       ...file,
       repoId: repoId,
       branch: branch,
+      project: {
+        userId: project.userId,  // Pass userId explicitly
+        id: project.id
+      }
     },
   }));
 
@@ -151,8 +166,22 @@ export const enqueueBatch = async (req, res) => {
     console.log(`[enqueueBatch] Initial analysis: Adding ${jobs.length} JS/TS files for repo ${repoId}`);
   }
 
-  await filesQueue.addBulk(jobs);
+  const resp = await filesQueue.addBulk(jobs);
 
+  if (resp && io) {  // Check if io exists
+    io.to(`user:${project.userId}`).emit('analysis_update', {
+      repoId,
+      phase: "JOB_DISPATCH",
+      level: "INFO",
+      message: "Analysis job dispatched to worker queue",
+      meta: {
+        jobType: "AST_ANALYSIS",
+        filesCount: jobs.length
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+  
   res.send({ added: jobs.length });
 };
 
@@ -330,7 +359,7 @@ export const collectePythonMetrics = async (req, res) => {
     console.log(`[collectePythonMetrics] Triggering background analysis for repo ${repoId}`);
     
     try {
-      await triggerBackgroundAnalysis(repoId);
+      await triggerBackgroundAnalysis(repoId, repo.userId);
       
       return res.status(200).json({
         success: true,

@@ -55,7 +55,7 @@ export const PushAnalysisWorker = new Worker(
     try {
       const url = process.env.ANALYSIS_INTERNAL_URL + "/v1/internal/analysis/run";
       const { data } = await axios.post(url, runPayload, {
-        timeout: 120_000, 
+        timeout: 120_000,
         signal: controller.signal,
       });
 
@@ -482,31 +482,41 @@ export const Analyse_repo_Worker = new Worker(
       clearTimeout(timer);
     }
   },
-  { connection, concurrency: CONCURRENCY, 
+  {
+    connection, concurrency: CONCURRENCY,
     lockDuration: 300000, // 5 minutes - must be longer than your Python processing time
     lockRenewTime: 150000, // 2.5 minutes - half of lockDuration
     stalledInterval: 30000, // Check for stalled jobs every 30 seconds
     maxStalledCount: 2,
-   }
+  }
 );
-
-Analyse_repo_Worker.on("ready", () => console.log("[analyse] worker ready"));
-Analyse_repo_Worker.on("error", err => console.error("[analyse] worker error", err));
-Analyse_repo_Worker.on("failed", (job, err) => console.error(`[analyse] job failed ${job?.id}`, err));
-Analyse_repo_Worker.on("completed", job => console.log(`[analyse] job completed ${job.id}`));
-
-
-const analyseEvents = new QueueEvents("fullRepoAnalysis", { connection });
-analyseEvents.on("waiting", ({ jobId }) => console.log("[analyse] waiting", jobId));
-analyseEvents.on("active", ({ jobId }) => console.log("[analyse] active", jobId));
-analyseEvents.on("completed", ({ jobId }) => console.log("[analyse] completed", jobId));
-analyseEvents.on("failed", ({ jobId, failedReason }) => console.error("[analyse] failed", jobId, failedReason));
 
 export const ASTworker = new Worker(
   "repoFiles",
   async job => {
-    const { path, content, repoId, branch } = job.data;
+    const { path, content, repoId, branch, project } = job.data;
     console.log(`Analyzing file: ${path}`);
+
+    // Check if project data exists
+    if (!project || !project.userId) {
+      console.error(`[ast] Missing project data for file: ${path}`);
+      return {
+        path,
+        error: true,
+        errorMessage: 'Missing project data in job'
+      };
+    }
+
+    io.to(`user:${project.userId}`).emit('analysis_update', {
+      repoId,
+      phase: "SYNTAX_ANALYSIS",
+      level: "PROGRESS",
+      message: "Parsing source file and generating AST",
+      meta: {
+        path
+      },
+      timestamp: new Date().toISOString()
+    });
 
     if (!repoId) {
       console.error(`[ast] Missing repoId for file: ${path}`);
@@ -518,25 +528,24 @@ export const ASTworker = new Worker(
     }
 
     try {
-
-      const project = await Project.findOne({
-        where: { repoId: repoId }
-      });
-
-      if (!project) {
-        console.error(`[ast] Project with repoId ${repoId} not found`);
-        return {
-          path,
-          error: true,
-          errorMessage: `Project with repoId ${repoId} not found`
-        };
-      }
-
+      
       const validExtensions = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
       const fileExtension = path.substring(path.lastIndexOf('.'));
 
       if (!validExtensions.includes(fileExtension)) {
         console.log(`[ast] Skipping ${path} - not a JS/TS file`);
+        io.to(`user:${project.userId}`).emit('analysis_update', {
+          repoId,
+          phase: "SYNTAX_ANALYSIS",
+          level: "INFO",
+          message: "File skipped (unsupported language)",
+          meta: {
+            filePath: path,
+            reason: "Non JS/TS source file"
+          },
+          timestamp: new Date().toISOString()
+        });
+
         return {
           path,
           skipped: true,
@@ -611,10 +620,36 @@ export const ASTworker = new Worker(
 
       console.log(`[ast] Completed ${path}: CC=${metrics.cc}, MI=${result.metrics.maintainabilityIndex}`);
 
+      io.to(`user:${project.userId}`).emit('analysis_update', {
+        repoId,
+        phase: "SYNTAX_ANALYSIS",
+        level: "SUCCESS",
+        message: "AST analysis completed for file",
+        meta: {
+          filePath: path,
+          cyclomaticComplexity: metrics.cc,
+          maintainabilityIndex: result.metrics.maintainabilityIndex
+        },
+        timestamp: new Date().toISOString()
+      });
+
       return result;
 
     } catch (error) {
       console.error(`[ast] Error analyzing ${path}:`, error.message);
+      
+      // Use project from job.data, don't fetch again
+      io.to(`user:${project.userId}`).emit('analysis_update', {
+        repoId,
+        phase: "SYNTAX_ANALYSIS",
+        level: "ERROR",
+        message: "AST analysis failed for file",
+        meta: {
+          filePath: path,
+          error: error.message  // Fixed: was 'err.message'
+        },
+        timestamp: new Date().toISOString()
+      });
 
       return {
         path,
@@ -630,21 +665,15 @@ export const ASTworker = new Worker(
   }
 );
 
-const ASTQueue = new Queue('repoFiles', { connection });
-
-ASTworker.on("ready", () => console.log("[ast] worker ready"));
-ASTworker.on("error", err => console.error("[ast] worker error", err));
 ASTworker.on("failed", async (job, err) => {
   console.error(`[ast] job failed ${job?.id}`, err);
 
-  if (job?.data && io) {
-    const { repoId, repoName, fullName, userId } = job.data;
+  if (job?.data?.project && io) {  // Check project exists
+    const { repoId, project } = job.data;
 
-    io.to(`user:${userId}`).emit('analysis_complete', {
+    io.to(`user:${project.userId}`).emit('analysis_complete', {
       success: false,
       repoId,
-      repoName,
-      fullName,
       stage: 'ast_analysis',
       error: err.message || 'AST analysis failed',
       timestamp: new Date().toISOString()
@@ -653,49 +682,49 @@ ASTworker.on("failed", async (job, err) => {
 });
 
 ASTworker.on("completed", async (job) => {
-  console.log(`[ast] job completed ${job.id}`);
+  console.log(`[ast] completed ${job.id}`);
 
-  if (job?.data && io) {
-    const { repoId, repoName, fullName, userId } = job.data;
+  if (job?.data?.project && io) {  // Check project exists
+    const { repoId, project } = job.data;
 
-    console.log(`[ast] Job completed for repo ${repoId}, triggering background analysis`);
+    io.to(`user:${project.userId}`).emit('analysis_update', {
+      repoId,
+      phase: "SYNTAX_ANALYSIS",
+      level: "SUCCESS",
+      message: "AST job completed successfully",
+      meta: {
+        jobId: job.id
+      },
+      timestamp: new Date().toISOString()
+    });
 
     try {
-      await triggerBackgroundAnalysis(repoId);
+      await triggerBackgroundAnalysis(repoId, project.userId);
 
-      io.to(`user:${userId}`).emit('analysis_complete', {
-        success: true,
-        repoId,
-        repoName,
-        fullName,
-        stage: 'repository_analysis',
-        message: 'Repository analysis completed successfully',
-        timestamp: new Date().toISOString()
-      });
+      // io.to(`user:${project.userId}`).emit('analysis_complete', {
+      //   success: true,
+      //   repoId,
+      //   stage: 'repository_analysis',
+      //   message: 'Repository analysis completed successfully',
+      //   timestamp: new Date().toISOString()
+      // });
+      
     } catch (error) {
       console.error(`[ast] Background analysis failed for repo ${repoId}:`, error);
 
-      io.to(`user:${userId}`).emit('analysis_complete', {
+      io.to(`user:${project.userId}`).emit('analysis_complete', {
         success: false,
         repoId,
-        repoName,
-        fullName,
         stage: 'repository_analysis',
         error: error.message,
         timestamp: new Date().toISOString()
       });
     }
 
-    // Emit file analyzed event
-    io.to(`user:${userId}`).emit('file_analyzed', {
+    io.to(`user:${project.userId}`).emit('file_analyzed', {
       repoId,
       path: job.data.path,
       timestamp: new Date().toISOString()
     });
   }
 });
-const astEvents = new QueueEvents("repoFiles", { connection });
-astEvents.on("waiting", ({ jobId }) => console.log("[ast] waiting", jobId));
-astEvents.on("active", ({ jobId }) => console.log("[ast] active", jobId));
-astEvents.on("completed", ({ jobId }) => console.log("[ast] completed", jobId));
-astEvents.on("failed", ({ jobId, failedReason }) => console.error("[ast] failed", jobId, failedReason));

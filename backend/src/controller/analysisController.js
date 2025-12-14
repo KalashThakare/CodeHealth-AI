@@ -116,7 +116,7 @@ export const analyze_repo = async (req, res) => {
       console.log("New analysis created:", analysis.id);
 
       // Trigger background analysis
-      triggerBackgroundAnalysis(repoId).catch((err) => {
+      triggerBackgroundAnalysis(repoId, userId).catch((err) => {
         console.error("Background analysis error:", err);
       });
 
@@ -181,9 +181,22 @@ export const analyze_repo = async (req, res) => {
   }
 };
 
-export async function triggerBackgroundAnalysis(repoId) {
+export async function triggerBackgroundAnalysis(repoId, userId) {
   try {
-    console.log(`[Background] Starting analysis for repo ${repoId}`);
+    console.log(`[Background] Starting analysis for repo Processing analysis in background ${repoId}`);
+
+    io.to(`user:${userId}`).emit('analysis_update', {
+      repoId,
+      phase: "STATIC_ANALYSIS",
+      level: "INFO",
+      message: "Processing analysis in background",
+      meta: {
+        startedAt: new Date().toISOString()
+      },
+      timestamp: new Date().toISOString()
+    });
+
+
     const timestamp = new Date().toISOString();
     console.log(`[Background] ========================================`);
     console.log(`[Background] STARTING analysis for repo ${repoId} at ${timestamp}`);
@@ -222,6 +235,20 @@ export async function triggerBackgroundAnalysis(repoId) {
       totalFiles: repoMetrics.totalFiles,
       avgCyclomaticComplexity: repoMetrics.avgCyclomaticComplexity
     });
+
+    io.to(`user:${userId}`).emit('analysis_update', {
+  repoId,
+  phase: "SYNTAX_ANALYSIS",
+  level: "SUCCESS",
+  message: "File analysis completed successfully",
+  meta: {
+    totalLOC:repoMetrics.totalLOC,
+    totalFiles: repoMetrics.totalFiles,
+    avgCyclomaticComplexity:repoMetrics.avgCyclomaticComplexity
+  },
+  timestamp: new Date().toISOString()
+});
+
 
     const [updatedAnalysis] = await RepositoryAnalysis.upsert(
       {
@@ -324,17 +351,29 @@ export async function triggerBackgroundAnalysis(repoId) {
 
     console.log(`[Background] Analysis completed for repo ${parsedRepoId}`);
 
+    io.to(`user:${userId}`).emit('analysis_update', {
+  repoId,
+  phase: "BACKGROUND_PROCESSING",
+  level: "INFO",
+  message: "Executing post-analysis background tasks",
+  meta: {
+    task: "cross-file-correlation"
+  },
+  timestamp: new Date().toISOString()
+});
+
+
     // triggerAlertScan(parsedRepoId, repo.userId).catch((error) => {
     //   console.log("error trigger alert scan", error)
     // });
 
   } catch (error) {
     console.error(`[Background] Analysis failed for repo ${repoId}:`, error);
-    
+
     const repo = await Project.findOne({ where: { repoId } });
     if (repo) {
       await repo.update({ analysisStatus: 'failed' });
-      
+
       io.to(`user:${repo.userId}`).emit('notification', {
         type: "analysis",
         success: false,
@@ -344,6 +383,17 @@ export async function triggerBackgroundAnalysis(repoId) {
         message: `Repository analysis failed for repo: ${repo.fullName}`,
         timestamp: new Date().toISOString()
       });
+
+      io.to(`user:${userId}`).emit('analysis_update', {
+  repoId,
+  phase: "BACKGROUND_PROCESSING",
+  level: "ERROR",
+  message: "Background analysis failed",
+  meta: {
+    task: "cross-file-correlation"
+  },
+  timestamp: new Date().toISOString()
+});
     }
 
     throw error;
