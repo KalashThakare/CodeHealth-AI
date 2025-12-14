@@ -99,7 +99,6 @@ export const heatMap = async (req, res) => {
             }
         });
 
-        // Build heatmap: [{ day: "Monday", hour: 9, count: 15 }, ...]
         const heatmap = {};
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -143,7 +142,7 @@ export const prVelocity = async(req,res)=>{
       order: [['date', 'ASC']]
     });
 
-    // Calculate summary statistics
+    // summary statistics
     const summary = {
       totalPRsOpened: metrics.reduce((sum, m) => sum + m.prsOpened, 0),
       totalPRsMerged: metrics.reduce((sum, m) => sum + m.prsMerged, 0),
@@ -279,7 +278,6 @@ export const reviewerPerformance = async(req,res)=>{
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // Get reviewer metrics
     const reviewerMetrics = await ReviewerMetrics.findAll({
       where: {
         repoId: repoId,

@@ -1,5 +1,8 @@
-import { pullAnalysisQueue } from "../../lib/redis.js";
 import { PullRequestActivity } from "../../database/models/repoAnalytics.js";
+import { aggregateRepoPRMetrics } from "../../jobs/prActivityAggregation.js";
+import { analyzePullRequest } from "../pull.Service.js";
+import dotenv from "dotenv"
+dotenv.config()
 
 export async function handlePullRequest(payload) {
   const repoFullName = payload.repository?.full_name;
@@ -102,11 +105,20 @@ export async function handlePullRequest(payload) {
         console.log(`[analytics] PR #${prNumber} closed (not merged)`);
       }
     }
+
+    if (action === "opened" || action === "closed") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      aggregateRepoPRMetrics(repoId, today, tomorrow).catch(err => {
+        console.error(`Failed to aggregate metrics for repo ${repoId}:`, err);
+      });
+    }
   } catch (err) {
     console.error("PR analytics error:", err);
   }
-
-  //Queue logic
 
   const actionable = action === "opened" || action === "reopened" || action === "synchronize";
   if (!actionable) {
@@ -144,16 +156,7 @@ export async function handlePullRequest(payload) {
   const jobId = `pr-${repoFullName.replace("/", "-")}-${prNumber}${headKey}`;
 
   try {
-    await pullAnalysisQueue.add("analysis.pr", jobData, {
-      jobId,
-      attempts: 3,
-      backoff: { type: "exponential", delay: 2000 },
-      removeOnComplete: { count: 1000 },
-      removeOnFail: { count: 1000 },
-      priority: 3,
-    });
-
-    console.log(`Enqueued PR analysis: ${jobId}`);
+    await analyzePullRequest(jobData);
 
     return {
       enqueued: true,
@@ -166,7 +169,7 @@ export async function handlePullRequest(payload) {
       jobId,
     };
   } catch (error) {
-    console.error("Failed to enqueue PR analysis:", error);
+    console.error("Failed to analyse PR analysis:", error);
     return {
       enqueued: false,
       error: error.message,

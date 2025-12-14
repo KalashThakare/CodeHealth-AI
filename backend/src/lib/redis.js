@@ -38,7 +38,7 @@ export const queueOptions = {
 
 export const webhookQueue = new Queue("webhooks", queueOptions);
 // export const pushAnalysisQueue = new Queue("pushAnalysis", queueOptions);
-export const pullAnalysisQueue = new Queue("pullAnalysis", queueOptions);
+// export const pullAnalysisQueue = new Queue("pullAnalysis", queueOptions);
 // export const issuesAnalysisQueue = new Queue("issuesAnalysis", queueOptions);
 export const fullRepoAnalysisQueue = new Queue("fullRepoAnalysis", queueOptions);
 export const filesQueue = new Queue("repoFiles", queueOptions);

@@ -104,7 +104,7 @@ export async function aggregatePRVelocity() {
 /**
  * Aggregate PR metrics for a single repository
  */
-async function aggregateRepoPRMetrics(repoId, startDate, endDate) {
+export async function aggregateRepoPRMetrics(repoId, startDate, endDate) {
   try {
 
     const today = new Date();
@@ -250,7 +250,7 @@ async function aggregateRepoPRMetrics(repoId, startDate, endDate) {
 /**
  * Aggregate reviewer performance metrics
  */
-async function aggregateReviewerMetrics(repoId, startDate, endDate) {
+export async function aggregateReviewerMetrics(repoId, startDate, endDate) {
   try {
     const today = new Date(startDate);
     const thirtyDaysAgo = new Date(today);
