@@ -162,6 +162,16 @@ interface AnalysisState {
   error: string | null;
   aiInsightsError: string | null;
 
+  socketNotifications: Array<{
+    event: string;
+    payload: any;
+    receivedAt: string;
+  }>;
+  socketListenersInitialized: boolean;
+  initSocketNotificationListeners: () => Promise<void>;
+  removeSocketNotificationListeners: () => Promise<void>;
+  clearSocketNotifications: () => void;
+
   fetchFullAnalysis: (repoId: string, useCache?: boolean) => Promise<void>;
   fetchAiInsights: (repoId: string) => Promise<any>;
   validateAiInsights: (repoId: string) => Promise<any>;
@@ -180,6 +190,8 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
   loadingAiInsights: false,
   error: null,
   aiInsightsError: null,
+  socketNotifications: [],
+  socketListenersInitialized: false,
 
   fetchFullAnalysis: async (repoId: string, useCache: boolean = true) => {
     set({ loading: true, error: null });
@@ -286,7 +298,9 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
         error.message ||
         "Failed to fetch repository analysis";
 
-      toast.error("Failed to load analysis make sure the repo is initialized", { description: errorMessage });
+      toast.error("Failed to load analysis make sure the repo is initialized", {
+        description: errorMessage,
+      });
       set({ loading: false, error: errorMessage, fullAnalysis: null });
 
       throw error;
@@ -410,6 +424,8 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
       loadingAiInsights: false,
       error: null,
       aiInsightsError: null,
+      socketNotifications: [],
+      socketListenersInitialized: false,
     });
   },
 
@@ -468,4 +484,103 @@ export const useAnalysisStore = create<AnalysisState>()((set, get) => ({
   exportToPDF: () => {
     // toast.info("PDF export feature coming soon!");
   },
+
+  initSocketNotificationListeners: async () => {
+    try {
+      if (get().socketListenersInitialized) return;
+      const handlers: Record<string, (...args: any[]) => void> = {};
+
+      handlers.analysis_update = (payload: any) => {
+        const note = {
+          event: "analysis_update",
+          payload,
+          receivedAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          socketNotifications: [note, ...state.socketNotifications],
+        }));
+      };
+
+      handlers.file_analyzed = (payload: any) => {
+        const note = {
+          event: "file_analyzed",
+          payload,
+          receivedAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          socketNotifications: [note, ...state.socketNotifications],
+        }));
+      };
+
+      handlers.analysis_complete = (payload: any) => {
+        const note = {
+          event: "analysis_complete",
+          payload,
+          receivedAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          socketNotifications: [note, ...state.socketNotifications],
+        }));
+        const currentRepoId = get().fullAnalysis
+          ? (get().fullAnalysis?.result as any)?.repoId
+          : null;
+        if (
+          payload?.repoId &&
+          currentRepoId &&
+          String(payload.repoId) === String(currentRepoId)
+        ) {
+          get()
+            .fetchFullAnalysis(String(payload.repoId))
+            .catch(() => {});
+        }
+      };
+
+      handlers.notification = (payload: any) => {
+        const note = {
+          event: "notification",
+          payload,
+          receivedAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          socketNotifications: [note, ...state.socketNotifications],
+        }));
+        if (payload?.success === false) {
+          toast.error(payload?.message || "Notification received");
+        } else if (payload?.success === true) {
+          toast.success(payload?.message || "Notification received");
+        } else {
+          toast(payload?.message || "Notification received");
+        }
+      };
+
+      const socket = (await import("@/lib/socket")).socketService;
+      Object.entries(handlers).forEach(([event, handler]) =>
+        socket.on(event, handler)
+      );
+      (get as any)._analysisSocketHandlers = handlers;
+      set({ socketListenersInitialized: true });
+    } catch (err) {
+      console.error("Failed to init socket listeners:", err);
+    }
+  },
+
+  removeSocketNotificationListeners: async () => {
+    try {
+      const socket = (await import("@/lib/socket")).socketService;
+      const handlers =
+        ((get as any)._analysisSocketHandlers as Record<
+          string,
+          (...args: any[]) => void
+        >) || {};
+      Object.entries(handlers).forEach(([event, handler]) =>
+        socket.off(event, handler)
+      );
+      (get as any)._analysisSocketHandlers = undefined;
+      set({ socketListenersInitialized: false });
+    } catch (err) {
+      console.error("Failed to remove socket listeners:", err);
+    }
+  },
+
+  clearSocketNotifications: () => set({ socketNotifications: [] }),
 }));
