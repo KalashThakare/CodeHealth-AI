@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useGitHubStore } from "@/store/githubStore";
 import { useAnalysisStore } from "@/store/analysisStore";
@@ -20,8 +20,8 @@ import {
   FiCode,
   FiAlertTriangle,
   FiPlus,
+  FiCheckCircle,
 } from "react-icons/fi";
-import { toast } from "sonner";
 import "./gitProject.css";
 import { DashboardNavbar } from "../dashboard/_components/DashboardNavbar";
 import Link from "next/link";
@@ -54,11 +54,16 @@ export default function GitHubImportPage() {
     error: analysisError,
     clearError: clearAnalysisError,
     fullAnalysis,
+    socketNotifications,
+    initSocketNotificationListeners,
+    removeSocketNotificationListeners,
+    clearSocketNotifications,
   } = useAnalysisStore();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [analytics, setAnalytics] = useState(false);
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
+  const [analyzingRepoId, setAnalyzingRepoId] = useState<number | null>(null);
 
   const selectedRepoFromStore = useGitHubStore((s) => s.selectedRepo);
   const [selectedRepo, setSelectedRepo] = useState<any>(selectedRepoFromStore);
@@ -68,6 +73,87 @@ export default function GitHubImportPage() {
   useEffect(() => {
     fetchGitHubRepos();
   }, [fetchGitHubRepos]);
+
+  useEffect(() => {
+    const initListeners = async () => {
+      await initSocketNotificationListeners();
+    };
+    initListeners();
+
+    return () => {
+      removeSocketNotificationListeners();
+    };
+  }, [initSocketNotificationListeners, removeSocketNotificationListeners]);
+
+  useEffect(() => {
+    if (socketNotifications.length === 0 || !analyzingRepoId) return;
+
+    const latestNotification = socketNotifications[0];
+    const { event, payload } = latestNotification as any;
+
+    const tryHandleCompletion = (repoIdFromPayload?: any) => {
+      const completedRepoId =
+        repoIdFromPayload || payload?.repoId || payload?.repositoryId;
+      if (!completedRepoId) return false;
+      if (String(completedRepoId) !== String(analyzingRepoId)) return false;
+
+      setAnalyzingRepoId(null);
+
+      setShowAnalysisResults(true);
+
+      if (selectedRepo?.repoId !== Number(completedRepoId)) {
+        const repo = repositories.find(
+          (r) => String(r.repoId) === String(completedRepoId)
+        );
+        if (repo) {
+          setSelectedRepo(repo);
+          selectRepository(repo);
+        }
+      }
+
+      fetchFullAnalysis(String(completedRepoId), true)
+        .then(() => {
+          setTimeout(() => clearSocketNotifications(), 1000);
+        })
+        .catch((error) => {
+          console.error("Failed to fetch completed analysis:", error);
+          setShowAnalysisResults(false);
+          clearSocketNotifications();
+        });
+
+      return true;
+    };
+
+    if (event === "analysis_complete") {
+      tryHandleCompletion(payload?.repoId || payload?.repositoryId);
+      return;
+    }
+
+    if (
+      event === "notification" &&
+      payload?.type === "analysis" &&
+      payload?.success
+    ) {
+      tryHandleCompletion(payload?.repoId);
+      return;
+    }
+
+    if (event === "notification" && typeof payload?.message === "string") {
+      const msg = payload.message as string;
+      const repo = repositories.find((r) => r.repoId === analyzingRepoId);
+      if (repo && msg.includes(repo.fullName)) {
+        tryHandleCompletion(analyzingRepoId);
+        return;
+      }
+    }
+  }, [
+    socketNotifications,
+    analyzingRepoId,
+    selectedRepo,
+    fetchFullAnalysis,
+    clearSocketNotifications,
+    repositories,
+  ]);
 
   useEffect(() => {
     if (
@@ -95,32 +181,108 @@ export default function GitHubImportPage() {
     }
   }, [repositories, selectedRepo]);
 
-  const filteredRepos = repositories.filter(
-    (repo) =>
-      repo.repoName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      repo.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRepos = repositories
+    .filter(
+      (repo) =>
+        repo.repoName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        repo.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (a.initialised && !b.initialised) return -1;
+      if (!a.initialised && b.initialised) return 1;
+      return 0;
+    });
 
-  const handleSelectRepo = (repo: any) => {
+  const handleSelectRepo = async (repo: any) => {
+    if (selectedRepo?.repoId !== repo.repoId) {
+      clearSocketNotifications();
+    }
+
     setSelectedRepo(repo);
     selectRepository(repo);
-    setShowAnalysisResults(false);
     clearAnalysisError();
+
+    if (repo.initialised) {
+      try {
+        await fetchFullAnalysis(String(repo.repoId), true);
+        setShowAnalysisResults(true);
+      } catch (error) {
+        setShowAnalysisResults(false);
+      }
+    } else {
+      setShowAnalysisResults(false);
+    }
   };
 
   const handleStartAnalysis = async () => {
     if (!selectedRepo) {
-      toast.error("Please select a repository first");
       return;
     }
 
     try {
       await fetchFullAnalysis(String(selectedRepo.repoId), false);
       setShowAnalysisResults(true);
-      toast.success("New analysis completed");
     } catch (error) {
       console.error("Failed to start analysis:", error);
       setShowAnalysisResults(false);
+    }
+  };
+
+  const handleInitializeRepo = async (repoId: number) => {
+    clearSocketNotifications();
+    setShowAnalysisResults(false);
+
+    const staleTimer = setTimeout(() => {
+      setAnalyzingRepoId((cur) => (cur === repoId ? null : cur));
+      clearSocketNotifications();
+    }, 1000 * 60 * 5);
+
+    try {
+      const success = await initializeRepository(repoId);
+      if (success) {
+        await fetchGitHubRepos();
+        const refreshed =
+          useGitHubStore
+            .getState()
+            .repositories.find((r) => r.repoId === repoId) || null;
+        if (refreshed) {
+          setSelectedRepo(refreshed);
+          selectRepository(refreshed);
+          setAnalyzingRepoId(repoId);
+        }
+        clearTimeout(staleTimer);
+        return;
+      }
+
+      await fetchGitHubRepos();
+      const refreshed = repositories.find((r) => r.repoId === repoId);
+      if (refreshed?.initialised) {
+        setSelectedRepo(refreshed);
+        selectRepository(refreshed);
+        setAnalyzingRepoId(repoId);
+        clearTimeout(staleTimer);
+        return;
+      }
+
+      setAnalyzingRepoId(null);
+      clearTimeout(staleTimer);
+    } catch (err) {
+      console.error("initializeRepository error:", err);
+      try {
+        await fetchGitHubRepos();
+        const refreshed = repositories.find((r) => r.repoId === repoId);
+        if (refreshed?.initialised) {
+          setSelectedRepo(refreshed);
+          selectRepository(refreshed);
+          clearTimeout(staleTimer);
+          return;
+        }
+      } catch (e) {
+        console.error("Failed to refresh repos after init error:", e);
+      }
+
+      setAnalyzingRepoId(null);
+      clearTimeout(staleTimer);
     }
   };
 
@@ -263,12 +425,24 @@ export default function GitHubImportPage() {
                           </div>
                         </div>
                         <button
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
                             if (isInitialized) {
-                              uninitializeRepository(repo.repoId);
+                              const success = await uninitializeRepository(
+                                repo.repoId
+                              );
+                              if (success) {
+                                if (selectedRepo?.repoId === repo.repoId) {
+                                  setSelectedRepo((s: any) =>
+                                    s ? { ...s, initialised: false } : s
+                                  );
+                                  setAnalyzingRepoId(null);
+                                  setShowAnalysisResults(false);
+                                  clearSocketNotifications();
+                                }
+                              }
                             } else {
-                              initializeRepository(repo.repoId);
+                              await handleInitializeRepo(repo.repoId);
                             }
                           }}
                           disabled={isLoading}
@@ -350,6 +524,17 @@ export default function GitHubImportPage() {
                             Public
                           </span>
                         )}
+                        {selectedRepo.initialised && (
+                          <span className="text-(--terminal-success) flex items-center gap-1">
+                            • Initialized
+                          </span>
+                        )}
+                        {analyzingRepoId === selectedRepo?.repoId && (
+                          <span className="text-(--terminal-warning) flex items-center gap-1">
+                            <FiLoader size={10} className="animate-spin" />
+                            Analyzing
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -364,25 +549,56 @@ export default function GitHubImportPage() {
                 </div>
 
                 <div className="flex gap-2 flex-wrap">
-                  <button
-                    onClick={handleStartAnalysis}
-                    disabled={analysisLoading}
-                    className="btn glassmorphism-button-primary flex-1 min-w-[180px] flex items-center justify-center gap-1.5"
-                  >
-                    {analysisLoading ? (
-                      <>
-                        <FiLoader className="animate-spin" size={16} />
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        <FiActivity size={16} />
-                        {showAnalysisResults
-                          ? "Run New Analysis"
-                          : "Start Analysis"}
-                      </>
-                    )}
-                  </button>
+                  {!selectedRepo?.initialised ? (
+                    <button
+                      onClick={() => handleInitializeRepo(selectedRepo.repoId)}
+                      disabled={initializingRepoId === selectedRepo?.repoId}
+                      className="btn glassmorphism-button-primary flex-1 min-w-[180px] flex items-center justify-center gap-1.5"
+                    >
+                      {initializingRepoId === selectedRepo?.repoId ? (
+                        <>
+                          <FiLoader className="animate-spin" size={16} />
+                          Initializing...
+                        </>
+                      ) : (
+                        <>
+                          <FiActivity size={16} />
+                          Initialize Repository
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleStartAnalysis}
+                      disabled={
+                        analysisLoading ||
+                        analyzingRepoId === selectedRepo?.repoId
+                      }
+                      className="btn glassmorphism-button-primary flex-1 min-w-[180px] flex items-center justify-center gap-1.5"
+                    >
+                      {analyzingRepoId === selectedRepo?.repoId ? (
+                        <>
+                          <FiLoader className="animate-spin" size={16} />
+                          Analyzing...
+                        </>
+                      ) : analysisLoading ? (
+                        <>
+                          <FiLoader className="animate-spin" size={16} />
+                          Loading...
+                        </>
+                      ) : showAnalysisResults && fullAnalysis ? (
+                        <>
+                          <FiActivity size={16} />
+                          Run New Analysis
+                        </>
+                      ) : (
+                        <>
+                          <FiActivity size={16} />
+                          Start Analysis
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
                 {hasAnalysisData && (
                   <div className="w-full mt-2 flex justify-center items-center bg-transparent!">
@@ -406,11 +622,182 @@ export default function GitHubImportPage() {
               </div>
             )}
 
-            {!hasAnalysisData && <DefaultAnalysisInfo />}
-            {hasAnalysisData && (
+            {analyzingRepoId === selectedRepo?.repoId && (
+              <AnalysisLoadingState
+                notifications={socketNotifications}
+                selectedRepo={selectedRepo}
+              />
+            )}
+            {!hasAnalysisData &&
+              analyzingRepoId !== selectedRepo?.repoId &&
+              !analysisLoading && <DefaultAnalysisInfo />}
+            {hasAnalysisData && analyzingRepoId !== selectedRepo?.repoId && (
               <AnalysisResults repo={selectedRepo} analysis={displayAnalysis} />
             )}
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AnalysisLoadingState({
+  notifications,
+  selectedRepo,
+}: {
+  notifications: Array<{ event: string; payload: any; receivedAt: string }>;
+  selectedRepo: any;
+}) {
+  const getEventIcon = (event: string) => {
+    switch (event) {
+      case "analysis_update":
+        return <FiActivity className="text-primary animate-pulse" size={16} />;
+      case "file_analyzed":
+        return <FiCode className="text-success" size={16} />;
+      case "analysis_complete":
+        return <FiCheckCircle className="text-success" size={16} />;
+      case "notification":
+        return <FiAlertCircle className="text-info" size={16} />;
+      default:
+        return <FiActivity className="text-primary" size={16} />;
+    }
+  };
+
+  const getEventTitle = (event: string) => {
+    switch (event) {
+      case "analysis_update":
+        return "Analysis Update";
+      case "file_analyzed":
+        return "File Analyzed";
+      case "analysis_complete":
+        return "Analysis Complete";
+      case "notification":
+        return "Notification";
+      default:
+        return event
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+    }
+  };
+
+  const getEventMessage = (notification: any) => {
+    const { event, payload } = notification;
+
+    if (event === "file_analyzed" && payload?.file) {
+      return `Analyzed: ${payload.file}`;
+    }
+    if (event === "analysis_update" && payload?.message) {
+      return payload.message;
+    }
+    if (event === "analysis_complete") {
+      return "Repository analysis completed successfully!";
+    }
+    if (event === "notification" && payload?.message) {
+      return payload.message;
+    }
+
+    return payload?.message || "Processing...";
+  };
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+  }, [notifications.length]);
+
+  const lines = [...notifications];
+
+  return (
+    <div className="apple-card animate-fadeIn z-10">
+      <div className="terminal-header">
+        <div>
+          <div className="title">Analyzing Repository</div>
+          {selectedRepo && (
+            <div className="sub">
+              Running analysis on {selectedRepo.repoName}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div
+        ref={containerRef}
+        className="terminal-panel custom-scrollbar"
+        onWheel={(e) => {
+          const el = containerRef.current;
+          if (!el) return;
+          const { scrollTop, scrollHeight, clientHeight } = el;
+          const delta = e.deltaY;
+          const atTop = scrollTop === 0;
+          const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+
+          if ((delta < 0 && !atTop) || (delta > 0 && !atBottom)) {
+            e.stopPropagation();
+          }
+        }}
+      >
+        {lines.length === 0 ? (
+          <div className="terminal-line">
+            <div className="terminal-time">--:--:--</div>
+            <div className="terminal-dot terminal-event-info" />
+            <div className="terminal-msg muted">Initializing analysis...</div>
+          </div>
+        ) : (
+          lines.map((notification, idx) => {
+            const t = new Date(notification.receivedAt).toLocaleTimeString();
+            const msg = getEventMessage(notification);
+            let kind = "info";
+            if (notification.event === "file_analyzed") kind = "success";
+            if (notification.event === "analysis_complete") kind = "success";
+            if (notification.event === "analysis_update") kind = "info";
+            if (
+              notification.event === "notification" &&
+              notification.payload?.success === false
+            )
+              kind = "error";
+
+            const filePath =
+              notification.payload?.file ||
+              notification.payload?.filePath ||
+              notification.payload?.path ||
+              notification.payload?.pathname ||
+              notification.payload?.pathName ||
+              notification.payload?.meta?.filePath ||
+              notification.payload?.meta?.path ||
+              notification.payload?.meta?.pathName ||
+              null;
+
+            return (
+              <div
+                key={idx}
+                className={`terminal-line terminal-event-${kind}`}
+                style={{ animationDelay: `${idx * 20}ms` }}
+              >
+                <div className="terminal-time">{t}</div>
+                <div className="terminal-dot" />
+                <div style={{ flex: 1 }}>
+                  {filePath && (
+                    <div className="terminal-file" title={filePath}>
+                      <code>{filePath}</code>
+                    </div>
+                  )}
+                  <div className="terminal-msg">{msg}</div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="mt-4 pt-3 border-t border-(--gp-border)">
+        <div className="flex items-center justify-between text-xs text-secondary">
+          <span className="flex items-center gap-1">
+            <FiActivity size={12} />
+            {notifications.length} events received
+          </span>
+          <span>This may take a few moments...</span>
         </div>
       </div>
     </div>
@@ -516,11 +903,11 @@ function AnalysisResults({ repo, analysis }: { repo: any; analysis: any }) {
             <FiAlertTriangle className="text-warning" size={14} />
             High Priority Files ({refactorFiles.length})
           </h4>
-          <div className="space-y-1.5">
+          <div className="space-y-2!">
             {refactorFiles.slice(0, 5).map((file: any, idx: number) => (
               <div
                 key={idx}
-                className="card flex items-center justify-between p-2.5"
+                className="card flex items-center justify-between p-3!"
               >
                 <span className="text-xs font-mono truncate flex-1">
                   {file.path || "Unknown file"}

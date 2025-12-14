@@ -15,7 +15,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div
-        className="fixed bottom-4 right-4 z-[9999] cursor-pointer"
+        className="fixed bottom-4 right-4 z-9999 cursor-pointer"
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
       >
