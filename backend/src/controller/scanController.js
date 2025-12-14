@@ -9,7 +9,7 @@ import RepoMetadata from "../database/models/repoMedata.js";
 import { triggerBackgroundAnalysis } from "./analysisController.js";
 import PullRequestAnalysis from "../database/models/pr_analysis_metrics.js";
 import activity from "../database/models/activity.js";
-import { startAnalysisPolling } from "../services/pooling.Service.js";
+import { startAnalysisPolling, stopAnalysisPolling } from "../services/pooling.Service.js";
 import { io } from "../server.js";
 
 export const Analyse_repo = async (req, res) => {
@@ -121,7 +121,9 @@ export const initialiseAnalysis = async(req,res)=>{
       totalFiles
     });
   } catch (error) {
+    const { repoId } = req.body;
     console.error(`[initializeAnalysis] Error: ${error.message}`);
+    stopAnalysisPolling(repoId);
     return res.status(500).json({
       success: false,
       message: "Failed to initialize analysis",
@@ -154,7 +156,7 @@ export const enqueueBatch = async (req, res) => {
       repoId: repoId,
       branch: branch,
       project: {
-        userId: project.userId,  // Pass userId explicitly
+        userId: project.userId,  
         id: project.id
       }
     },
@@ -369,7 +371,7 @@ export const collectePythonMetrics = async (req, res) => {
       });
     } catch (error) {
       console.error('[collectePythonMetrics] Background analysis failed:', error);
-      
+      stopAnalysisPolling(repoId);
       return res.status(500).json({
         message: "Failed to complete repository analysis",
         filesProcessed: savedRecords.length,
@@ -378,7 +380,6 @@ export const collectePythonMetrics = async (req, res) => {
     }
   } catch (error) {
     console.error("Error collecting Python metrics:", error);
-    
     return res.status(500).json({
       success: false,
       message: "Internal server error",

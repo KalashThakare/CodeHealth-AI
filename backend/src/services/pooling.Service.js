@@ -101,7 +101,7 @@ export const stopAnalysisPolling = (repoId) => {
   if (activePollers.has(repoId)) {
     clearInterval(activePollers.get(repoId));
     activePollers.delete(repoId);
-    console.log(`[Polling] Manually stopped for repo ${repoId}`);
+    console.log(`[Polling] stopped for repo ${repoId}`);
     return true;
   }
   return false;

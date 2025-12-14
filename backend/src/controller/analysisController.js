@@ -22,6 +22,7 @@ import { createAlertNotification } from "../utils/alertNotificationHelper.js";
 import trend from "../database/models/trend.js";
 import { triggerAlertScan } from "./alertController.js";
 import { error } from "console";
+import { stopAnalysisPolling } from "../services/pooling.Service.js";
 dotenv.config();
 
 
@@ -369,6 +370,8 @@ export async function triggerBackgroundAnalysis(repoId, userId) {
 
   } catch (error) {
     console.error(`[Background] Analysis failed for repo ${repoId}:`, error);
+
+    stopAnalysisPolling(repoId);
 
     const repo = await Project.findOne({ where: { repoId } });
     if (repo) {

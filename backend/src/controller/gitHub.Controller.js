@@ -7,7 +7,7 @@ import { Project } from "../database/models/project.js";
 import { WebhookEvent } from "../database/models/webhookEvents.js";
 import { connection, pushAnalysisQueue, webhookQueue } from "../lib/redis.js";
 import { handlePush } from "../services/handlers/push.handler.js";
-import { handleIssues } from "../services/handlers/issues.handler.js";
+// import { handleIssues } from "../services/handlers/issues.handler.js";
 import { handlePullRequest } from "../services/handlers/pull.handler.js";
 import { Analyse_repo } from "./scanController.js";
 import OAuthConnection from "../database/models/OauthConnections.js";
@@ -552,10 +552,10 @@ export const githubWebhookController = async (req, res) => {
       const result = await handlePullRequest(payload);
       return res.status(200).json(result);
     }
-    if (event === "issues") {
-      const result = await handleIssues(payload);
-      return res.status(200).json(result);
-    }
+    // if (event === "issues") {
+    //   const result = await handleIssues(payload);
+    //   return res.status(200).json(result);
+    // }
 
     if (event === "pull_request_review") {
       const result = await handlePullRequestReview(payload);
