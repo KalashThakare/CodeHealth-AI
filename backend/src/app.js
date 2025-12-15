@@ -32,6 +32,8 @@ dotenv.config();
 
 const app = express();
 
+app.set("trust proxy", 1); // for hiroku else secure: true was silently failing
+
 const frontendUrl = process.env.FRONTEND_URL
 
 app.use(cors({

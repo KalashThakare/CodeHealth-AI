@@ -107,12 +107,14 @@ export const manageGitHubScopes = async (req, res) => {
     res.cookie("github_oauth_state", state, {
       httpOnly: true,
       maxAge: 600000,
-      sameSite: "lax",
+      sameSite: "none",
+      secure:true
     });
     res.cookie("github_code_verifier", codeVerifier, {
       httpOnly: true,
       maxAge: 600000,
-      sameSite: "lax",
+      sameSite: "none",
+      secure:true
     });
 
     const authURL = github.createAuthorizationURL(state, scopes);

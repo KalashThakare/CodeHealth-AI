@@ -33,12 +33,14 @@ export const googleLogin = async (req, res) => {
   res.cookie("google_oauth_state", state, {
     httpOnly: true,
     maxAge: 600000,
-    sameSite: "lax",
+    sameSite: "none",
+    secure:true
   });
   res.cookie("google_code_verifier", codeVerifier, {
     httpOnly: true,
     maxAge: 600000,
-    sameSite: "lax",
+    sameSite: "none",
+    secure:true
   });
 
   const authURL = google.createAuthorizationURL(
@@ -152,12 +154,14 @@ export const githubLogin = async (req, res) => {
   res.cookie("github_oauth_state", state, {
     httpOnly: true,
     maxAge: 600000,
-    sameSite: "lax",
+    sameSite: "none",
+    secure:true
   });
   res.cookie("github_code_verifier", codeVerifier, {
     httpOnly: true,
     maxAge: 600000,
-    sameSite: "lax",
+    sameSite: "none",
+    secure:true
   });
 
   const authURL = github.createAuthorizationURL(encodedState, scopes);
@@ -265,7 +269,8 @@ export const githubAuthCallback = async (req, res) => {
         // Set GitHub token cookie for API calls
         res.cookie('gitHubtoken', githubAccessToken, {
           httpOnly: true,
-          sameSite: 'lax',
+          sameSite: "none",
+          secure: true,
           maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
@@ -348,8 +353,9 @@ export const githubAuthCallback = async (req, res) => {
     // Set GitHub token cookie
     res.cookie('gitHubtoken', githubAccessToken, {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure:true
     });
 
     const redirectUrl = isNewUser 

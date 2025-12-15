@@ -83,14 +83,16 @@ export const deleteAccount = async (req, res) => {
 
         res.clearCookie("token", {
             httpOnly: true,
-            sameSite: "strict",
-            path: "/"
+            sameSite: "none",
+            path: "/",
+            secure:true
         });
 
         res.clearCookie("gitHubtoken", {
             httpOnly: true,
-            sameSite: "lax",
-            path: "/"
+            sameSite: "none",
+            path: "/",
+            secure:true
         });
 
         res.status(200).json({ message: "Account deleted successfully" });
