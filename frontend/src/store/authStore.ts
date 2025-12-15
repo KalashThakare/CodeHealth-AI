@@ -65,6 +65,7 @@ export const useAuthStore = create<AuthStore>()(
 
           const res = await axiosInstance.get<User>("/auth/check", {
             headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
           });
 
           if (res.data) {

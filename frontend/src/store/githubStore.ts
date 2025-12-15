@@ -107,10 +107,16 @@ export const useGitHubStore = create<GitHubStore>()(
       },
 
       fetchGitHubUser: async () => {
-        const token = get().githubToken;
+        let token = get().githubToken;
         if (!token) {
-          toast.error("No GitHub token found");
-          return;
+          const has = await get().checkGitHubTokenStatus();
+          if (!has) {
+            toast.error(
+              "No GitHub token found. Please connect your GitHub account."
+            );
+            return;
+          }
+          token = get().githubToken;
         }
 
         set({ isLoading: true, error: null });
@@ -137,10 +143,17 @@ export const useGitHubStore = create<GitHubStore>()(
       },
 
       fetchGitHubRepos: async () => {
-        const token = get().githubToken;
+        let token = get().githubToken;
+        // Ensure we check server-side cookie if local token missing
         if (!token) {
-          toast.error("No GitHub token found");
-          return;
+          const has = await get().checkGitHubTokenStatus();
+          if (!has) {
+            toast.error(
+              "No GitHub token found. Please connect your GitHub account."
+            );
+            return;
+          }
+          token = get().githubToken;
         }
 
         set({ isLoading: true, error: null });
@@ -330,8 +343,10 @@ export const useGitHubStore = create<GitHubStore>()(
         }
         set({ isLoading: true });
         try {
-          const res = await axiosInstance.get("/github/token-status");
-          if (res.data.hasToken && provider === "github") {
+          const res = await axiosInstance.get("/github/token-status", {
+            withCredentials: true,
+          });
+          if (res.data?.hasToken) {
             set({ githubToken: "valid-token-exists" });
             return true;
           }
