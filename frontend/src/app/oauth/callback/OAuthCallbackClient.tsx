@@ -42,7 +42,8 @@ export default function OAuthCallbackClient() {
       }
 
       setTimeout(() => {
-        router.replace("/dashboard");
+        window.location.href = "/dashboard";
+        // router.replace("/dashboard");
       }, 2000);
     } else if (error) {
       setStatus("error");
