@@ -360,7 +360,6 @@ function AnimatedTerminal({ theme }: { theme: "light" | "dark" }) {
   return (
     <div className="relative w-full max-w-sm md:max-w-md lg:max-w-lg mx-auto">
       <div className="landing-terminal">
-        {/* Header */}
         <div className="landing-terminal-header">
           <div className="landing-terminal-dots">
             <div className="landing-terminal-dot red" />
@@ -377,7 +376,6 @@ function AnimatedTerminal({ theme }: { theme: "light" | "dark" }) {
           <div className="w-16" />
         </div>
 
-        {/* Content */}
         <div className="landing-terminal-content">
           <div className="flex items-center gap-2 mb-4 flex-wrap">
             <span
@@ -494,7 +492,6 @@ function AnimatedTerminal({ theme }: { theme: "light" | "dark" }) {
         </div>
       </div>
 
-      {/* Decorative elements */}
       <div
         className="absolute -top-3 -right-3 w-6 h-6 rounded-full opacity-20 animate-pulse"
         style={{ backgroundColor: theme === "dark" ? "#60a5fa" : "#7c3aed" }}

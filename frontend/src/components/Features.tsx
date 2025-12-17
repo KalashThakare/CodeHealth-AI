@@ -30,7 +30,6 @@ function Features() {
 
   return (
     <div>
-      {/* Why Choose Section */}
       <section
         id="features"
         className="relative features-section py-20 px-4 overflow-hidden"
@@ -79,9 +78,7 @@ function Features() {
             </p>
           </div>
 
-          {/* Varied Card Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Large featured card */}
             <div className="lg:col-span-2 landing-card-gradient p-8">
               <div className="flex flex-col md:flex-row gap-6">
                 <div
@@ -129,7 +126,6 @@ function Features() {
               </div>
             </div>
 
-            {/* Smaller card */}
             <div className="landing-card-accent p-6">
               <div
                 className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
@@ -160,7 +156,6 @@ function Features() {
               </p>
             </div>
 
-            {/* Two smaller cards */}
             <div className="landing-card-accent p-6">
               <div
                 className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
@@ -241,7 +236,6 @@ function Features() {
         </div>
       </section>
 
-      {/* Key Metrics Section */}
       <section
         className="relative py-16 px-4"
         style={{ background: "var(--color-bg)" }}
@@ -332,7 +326,6 @@ function Features() {
         </div>
       </section>
 
-      {/* Supported Languages */}
       <section
         className="relative py-16 px-4 overflow-hidden"
         style={{ background: "var(--color-bg-secondary)" }}
@@ -376,7 +369,6 @@ function Features() {
         </div>
       </section>
 
-      {/* How It Works Section */}
       <section
         id="how-it-works"
         className="relative py-20 px-4 overflow-hidden"
@@ -479,7 +471,6 @@ function Features() {
         </div>
       </section>
 
-      {/* What You'll Discover Section */}
       <section
         className="relative py-20 px-4 overflow-hidden"
         style={{ background: "var(--color-bg-secondary)" }}
@@ -502,7 +493,7 @@ function Features() {
           <div className="text-center mb-16">
             <span className="landing-section-label">
               <Code2 className="w-3.5 h-3.5" />
-              Dashboard Preview
+              Analysis Preview
             </span>
             <h2
               className="text-3xl sm:text-4xl font-bold mb-4"

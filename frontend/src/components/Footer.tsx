@@ -10,7 +10,6 @@ export default function Footer() {
       }}
     >
       <div className="landing-container py-12 sm:py-16">
-        {/* Contact Section */}
         <div className="text-center mb-12">
           <h3
             className="text-2xl sm:text-3xl font-bold mb-4"

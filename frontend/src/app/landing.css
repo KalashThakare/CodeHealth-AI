@@ -1,7 +1,3 @@
-/* Professional Landing Page Styles */
-/* Theme-sensitive, fully responsive */
-
-/* ===== RESPONSIVE CONTAINER ===== */
 .landing-container {
   width: 100%;
   max-width: 1280px;
@@ -35,9 +31,6 @@
   }
 }
 
-/* ===== BUTTON VARIANTS ===== */
-
-/* Primary Button (Get Started) */
 .landing-btn-primary {
   position: relative;
   display: inline-flex;
@@ -76,7 +69,6 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Ghost Button (Login) */
 .landing-btn-ghost {
   display: inline-flex;
   align-items: center;
@@ -113,7 +105,6 @@
   transform: translateY(-1px);
 }
 
-/* Icon Button (Theme Toggle) */
 .landing-btn-icon {
   display: flex;
   align-items: center;
@@ -148,7 +139,6 @@
   color: #18181b;
 }
 
-/* Secondary Button */
 .landing-btn-secondary {
   display: inline-flex;
   align-items: center;
@@ -183,7 +173,6 @@
   border-color: rgba(0, 0, 0, 0.25);
 }
 
-/* ===== ENHANCED TERMINAL ===== */
 .landing-terminal {
   position: relative;
   border-radius: 1rem;
@@ -266,9 +255,6 @@
   background: #ffffff;
 }
 
-/* ===== VARIED FEATURE CARDS ===== */
-
-/* Card Style 1 - Default with left accent */
 .landing-card-accent {
   position: relative;
   padding: 1.5rem;
@@ -317,7 +303,6 @@
   transform: translateX(4px);
 }
 
-/* Card Style 2 - Gradient border */
 .landing-card-gradient {
   position: relative;
   padding: 1.5rem;
@@ -361,7 +346,6 @@
   box-shadow: 0 8px 24px rgba(139, 92, 246, 0.12);
 }
 
-/* ===== TECH STACK / LANGUAGES ===== */
 .landing-tech-badge {
   display: inline-flex;
   align-items: center;
@@ -395,7 +379,6 @@
   border-color: rgba(139, 92, 246, 0.2);
 }
 
-/* ===== KEY METRICS SECTION ===== */
 .landing-metric-card {
   text-align: center;
   padding: 2rem 1.5rem;
@@ -445,7 +428,6 @@
   -webkit-text-fill-color: transparent;
 }
 
-/* ===== HOW IT WORKS SECTION ===== */
 .landing-steps-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -521,7 +503,6 @@
   transform: scale(1.1);
 }
 
-/* Step connector line (desktop) */
 .landing-steps-connector {
   position: absolute;
   top: 3.5rem;
@@ -545,7 +526,6 @@
   }
 }
 
-/* ===== WHAT YOU'LL DISCOVER SECTION ===== */
 .landing-discover-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -608,7 +588,6 @@
   color: #7c3aed;
 }
 
-/* ===== SECTION STYLING ===== */
 .landing-section-label {
   display: inline-flex;
   align-items: center;
@@ -634,7 +613,6 @@
   border: 1px solid rgba(139, 92, 246, 0.15);
 }
 
-/* ===== ENHANCED LIGHT THEME ===== */
 [data-theme="light"] .glass-card {
   background: rgba(255, 255, 255, 0.85) !important;
   border: 1px solid rgba(139, 92, 246, 0.1) !important;
@@ -649,7 +627,6 @@
     0 4px 16px rgba(139, 92, 246, 0.1) !important;
 }
 
-/* ===== CTA SECTION ===== */
 .landing-cta-section {
   position: relative;
   padding: 4rem 2rem;
@@ -668,7 +645,6 @@
   border: 1px solid rgba(139, 92, 246, 0.1);
 }
 
-/* ===== RESPONSIVE UTILITIES ===== */
 @media (max-width: 640px) {
   .landing-btn-primary,
   .landing-btn-ghost,
@@ -686,9 +662,7 @@
   }
 }
 
-/* ===== LARGE SCREEN SCALING (1920px+) ===== */
 @media (min-width: 1920px) {
-  /* Buttons scale up */
   .landing-btn-primary,
   .landing-btn-ghost,
   .landing-btn-secondary {
@@ -698,14 +672,12 @@
     gap: 0.75rem;
   }
   
-  /* Section labels */
   .landing-section-label {
     padding: 0.625rem 1.5rem;
     font-size: 1rem;
     gap: 0.625rem;
   }
   
-  /* Cards scale up */
   .landing-card-accent,
   .landing-card-gradient {
     padding: 2.5rem;
@@ -736,7 +708,6 @@
     border-radius: 1rem;
   }
   
-  /* Metrics scale up */
   .landing-metric-card {
     padding: 3rem 2.5rem;
     border-radius: 1.5rem;
@@ -747,14 +718,12 @@
     margin-bottom: 0.75rem;
   }
   
-  /* Tech badges */
   .landing-tech-badge {
     padding: 0.875rem 1.75rem;
     font-size: 1.125rem;
     gap: 0.625rem;
   }
   
-  /* Terminal scales up */
   .landing-terminal {
     border-radius: 1.5rem;
   }
@@ -776,13 +745,11 @@
     gap: 0.625rem;
   }
   
-  /* CTA section */
   .landing-cta-section {
     padding: 6rem 4rem;
     border-radius: 2.5rem;
   }
   
-  /* Grid gaps increase */
   .landing-steps-container {
     gap: 4rem;
   }
@@ -791,16 +758,13 @@
     gap: 2.5rem;
   }
   
-  /* Glass cards */
   .glass-card {
     padding: 2.5rem !important;
     border-radius: 1.5rem !important;
   }
 }
 
-/* ===== ULTRA-LARGE SCREEN SCALING (2560px+) ===== */
 @media (min-width: 2560px) {
-  /* Buttons scale up more */
   .landing-btn-primary,
   .landing-btn-ghost,
   .landing-btn-secondary {
@@ -810,14 +774,12 @@
     gap: 1rem;
   }
   
-  /* Section labels */
   .landing-section-label {
     padding: 0.875rem 2rem;
     font-size: 1.125rem;
     gap: 0.75rem;
   }
   
-  /* Cards scale up more */
   .landing-card-accent,
   .landing-card-gradient {
     padding: 3.5rem;
@@ -848,7 +810,6 @@
     border-radius: 1.25rem;
   }
   
-  /* Metrics scale up more */
   .landing-metric-card {
     padding: 4rem 3rem;
     border-radius: 2rem;
@@ -859,14 +820,12 @@
     margin-bottom: 1rem;
   }
   
-  /* Tech badges */
   .landing-tech-badge {
     padding: 1rem 2.25rem;
     font-size: 1.375rem;
     gap: 0.875rem;
   }
   
-  /* Terminal scales up more */
   .landing-terminal {
     border-radius: 2rem;
   }
@@ -891,13 +850,11 @@
     gap: 0.75rem;
   }
   
-  /* CTA section */
   .landing-cta-section {
     padding: 8rem 6rem;
     border-radius: 3rem;
   }
   
-  /* Grid gaps increase more */
   .landing-steps-container {
     gap: 6rem;
   }
@@ -907,22 +864,18 @@
     grid-template-columns: repeat(3, 1fr);
   }
   
-  /* Steps connector adjusts */
   .landing-steps-connector {
     top: 5rem;
     height: 3px;
   }
   
-  /* Glass cards */
   .glass-card {
     padding: 3.5rem !important;
     border-radius: 2rem !important;
   }
 }
 
-/* ===== 4K+ SCREEN SCALING (3840px+) ===== */
 @media (min-width: 3840px) {
-  /* Buttons scale up even more */
   .landing-btn-primary,
   .landing-btn-ghost,
   .landing-btn-secondary {
@@ -932,14 +885,12 @@
     gap: 1.25rem;
   }
   
-  /* Section labels */
   .landing-section-label {
     padding: 1rem 2.5rem;
     font-size: 1.375rem;
     gap: 1rem;
   }
   
-  /* Cards scale up even more */
   .landing-card-accent,
   .landing-card-gradient {
     padding: 4.5rem;
@@ -970,7 +921,6 @@
     border-radius: 1.5rem;
   }
   
-  /* Metrics scale up even more */
   .landing-metric-card {
     padding: 5rem 4rem;
     border-radius: 2.5rem;
@@ -981,14 +931,12 @@
     margin-bottom: 1.25rem;
   }
   
-  /* Tech badges */
   .landing-tech-badge {
     padding: 1.25rem 3rem;
     font-size: 1.625rem;
     gap: 1rem;
   }
   
-  /* Terminal scales up even more */
   .landing-terminal {
     border-radius: 2.5rem;
   }
@@ -1013,13 +961,11 @@
     gap: 1rem;
   }
   
-  /* CTA section */
   .landing-cta-section {
     padding: 10rem 8rem;
     border-radius: 4rem;
   }
   
-  /* Grid gaps increase even more */
   .landing-steps-container {
     gap: 8rem;
   }
@@ -1028,13 +974,11 @@
     gap: 4rem;
   }
   
-  /* Steps connector adjusts */
   .landing-steps-connector {
     top: 6rem;
     height: 4px;
   }
   
-  /* Glass cards */
   .glass-card {
     padding: 5rem !important;
     border-radius: 2.5rem !important;
