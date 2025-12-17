@@ -1,7 +1,27 @@
+"use client";
 import React from "react";
 import Particles from "./ui/Particles";
 import "@/app/glass.css";
-import { Brain, Zap, Shield, ArrowRight } from "lucide-react";
+import "@/app/landing.css";
+import {
+  Brain,
+  Zap,
+  Shield,
+  ArrowRight,
+  GitBranch,
+  Search,
+  FileCheck,
+  AlertTriangle,
+  TrendingUp,
+  Code2,
+  Wrench,
+  BarChart3,
+  FileCode,
+  Activity,
+  Target,
+  Gauge,
+  CheckCircle2,
+} from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
 function Features() {
@@ -10,7 +30,11 @@ function Features() {
 
   return (
     <div>
-      <section className="relative features-section py-20 px-4 overflow-hidden">
+      {/* Why Choose Section */}
+      <section
+        id="features"
+        className="relative features-section py-20 px-4 overflow-hidden"
+      >
         <div className="absolute inset-0 pointer-events-none">
           <div
             style={{
@@ -34,164 +58,438 @@ function Features() {
           </div>
         </div>
 
-        <div className="relative z-10 max-w-6xl mx-auto">
+        <div className="relative z-10 landing-container">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-[var(--color-fg)] mb-4 glass-text">
-              Why Choose CodeHealth AI?
+            <span className="landing-section-label">
+              <Zap className="w-3.5 h-3.5" />
+              Why CodeHealth AI
+            </span>
+            <h2
+              className="text-3xl sm:text-4xl font-bold mb-4"
+              style={{ color: "var(--color-fg)" }}
+            >
+              What Makes Us Different
             </h2>
-            <p className="text-xl text-[var(--color-fg-secondary)] max-w-2xl mx-auto glass-text-subtle">
-              Powerful AI-driven code analysis and health monitoring for modern
-              development teams
+            <p
+              className="text-lg sm:text-xl max-w-2xl mx-auto"
+              style={{ color: "var(--color-fg-secondary)" }}
+            >
+              More than just static analysis — we provide context-aware insights
+              powered by AI
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="glass-card glass-shimmer glass-theme text-center p-8 group relative overflow-hidden">
-              <div className="absolute top-3 right-3 w-2 h-2 bg-[var(--color-primary)]/30 rounded-full animate-pulse"></div>
-              <div className="absolute bottom-4 left-3 w-1 h-5 bg-gradient-to-t from-[var(--color-accent)]/20 to-transparent rounded-full"></div>
-
-              <div className="relative mx-auto mb-6 w-fit">
-                <div className="w-16 h-16 glass-primary rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-all duration-300 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <Brain className="w-7 h-7 text-[var(--color-primary)] relative z-10" />
+          {/* Varied Card Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Large featured card */}
+            <div className="lg:col-span-2 landing-card-gradient p-8">
+              <div className="flex flex-col md:flex-row gap-6">
+                <div
+                  className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background:
+                      theme === "dark"
+                        ? "linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2))"
+                        : "linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15))",
+                  }}
+                >
+                  <Brain
+                    className="w-8 h-8"
+                    style={{
+                      color: theme === "dark" ? "#60a5fa" : "#7c3aed",
+                    }}
+                  />
                 </div>
-                <div className="absolute inset-0 w-16 h-16 bg-[var(--color-primary)]/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
+                <div>
+                  <h3
+                    className="text-xl font-semibold mb-3"
+                    style={{ color: "var(--color-fg)" }}
+                  >
+                    AI-Powered Code Understanding
+                  </h3>
+                  <p
+                    className="text-base leading-relaxed mb-4"
+                    style={{ color: "var(--color-fg-secondary)" }}
+                  >
+                    Our AI doesn't just scan for patterns — it understands your
+                    code contextually. Get explanations in plain language about
+                    why certain patterns are problematic and how to fix them.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="landing-tech-badge">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Context-aware analysis
+                    </span>
+                    <span className="landing-tech-badge">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Plain language explanations
+                    </span>
+                  </div>
+                </div>
               </div>
-
-              <h3 className="text-xl font-semibold text-[var(--color-fg)] mb-4 glass-text group-hover:text-[var(--color-primary)] transition-colors duration-300">
-                AI-Powered Analysis
-              </h3>
-              <p className="text-[var(--color-fg-secondary)] glass-text-subtle leading-relaxed">
-                Advanced machine learning algorithms analyze your codebase for
-                potential issues, performance bottlenecks, and improvement
-                opportunities.
-              </p>
-
-              <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl"></div>
             </div>
 
-            <div className="glass-card glass-shimmer glass-theme text-center p-8 group relative overflow-hidden">
-              <div className="absolute top-2 left-4 w-1.5 h-1.5 bg-[var(--color-accent)]/40 rounded-full animate-pulse delay-200"></div>
-              <div className="absolute bottom-3 right-2 w-3 h-1 bg-gradient-to-r from-[var(--color-primary)]/30 to-transparent rounded-full"></div>
-              <div className="absolute top-1/3 right-1 w-1 h-4 bg-gradient-to-t from-yellow-400/20 to-transparent rounded-full animate-pulse delay-500"></div>
-
-              <div className="relative mx-auto mb-6 w-fit">
-                <div className="w-16 h-16 glass-accent rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-all duration-300 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="absolute inset-0 bg-gradient-to-tr from-yellow-400/20 to-transparent opacity-0 group-hover:opacity-70 transition-all duration-500"></div>
-                  <Zap className="w-7 h-7 text-yellow-400 relative z-10" />
-                </div>
-                <div className="absolute inset-0 w-16 h-16 bg-gradient-to-br from-[var(--color-accent)]/20 via-yellow-400/15 to-transparent rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
+            {/* Smaller card */}
+            <div className="landing-card-accent p-6">
+              <div
+                className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
+                style={{
+                  background:
+                    theme === "dark"
+                      ? "rgba(250, 204, 21, 0.15)"
+                      : "rgba(234, 179, 8, 0.12)",
+                }}
+              >
+                <Zap
+                  className="w-6 h-6"
+                  style={{ color: theme === "dark" ? "#fbbf24" : "#ca8a04" }}
+                />
               </div>
-
-              <h3 className="text-xl font-semibold text-[var(--color-fg)] mb-4 glass-text group-hover:text-yellow-400 transition-colors duration-300">
-                Real-time Monitoring
+              <h3
+                className="text-lg font-semibold mb-2"
+                style={{ color: "var(--color-fg)" }}
+              >
+                Instant Results
               </h3>
-              <p className="text-[var(--color-fg-secondary)] glass-text-subtle leading-relaxed">
-                Monitor your code health in real-time with instant notifications
-                and actionable insights delivered straight to your workflow.
+              <p
+                className="text-sm"
+                style={{ color: "var(--color-fg-secondary)" }}
+              >
+                Get comprehensive analysis within seconds. No waiting for
+                overnight builds or complex CI pipelines.
               </p>
-
-              <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/5 via-[var(--color-accent)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl"></div>
             </div>
 
-            <div className="glass-card glass-shimmer glass-theme text-center p-8 group relative overflow-hidden">
-              <div className="absolute top-4 right-2 w-2 h-2 bg-green-400/30 rounded-full animate-pulse delay-300"></div>
-              <div className="absolute bottom-2 left-1/3 w-1.5 h-1.5 bg-[var(--color-primary)]/25 rounded-full animate-pulse delay-700"></div>
-              <div className="absolute top-1/4 left-2 w-1 h-3 bg-gradient-to-t from-green-400/25 to-transparent rounded-full"></div>
-
-              <div className="relative mx-auto mb-6 w-fit">
-                <div className="w-16 h-16 glass-primary rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-all duration-300 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="absolute inset-0 bg-gradient-to-tr from-green-400/15 to-transparent opacity-0 group-hover:opacity-70 transition-all duration-500"></div>
-                  <Shield className="w-7 h-7 text-green-400 relative z-10" />
-                </div>
-                <div className="absolute inset-0 w-16 h-16 bg-gradient-to-br from-[var(--color-primary)]/20 to-green-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
+            {/* Two smaller cards */}
+            <div className="landing-card-accent p-6">
+              <div
+                className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
+                style={{
+                  background:
+                    theme === "dark"
+                      ? "rgba(34, 197, 94, 0.15)"
+                      : "rgba(22, 163, 74, 0.12)",
+                }}
+              >
+                <Shield
+                  className="w-6 h-6"
+                  style={{ color: theme === "dark" ? "#22c55e" : "#16a34a" }}
+                />
               </div>
-
-              <h3 className="text-xl font-semibold text-[var(--color-fg)] mb-4 glass-text group-hover:text-green-400 transition-colors duration-300">
-                Enterprise Security
+              <h3
+                className="text-lg font-semibold mb-2"
+                style={{ color: "var(--color-fg)" }}
+              >
+                GitHub Native
               </h3>
-              <p className="text-[var(--color-fg-secondary)] glass-text-subtle leading-relaxed">
-                Bank-level security with encrypted data processing, SOC2
-                compliance, and complete privacy protection for your code.
+              <p
+                className="text-sm"
+                style={{ color: "var(--color-fg-secondary)" }}
+              >
+                Install our GitHub App with read-only access. Your code stays
+                secure and never leaves GitHub's servers.
               </p>
+            </div>
 
-              <div className="absolute inset-0 bg-gradient-to-br from-green-400/5 via-[var(--color-primary)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl"></div>
+            <div className="lg:col-span-2 landing-card-gradient p-8">
+              <div className="flex flex-col md:flex-row gap-6">
+                <div
+                  className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background:
+                      theme === "dark"
+                        ? "linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(59, 130, 246, 0.2))"
+                        : "linear-gradient(135deg, rgba(22, 163, 74, 0.15), rgba(37, 99, 235, 0.15))",
+                  }}
+                >
+                  <Target
+                    className="w-8 h-8"
+                    style={{
+                      color: theme === "dark" ? "#22c55e" : "#16a34a",
+                    }}
+                  />
+                </div>
+                <div>
+                  <h3
+                    className="text-xl font-semibold mb-3"
+                    style={{ color: "var(--color-fg)" }}
+                  >
+                    Prioritized Recommendations
+                  </h3>
+                  <p
+                    className="text-base leading-relaxed mb-4"
+                    style={{ color: "var(--color-fg-secondary)" }}
+                  >
+                    Not all issues are equal. We rank recommendations by impact,
+                    helping you focus on changes that matter most. See estimated
+                    effort and expected improvement for each suggestion.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="landing-tech-badge">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Impact-based ranking
+                    </span>
+                    <span className="landing-tech-badge">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Effort estimates
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="relative stats-section py-16 overflow-hidden">
-        <div className="absolute inset-0 bg-[var(--color-bg-secondary)]/50 backdrop-blur-sm"></div>
+      {/* Key Metrics Section */}
+      <section
+        className="relative py-16 px-4"
+        style={{ background: "var(--color-bg)" }}
+      >
+        <div className="relative z-10 landing-container">
+          <div className="text-center mb-12">
+            <span className="landing-section-label">
+              <Gauge className="w-3.5 h-3.5" />
+              What We Measure
+            </span>
+            <h2
+              className="text-3xl sm:text-4xl font-bold mb-4"
+              style={{ color: "var(--color-fg)" }}
+            >
+              Comprehensive Code Metrics
+            </h2>
+            <p
+              className="text-lg max-w-xl mx-auto"
+              style={{ color: "var(--color-fg-secondary)" }}
+            >
+              Industry-standard metrics to give you a complete picture of your
+              codebase
+            </p>
+          </div>
 
-        <div className="relative z-10 max-w-4xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
-            <div className="glass-subtle glass-theme p-6 rounded-2xl group transition-all duration-300 hover:scale-105">
-              <div className="text-4xl font-bold text-[var(--color-fg)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
-                <span
-                  className="stat-number neon-glow-subtle"
-                  data-value="1000"
-                >
-                  1000
-                </span>
-                +
-              </div>
-              <p className="text-[var(--color-fg-secondary)] glass-text-subtle">
-                Projects Analyzed
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="landing-metric-card">
+              <div className="landing-metric-value">CC</div>
+              <p
+                className="text-sm font-medium"
+                style={{ color: "var(--color-fg)" }}
+              >
+                Cyclomatic Complexity
+              </p>
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--color-fg-secondary)" }}
+              >
+                Code path complexity
               </p>
             </div>
-
-            <div className="glass-subtle glass-theme p-6 rounded-2xl group transition-all duration-300 hover:scale-105">
-              <div className="text-4xl font-bold text-[var(--color-fg)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
-                <span
-                  className="stat-number neon-glow-subtle"
-                  data-value="5000"
-                >
-                  5000
-                </span>
-                +
-              </div>
-              <p className="text-[var(--color-fg-secondary)] glass-text-subtle">
-                Issues Detected
+            <div className="landing-metric-card">
+              <div className="landing-metric-value">MI</div>
+              <p
+                className="text-sm font-medium"
+                style={{ color: "var(--color-fg)" }}
+              >
+                Maintainability Index
+              </p>
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--color-fg-secondary)" }}
+              >
+                Ease of maintenance
               </p>
             </div>
-
-            <div className="glass-subtle glass-theme p-6 rounded-2xl group transition-all duration-300 hover:scale-105">
-              <div className="text-4xl font-bold text-[var(--color-fg)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
-                <span className="stat-number neon-glow-subtle" data-value="90">
-                  90
-                </span>
-                %
-              </div>
-              <p className="text-[var(--color-fg-secondary)] glass-text-subtle">
-                Accuracy Rate
+            <div className="landing-metric-card">
+              <div className="landing-metric-value">HS</div>
+              <p
+                className="text-sm font-medium"
+                style={{ color: "var(--color-fg)" }}
+              >
+                Halstead Metrics
+              </p>
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--color-fg-secondary)" }}
+              >
+                Volume & difficulty
               </p>
             </div>
-
-            <div className="glass-subtle glass-theme p-6 rounded-2xl group transition-all duration-300 hover:scale-105">
-              <div className="text-4xl font-bold text-[var(--color-fg)] mb-2 glass-text group-hover:scale-110 transition-transform duration-300">
-                <span className="stat-number neon-glow-subtle" data-value="24">
-                  24
-                </span>
-                /7
-              </div>
-              <p className="text-[var(--color-fg-secondary)] glass-text-subtle">
-                Uptime
+            <div className="landing-metric-card">
+              <div className="landing-metric-value">TD</div>
+              <p
+                className="text-sm font-medium"
+                style={{ color: "var(--color-fg)" }}
+              >
+                Technical Debt
+              </p>
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--color-fg-secondary)" }}
+              >
+                Estimated fix time
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="relative py-20 px-4">
-        <div className="absolute inset-0 pointer-events-none opacity-30">
+      {/* Supported Languages */}
+      <section
+        className="relative py-16 px-4 overflow-hidden"
+        style={{ background: "var(--color-bg-secondary)" }}
+      >
+        <div className="relative z-10 landing-container text-center">
+          <span className="landing-section-label">
+            <FileCode className="w-3.5 h-3.5" />
+            Language Support
+          </span>
+          <h2
+            className="text-2xl sm:text-3xl font-bold mb-4"
+            style={{ color: "var(--color-fg)" }}
+          >
+            Works With Your Stack
+          </h2>
+          <p
+            className="text-base mb-8 max-w-lg mx-auto"
+            style={{ color: "var(--color-fg-secondary)" }}
+          >
+            Currently supporting JavaScript, TypeScript, and Python with more
+            languages coming soon
+          </p>
+
+          <div className="flex flex-wrap justify-center gap-3">
+            <span className="landing-tech-badge">
+              <span style={{ color: "#f7df1e" }}>●</span> JavaScript
+            </span>
+            <span className="landing-tech-badge">
+              <span style={{ color: "#3178c6" }}>●</span> TypeScript
+            </span>
+            <span className="landing-tech-badge">
+              <span style={{ color: "#3776ab" }}>●</span> Python
+            </span>
+            <span
+              className="landing-tech-badge"
+              style={{ opacity: 0.6, fontStyle: "italic" }}
+            >
+              + More coming soon
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section
+        id="how-it-works"
+        className="relative py-20 px-4 overflow-hidden"
+        style={{ background: "var(--color-bg)" }}
+      >
+        <div className="relative z-10 landing-container">
+          <div className="text-center mb-16">
+            <span className="landing-section-label">
+              <Wrench className="w-3.5 h-3.5" />
+              How It Works
+            </span>
+            <h2
+              className="text-3xl sm:text-4xl font-bold mb-4"
+              style={{ color: "var(--color-fg)" }}
+            >
+              Get Started in Minutes
+            </h2>
+            <p
+              className="text-lg max-w-xl mx-auto"
+              style={{ color: "var(--color-fg-secondary)" }}
+            >
+              Three simple steps to better code health
+            </p>
+          </div>
+
+          <div className="relative">
+            <div className="landing-steps-connector hidden md:block" />
+
+            <div className="landing-steps-container">
+              <div className="landing-step-card">
+                <div className="landing-step-number">1</div>
+                <div className="mb-4">
+                  <GitBranch
+                    className="w-8 h-8 mx-auto"
+                    style={{ color: "var(--color-primary)" }}
+                  />
+                </div>
+                <h3
+                  className="text-lg font-semibold mb-2"
+                  style={{ color: "var(--color-fg)" }}
+                >
+                  Connect Repository
+                </h3>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--color-fg-secondary)" }}
+                >
+                  Install our GitHub App and select which repositories you want
+                  to analyze. Read-only access keeps your code secure.
+                </p>
+              </div>
+
+              <div className="landing-step-card">
+                <div className="landing-step-number">2</div>
+                <div className="mb-4">
+                  <Search
+                    className="w-8 h-8 mx-auto"
+                    style={{ color: "var(--color-primary)" }}
+                  />
+                </div>
+                <h3
+                  className="text-lg font-semibold mb-2"
+                  style={{ color: "var(--color-fg)" }}
+                >
+                  AI Analyzes Code
+                </h3>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--color-fg-secondary)" }}
+                >
+                  Our AI scans every file, calculating metrics, detecting code
+                  smells, and generating prioritized insights.
+                </p>
+              </div>
+
+              <div className="landing-step-card">
+                <div className="landing-step-number">3</div>
+                <div className="mb-4">
+                  <FileCheck
+                    className="w-8 h-8 mx-auto"
+                    style={{ color: "var(--color-primary)" }}
+                  />
+                </div>
+                <h3
+                  className="text-lg font-semibold mb-2"
+                  style={{ color: "var(--color-fg)" }}
+                >
+                  Get Recommendations
+                </h3>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--color-fg-secondary)" }}
+                >
+                  View detailed health scores and follow prioritized improvement
+                  suggestions to make your code better.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* What You'll Discover Section */}
+      <section
+        className="relative py-20 px-4 overflow-hidden"
+        style={{ background: "var(--color-bg-secondary)" }}
+      >
+        <div className="absolute inset-0 pointer-events-none opacity-20">
           <Particles
             particleColors={[particleColor, particleColor]}
-            particleCount={400}
+            particleCount={300}
             particleSpread={15}
-            speed={0.2}
+            speed={0.15}
             particleBaseSize={80}
             sizeRandomness={0}
             moveParticlesOnHover={true}
@@ -200,30 +498,197 @@ function Features() {
           />
         </div>
 
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
-          <div className="glass-card glass-shimmer glass-theme p-12 relative overflow-hidden">
-            <div className="absolute top-4 right-6 w-3 h-3 bg-[var(--color-accent)]/30 rounded-full animate-pulse"></div>
-            <div className="absolute bottom-6 left-8 w-2 h-2 bg-[var(--color-primary)]/40 rounded-full animate-pulse delay-500"></div>
-
-            <h2 className="text-4xl font-bold text-[var(--color-fg)] mb-6 glass-text">
-              Ready to Transform Your Code Quality?
+        <div className="relative z-10 landing-container">
+          <div className="text-center mb-16">
+            <span className="landing-section-label">
+              <Code2 className="w-3.5 h-3.5" />
+              Dashboard Preview
+            </span>
+            <h2
+              className="text-3xl sm:text-4xl font-bold mb-4"
+              style={{ color: "var(--color-fg)" }}
+            >
+              Insights You'll See
             </h2>
-            <p className="text-xl text-[var(--color-fg-secondary)] mb-8 max-w-2xl mx-auto glass-text-subtle leading-relaxed">
-              Join thousands of developers who trust CodeHealth AI to maintain
-              pristine code quality and accelerate their development process.
+            <p
+              className="text-lg max-w-xl mx-auto"
+              style={{ color: "var(--color-fg-secondary)" }}
+            >
+              Clear, actionable information about your codebase
+            </p>
+          </div>
+
+          <div className="landing-discover-grid">
+            <div className="landing-discover-card">
+              <div className="landing-discover-icon">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div>
+                <h3
+                  className="text-base font-semibold mb-1"
+                  style={{ color: "var(--color-fg)" }}
+                >
+                  Overall Health Score
+                </h3>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--color-fg-secondary)" }}
+                >
+                  A single score (0-100) that summarizes your entire codebase
+                  health.
+                </p>
+              </div>
+            </div>
+
+            <div className="landing-discover-card">
+              <div className="landing-discover-icon">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3
+                  className="text-base font-semibold mb-1"
+                  style={{ color: "var(--color-fg)" }}
+                >
+                  Code Smell Detection
+                </h3>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--color-fg-secondary)" }}
+                >
+                  Identify long methods, deep nesting, god classes, and other
+                  anti-patterns.
+                </p>
+              </div>
+            </div>
+
+            <div className="landing-discover-card">
+              <div className="landing-discover-icon">
+                <Wrench className="w-5 h-5" />
+              </div>
+              <div>
+                <h3
+                  className="text-base font-semibold mb-1"
+                  style={{ color: "var(--color-fg)" }}
+                >
+                  Refactoring Suggestions
+                </h3>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--color-fg-secondary)" }}
+                >
+                  AI-generated suggestions with effort estimates and expected
+                  impact.
+                </p>
+              </div>
+            </div>
+
+            <div className="landing-discover-card">
+              <div className="landing-discover-icon">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3
+                  className="text-base font-semibold mb-1"
+                  style={{ color: "var(--color-fg)" }}
+                >
+                  File-by-File Breakdown
+                </h3>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--color-fg-secondary)" }}
+                >
+                  See exactly which files need attention with individual quality
+                  scores.
+                </p>
+              </div>
+            </div>
+
+            <div className="landing-discover-card">
+              <div className="landing-discover-icon">
+                <Activity className="w-5 h-5" />
+              </div>
+              <div>
+                <h3
+                  className="text-base font-semibold mb-1"
+                  style={{ color: "var(--color-fg)" }}
+                >
+                  Complexity Distribution
+                </h3>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--color-fg-secondary)" }}
+                >
+                  Visualize how complexity is distributed across your codebase.
+                </p>
+              </div>
+            </div>
+
+            <div className="landing-discover-card">
+              <div className="landing-discover-icon">
+                <Shield className="w-5 h-5" />
+              </div>
+              <div>
+                <h3
+                  className="text-base font-semibold mb-1"
+                  style={{ color: "var(--color-fg)" }}
+                >
+                  Security Flags
+                </h3>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--color-fg-secondary)" }}
+                >
+                  Basic security checks for common vulnerabilities and best
+                  practices.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="relative py-20 px-4">
+        <div className="relative z-10 landing-container">
+          <div className="landing-cta-section">
+            <div
+              className="absolute top-4 right-6 w-3 h-3 rounded-full animate-pulse"
+              style={{ background: "var(--color-accent)", opacity: 0.3 }}
+            />
+            <div
+              className="absolute bottom-6 left-8 w-2 h-2 rounded-full animate-pulse"
+              style={{
+                background: "var(--color-primary)",
+                opacity: 0.4,
+                animationDelay: "0.5s",
+              }}
+            />
+
+            <h2
+              className="text-3xl sm:text-4xl font-bold mb-4"
+              style={{ color: "var(--color-fg)" }}
+            >
+              Ready to Improve Your Code?
+            </h2>
+            <p
+              className="text-lg mb-8 max-w-xl mx-auto"
+              style={{ color: "var(--color-fg-secondary)" }}
+            >
+              Connect your repository and get your first analysis in under a
+              minute. It's completely free.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                className="glass-btn-primary text-lg px-8 py-4 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
+                className="landing-btn-primary"
                 onClick={() =>
                   (window.location.href = process.env.NEXT_PUBLIC_SIGNUP_URL!)
                 }
               >
-                Start Free Trial <ArrowRight className="w-5 h-5" />
+                Get Started Free <ArrowRight className="w-4 h-4" />
               </button>
               <button
-                className="glass-btn text-lg px-8 py-4 rounded-xl font-semibold transition-all duration-300 hover:scale-105"
+                className="landing-btn-ghost"
                 onClick={() =>
                   (window.location.href = process.env.NEXT_PUBLIC_LOGIN_URL!)
                 }
@@ -231,8 +696,6 @@ function Features() {
                 Login
               </button>
             </div>
-
-            <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary)]/3 via-[var(--color-accent)]/3 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"></div>
           </div>
         </div>
       </section>

@@ -1,92 +1,168 @@
-import { Twitter, Github, Linkedin } from "lucide-react";
+import { Twitter, Github, Linkedin, Mail } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="bg-(--color-bg-secondary) border-t border-(--color-border)">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+    <footer
+      id="contact"
+      style={{
+        backgroundColor: "var(--color-bg-secondary)",
+        borderTop: "1px solid var(--color-border)",
+      }}
+    >
+      <div className="landing-container py-12 sm:py-16">
+        {/* Contact Section */}
+        <div className="text-center mb-12">
+          <h3
+            className="text-2xl sm:text-3xl font-bold mb-4"
+            style={{ color: "var(--color-fg)" }}
+          >
+            Get in Touch
+          </h3>
+          <p
+            className="text-base max-w-md mx-auto mb-6"
+            style={{ color: "var(--color-fg-secondary)" }}
+          >
+            Have questions or feedback? We'd love to hear from you.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
+            <a
+              href="mailto:contact@codehealthai.com"
+              className="flex items-center gap-2 transition-opacity hover:opacity-70"
+              style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
+            >
+              <Mail className="w-4 h-4" />
+              <span>contact@codehealthai.com</span>
+            </a>
+            <a
+              href="#"
+              className="flex items-center gap-2 transition-opacity hover:opacity-70"
+              style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
+            >
+              <Github className="w-4 h-4" />
+              <span>github.com/codehealthai</span>
+            </a>
+          </div>
+        </div>
+
+        <div
+          className="pt-8 mb-8"
+          style={{ borderTop: "1px solid var(--color-border)" }}
+        />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           <div className="sm:col-span-2 lg:col-span-2">
-            <h3 className="text-xl sm:text-2xl font-bold text-(--color-fg) mb-3 sm:mb-4">
-              CodeHealth<span className="text-[var(--color-primary)]">AI</span>
+            <h3
+              className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4"
+              style={{ color: "var(--color-fg)" }}
+            >
+              CodeHealth
+              <span style={{ color: "var(--color-primary)" }}>AI</span>
             </h3>
-            <p className="text-sm sm:text-base text-[var(--color-fg-secondary)] mb-4 sm:mb-6 max-w-md">
-              Empowering developers with AI-driven code analysis and health
-              monitoring to build better software, faster.
+            <p
+              className="text-sm sm:text-base mb-4 sm:mb-6 max-w-md"
+              style={{ color: "var(--color-fg-secondary)" }}
+            >
+              Free AI-powered code analysis for GitHub repositories. Understand
+              your code health and get actionable recommendations to improve
+              quality.
             </p>
-            <div className="flex space-x-4">
+            <div className="flex space-x-3">
               <a
                 href="#"
-                className="text-[var(--color-fg-secondary)] hover:text-[var(--color-primary)] transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-opacity hover:opacity-70"
+                style={{
+                  border: "1px solid var(--color-border)",
+                  color: "var(--color-fg-secondary)",
+                  textDecoration: "none",
+                }}
               >
-                <span className="sr-only">Twitter</span>
-                <Twitter className="w-5 h-5" />
+                <Twitter className="w-4 h-4" />
               </a>
               <a
                 href="#"
-                className="text-[var(--color-fg-secondary)] hover:text-[var(--color-primary)] transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-opacity hover:opacity-70"
+                style={{
+                  border: "1px solid var(--color-border)",
+                  color: "var(--color-fg-secondary)",
+                  textDecoration: "none",
+                }}
               >
-                <span className="sr-only">GitHub</span>
-                <Github className="w-5 h-5" />
+                <Github className="w-4 h-4" />
               </a>
               <a
                 href="#"
-                className="text-[var(--color-fg-secondary)] hover:text-[var(--color-primary)] transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-opacity hover:opacity-70"
+                style={{
+                  border: "1px solid var(--color-border)",
+                  color: "var(--color-fg-secondary)",
+                  textDecoration: "none",
+                }}
               >
-                <span className="sr-only">LinkedIn</span>
-                <Linkedin className="w-5 h-5" />
+                <Linkedin className="w-4 h-4" />
               </a>
             </div>
           </div>
 
           <div>
-            <h4 className="text-base sm:text-lg font-semibold text-[var(--color-fg)] mb-3 sm:mb-4">
+            <h4
+              className="text-sm font-semibold uppercase tracking-wider mb-4"
+              style={{ color: "var(--color-fg)" }}
+            >
               Product
             </h4>
-            <ul className="space-y-2 sm:space-y-3">
+            <ul className="space-y-3">
               <li>
                 <a
-                  href="#"
-                  className="text-sm sm:text-base text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors"
+                  href="#features"
+                  className="text-sm transition-opacity hover:opacity-70"
+                  style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
                 >
                   Features
                 </a>
               </li>
               <li>
                 <a
-                  href="#"
-                  className="text-sm sm:text-base text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors"
+                  href="#how-it-works"
+                  className="text-sm transition-opacity hover:opacity-70"
+                  style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
                 >
-                  Pricing
+                  How It Works
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-sm sm:text-base text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors"
+                  className="text-sm transition-opacity hover:opacity-70"
+                  style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
                 >
-                  Integrations
+                  GitHub Integration
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-sm sm:text-base text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors"
+                  className="text-sm transition-opacity hover:opacity-70"
+                  style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
                 >
-                  API
+                  API Documentation
                 </a>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-base sm:text-lg font-semibold text-[var(--color-fg)] mb-3 sm:mb-4">
-              Support
+            <h4
+              className="text-sm font-semibold uppercase tracking-wider mb-4"
+              style={{ color: "var(--color-fg)" }}
+            >
+              Resources
             </h4>
-            <ul className="space-y-2 sm:space-y-3">
+            <ul className="space-y-3">
               <li>
                 <a
                   href="#"
-                  className="text-sm sm:text-base text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors"
+                  className="text-sm transition-opacity hover:opacity-70"
+                  style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
                 >
                   Documentation
                 </a>
@@ -94,7 +170,8 @@ export default function Footer() {
               <li>
                 <a
                   href="#"
-                  className="text-sm sm:text-base text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors"
+                  className="text-sm transition-opacity hover:opacity-70"
+                  style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
                 >
                   Help Center
                 </a>
@@ -102,15 +179,17 @@ export default function Footer() {
               <li>
                 <a
                   href="#"
-                  className="text-sm sm:text-base text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors"
+                  className="text-sm transition-opacity hover:opacity-70"
+                  style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
                 >
-                  Contact
+                  Blog
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-sm sm:text-base text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors"
+                  className="text-sm transition-opacity hover:opacity-70"
+                  style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
                 >
                   Status
                 </a>
@@ -119,29 +198,31 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-[var(--color-border)] mt-8 sm:mt-12 pt-6 sm:pt-8">
+        <div
+          className="mt-12 pt-8"
+          style={{ borderTop: "1px solid var(--color-border)" }}
+        >
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-            <p className="text-xs sm:text-sm text-[var(--color-fg-secondary)] text-center sm:text-left">
-              © 2024 CodeHealth AI. All rights reserved.
+            <p
+              className="text-xs text-center sm:text-left"
+              style={{ color: "var(--color-fg-secondary)" }}
+            >
+              © {new Date().getFullYear()} CodeHealth AI. All rights reserved.
             </p>
             <div className="flex flex-wrap justify-center sm:justify-end space-x-4 sm:space-x-6">
               <a
                 href="#"
-                className="text-xs sm:text-sm text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors"
+                className="text-xs transition-opacity hover:opacity-70"
+                style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
               >
-                Privacy Policy
+                Privacy
               </a>
               <a
                 href="#"
-                className="text-xs sm:text-sm text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors"
+                className="text-xs transition-opacity hover:opacity-70"
+                style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
               >
-                Terms of Service
-              </a>
-              <a
-                href="#"
-                className="text-xs sm:text-sm text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors"
-              >
-                Cookie Policy
+                Terms
               </a>
             </div>
           </div>

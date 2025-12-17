@@ -5,14 +5,16 @@ import gsap from "gsap";
 import Particles from "./ui/Particles";
 import {
   BarChart3,
-  DollarSign,
-  Rocket,
+  GitBranch,
+  Lightbulb,
   ArrowRight,
   Terminal,
   CheckCircle,
   Zap,
   TrendingUp,
+  FileCode,
 } from "lucide-react";
+import "@/app/landing.css";
 
 export default function HeroSection() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -93,95 +95,113 @@ export default function HeroSection() {
         />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto w-full">
+      <div className="relative z-10 landing-container w-full">
         <div className="min-h-[80vh] grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           <div className="text-center lg:text-left sm:break-words relative order-2 lg:order-1">
             <h1
-              className="font-title align-middle font-light hero-title text-4xl sm:text-6xl md:text-7xl lg:text-6xl xl:text-7xl mb-6 sm:mb-8 leading-[1.05] text-nowrap"
+              className="font-title align-middle font-light hero-title text-4xl sm:text-5xl md:text-6xl lg:text-5xl xl:text-6xl mb-6 sm:mb-8 leading-[1.1] relative z-0"
               style={{ color: "var(--color-fg)" }}
             >
-              Maximize
+              Understand Your
               <br />
-              Developer
-              <span> </span>
-              <br className="block sm:hidden" />
               <span
-                className="efficiency-gradient"
+                className="whitespace-nowrap"
                 style={{
-                  backgroundImage:
-                    theme === "dark"
-                      ? "linear-gradient(135deg, #ffffff 0%, #e5e5e5 25%, #a1a1a1 50%, #888888 75%, #666666 100%)"
-                      : "linear-gradient(135deg, #a084e8 0%, #8b5cf6 25%, #7c3aed 50%, #a855f7 75%, #cdb4f6 100%)",
-                  backgroundRepeat: "no-repeat",
-                  backgroundSize: "100% 100%",
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  color: "transparent",
+                  display: "inline-block",
                 }}
               >
-                Efficiency
+                <span style={{ color: "var(--color-fg)" }}>Code Health </span>
+                <span
+                  className="efficiency-gradient"
+                  style={{
+                    backgroundImage:
+                      theme === "dark"
+                        ? "linear-gradient(135deg, #ffffff 0%, #e5e5e5 25%, #a1a1a1 50%, #888888 75%, #666666 100%)"
+                        : "linear-gradient(135deg, #a084e8 0%, #8b5cf6 25%, #7c3aed 50%, #a855f7 75%, #cdb4f6 100%)",
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "100% 100%",
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    color: "transparent",
+                  }}
+                >
+                  at a Glance
+                </span>
               </span>
             </h1>
 
             <div className="mb-6 sm:mb-8">
               <p
-                className="hero-subtitle text-base sm:text-lg md:text-xl mb-4 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
+                className="hero-subtitle text-base sm:text-lg md:text-xl mb-4 max-w-xl mx-auto lg:mx-0 leading-relaxed"
                 style={{ color: "var(--color-fg-secondary)" }}
               >
+                Analyze your GitHub repositories with{" "}
                 <strong style={{ color: "var(--color-fg)" }}>
-                  The CodeHealth AI analyzer
-                </strong>{" "}
-                provides deep insights into developer productivity, code quality
-                metrics, and business impact analytics to optimize your
-                development workflow.
+                  AI-powered insights
+                </strong>
+                . Get actionable recommendations for code quality, technical
+                debt, and maintainability — completely free.
               </p>
             </div>
 
-            <div className="hero-cta flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-8 sm:mb-10">
+            <div className="hero-cta flex flex-col sm:flex-row gap-3 justify-center lg:justify-start items-center mb-8 sm:mb-10">
               <button
-                className="flex items-center gap-2 text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold transition-all duration-300 w-full sm:w-auto"
-                style={{
-                  backgroundColor: "var(--color-btn-bg)",
-                  color: "var(--color-btn-fg)",
-                  border: "var(--color-btn-border)",
-                }}
+                className="landing-btn-primary w-full sm:w-auto"
+                onClick={() =>
+                  (window.location.href = process.env.NEXT_PUBLIC_SIGNUP_URL!)
+                }
+              >
+                Connect Your Repository
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                className="landing-btn-secondary w-full sm:w-auto"
                 onClick={() =>
                   (window.location.href = process.env.NEXT_PUBLIC_LOGIN_URL!)
                 }
               >
-                Start Analytics Dashboard
-                <ArrowRight className="w-5 h-5" />
+                Login to Dashboard
               </button>
             </div>
+
+            <p
+              className="text-sm"
+              style={{ color: "var(--color-fg-secondary)", opacity: 0.7 }}
+            >
+              Free forever • No credit card required • GitHub integration
+            </p>
           </div>
 
-          <div className="relative top-18 right-8 lg:pl-8 order-1 lg:order-2 hidden lg:block">
+          <div className="relative lg:pl-8 order-1 lg:order-2 hidden lg:block z-20">
             <AnimatedTerminal theme={theme} />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mt-20 sm:mt-32">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mt-16 sm:mt-24">
           <FeatureCard
-            icon={<BarChart3 className="w-6 h-6" />}
-            title="Developer Analytics"
-            description="Track productivity metrics, velocity trends, and efficiency patterns across your development teams"
+            icon={<BarChart3 className="w-5 h-5" />}
+            title="Code Quality Metrics"
+            description="Measure cyclomatic complexity, maintainability index, and health scores for every file in your repository."
             accentColor="var(--color-border)"
+            theme={theme}
           />
 
           <FeatureCard
-            icon={<DollarSign className="w-6 h-6" />}
-            title="Cost Intelligence"
-            description="Get accurate project cost estimates, resource allocation insights, and ROI projections"
+            icon={<GitBranch className="w-5 h-5" />}
+            title="Technical Debt Analysis"
+            description="Identify and prioritize technical debt with AI-generated refactoring suggestions and estimated effort."
             accentColor="var(--color-border2)"
+            theme={theme}
           />
 
           <FeatureCard
-            icon={<Rocket className="w-6 h-6" />}
-            title="Performance Insights"
-            description="Identify bottlenecks, optimize workflows, and accelerate delivery with data-driven recommendations"
+            icon={<Lightbulb className="w-5 h-5" />}
+            title="Actionable Recommendations"
+            description="Receive clear, prioritized suggestions for improving code quality based on industry best practices."
             accentColor="var(--color-border)"
             className="sm:col-span-2 md:col-span-1 sm:mx-auto md:mx-0 max-w-sm sm:max-w-none"
+            theme={theme}
           />
         </div>
       </div>
@@ -195,6 +215,7 @@ interface FeatureCardProps {
   description: string;
   accentColor: string;
   className?: string;
+  theme: "light" | "dark";
 }
 
 function FeatureCard({
@@ -203,10 +224,11 @@ function FeatureCard({
   description,
   accentColor,
   className = "",
+  theme,
 }: FeatureCardProps) {
   return (
     <div
-      className={`glass-card glass-shimmer glass-theme text-center p-6 sm:p-8 group relative overflow-hidden ${className}`}
+      className={`landing-card-gradient p-6 sm:p-8 group relative overflow-hidden ${className}`}
     >
       <div
         className="absolute top-2 right-2 w-2 h-2 rounded-full animate-pulse"
@@ -221,30 +243,36 @@ function FeatureCard({
         }}
       />
 
-      <div className="relative mx-auto mb-4 sm:mb-6 w-fit">
-        <div
-          className="w-12 sm:w-16 h-12 sm:h-16 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-all duration-300 relative overflow-hidden"
-          style={{ backgroundColor: accentColor }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <span className="text-white relative z-10">{icon}</span>
+      <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+        <div className="relative flex-shrink-0">
+          <div
+            className="w-10 sm:w-12 h-10 sm:h-12 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-all duration-300 relative overflow-hidden"
+            style={{ 
+              backgroundColor: theme === "dark" ? "rgba(59, 130, 246, 0.15)" : "rgba(139, 92, 246, 0.12)",
+              border: theme === "dark" ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid rgba(139, 92, 246, 0.2)"
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <span style={{ color: theme === "dark" ? "#60a5fa" : "#7c3aed" }} className="relative z-10">{icon}</span>
+          </div>
+          <div
+            className="absolute inset-0 w-10 sm:w-12 h-10 sm:h-12 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-all duration-300"
+            style={{
+              backgroundColor: theme === "dark" ? "rgba(59, 130, 246, 0.2)" : "rgba(139, 92, 246, 0.15)",
+            }}
+          />
         </div>
-        <div
-          className="absolute inset-0 w-12 sm:w-16 h-12 sm:h-16 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition-all duration-300"
-          style={{
-            backgroundColor: `color-mix(in srgb, ${accentColor} 30%, transparent)`,
-          }}
-        />
+
+        <h3
+          className="text-lg sm:text-xl font-semibold glass-text group-hover:text-[var(--color-primary)] transition-colors duration-300 text-left"
+          style={{ color: "var(--color-fg)" }}
+        >
+          {title}
+        </h3>
       </div>
 
-      <h3
-        className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3 glass-text group-hover:text-[var(--color-primary)] transition-colors duration-300"
-        style={{ color: "var(--color-fg)" }}
-      >
-        {title}
-      </h3>
       <p
-        className="text-sm sm:text-base leading-relaxed glass-text-subtle"
+        className="text-sm sm:text-base leading-relaxed glass-text-subtle text-left"
         style={{ color: "var(--color-fg-secondary)" }}
       >
         {description}
@@ -267,24 +295,25 @@ function AnimatedTerminal({ theme }: { theme: "light" | "dark" }) {
 
   const steps = [
     {
-      prompt: "codehealth analyze --project ./src",
+      prompt: "codehealth analyze ./my-project",
       responses: [
-        "Scanning repository...",
-        "Analyzing code patterns...",
-        "Running AI diagnostics...",
+        "Connecting to GitHub...",
+        "Scanning repository files...",
+        "Running AI analysis...",
       ],
     },
     {
       prompt: "",
       responses: [
         "",
-        "Analysis Complete",
-        "─────────────────────────",
-        "Efficiency Score: 87.3%",
-        "Est. Cost: $127,000",
-        "Velocity: +23% ↑",
-        "─────────────────────────",
-        "Done in 847ms",
+        "✓ Analysis Complete",
+        "─────────────────────────────",
+        "Health Score:     87/100",
+        "Maintainability:  A",
+        "Code Smells:      3 detected",
+        "Tech Debt:        ~4 hours",
+        "─────────────────────────────",
+        "→ 5 recommendations ready",
       ],
     },
   ];
@@ -301,7 +330,7 @@ function AnimatedTerminal({ theme }: { theme: "light" | "dark" }) {
         if (textIndex < step.responses.length) {
           setDisplayText(step.responses.slice(0, textIndex + 1).join("\n"));
           textIndex++;
-          timeout = setTimeout(typeText, 400);
+          timeout = setTimeout(typeText, 350);
         } else {
           setIsTyping(false);
           timeout = setTimeout(() => {
@@ -314,9 +343,9 @@ function AnimatedTerminal({ theme }: { theme: "light" | "dark" }) {
                 setCurrentStep(0);
                 setDisplayText("");
                 setIsTyping(true);
-              }, 2000);
+              }, 2500);
             }
-          }, 1000);
+          }, 1200);
         }
       };
 
@@ -330,142 +359,132 @@ function AnimatedTerminal({ theme }: { theme: "light" | "dark" }) {
 
   return (
     <div className="relative w-full max-w-sm md:max-w-md lg:max-w-lg mx-auto">
-      <div
-        className="terminal-window rounded-2xl lg:rounded-3xl overflow-hidden shadow-2xl transform hover:scale-[1.02] transition-transform duration-300"
-        style={{
-          backgroundColor: theme === "dark" ? "#0a0a0a" : "#fafafa",
-          border: `1px solid ${theme === "dark" ? "#262626" : "#e5e5e5"}`,
-        }}
-      >
-        <div
-          className="flex items-center justify-between px-4 py-3"
-          style={{
-            backgroundColor: theme === "dark" ? "#171717" : "#f5f5f5",
-            borderBottom: `1px solid ${
-              theme === "dark" ? "#262626" : "#e5e5e5"
-            }`,
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full hover:bg-red-400 transition-colors" />
-            <div className="w-3 h-3 bg-yellow-500 rounded-full hover:bg-yellow-400 transition-colors" />
-            <div className="w-3 h-3 bg-green-500 rounded-full hover:bg-green-400 transition-colors" />
+      <div className="landing-terminal">
+        {/* Header */}
+        <div className="landing-terminal-header">
+          <div className="landing-terminal-dots">
+            <div className="landing-terminal-dot red" />
+            <div className="landing-terminal-dot yellow" />
+            <div className="landing-terminal-dot green" />
           </div>
           <div
             className="flex items-center gap-2 text-xs font-mono font-medium"
-            style={{ color: theme === "dark" ? "#737373" : "#737373" }}
+            style={{ color: theme === "dark" ? "#6b7280" : "#9ca3af" }}
           >
             <Terminal className="w-3.5 h-3.5" />
-            <span>terminal</span>
+            <span>codehealth-cli</span>
           </div>
           <div className="w-16" />
         </div>
 
-        <div
-          className="p-4 min-h-[260px] font-mono text-sm leading-relaxed"
-          style={{ backgroundColor: theme === "dark" ? "#0a0a0a" : "#fafafa" }}
-        >
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
+        {/* Content */}
+        <div className="landing-terminal-content">
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
             <span
               style={{ color: theme === "dark" ? "#22c55e" : "#16a34a" }}
               className="font-semibold"
             >
-              →
+              ➜
             </span>
-            <span style={{ color: theme === "dark" ? "#3b82f6" : "#2563eb" }}>
-              ~/workspace
+            <span style={{ color: theme === "dark" ? "#60a5fa" : "#7c3aed" }}>
+              ~/projects
             </span>
-            <span style={{ color: theme === "dark" ? "#737373" : "#a3a3a3" }}>
+            <span style={{ color: theme === "dark" ? "#6b7280" : "#9ca3af" }}>
               $
             </span>
             <span
-              style={{ color: theme === "dark" ? "#ededed" : "#171717" }}
+              style={{ color: theme === "dark" ? "#f5f5f5" : "#18181b" }}
               className="font-medium"
             >
               {steps[currentStep]?.prompt}
             </span>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {displayText.split("\n").map((line, index) => {
               let lineStyle: React.CSSProperties = {
-                color: theme === "dark" ? "#a3a3a3" : "#525252",
+                color: theme === "dark" ? "#a1a1aa" : "#71717a",
               };
 
-              if (line.includes("Analysis Complete")) {
+              if (line.includes("✓ Analysis Complete")) {
                 lineStyle = {
                   color: theme === "dark" ? "#22c55e" : "#16a34a",
                   fontWeight: 600,
                 };
-              } else if (line.includes("Efficiency Score")) {
+              } else if (line.includes("Health Score")) {
                 lineStyle = {
-                  color: theme === "dark" ? "#3b82f6" : "#2563eb",
+                  color: theme === "dark" ? "#60a5fa" : "#7c3aed",
+                  fontWeight: 500,
                 };
-              } else if (line.includes("Est. Cost")) {
-                lineStyle = {
-                  color: theme === "dark" ? "#f59e0b" : "#d97706",
-                };
-              } else if (line.includes("Velocity")) {
+              } else if (line.includes("Maintainability")) {
                 lineStyle = {
                   color: theme === "dark" ? "#22c55e" : "#16a34a",
                 };
-              } else if (line.includes("Done in")) {
+              } else if (line.includes("Code Smells")) {
                 lineStyle = {
-                  color: theme === "dark" ? "#737373" : "#a3a3a3",
-                  fontSize: "0.75rem",
+                  color: theme === "dark" ? "#fbbf24" : "#d97706",
+                };
+              } else if (line.includes("Tech Debt")) {
+                lineStyle = {
+                  color: theme === "dark" ? "#f87171" : "#dc2626",
+                };
+              } else if (line.includes("recommendations")) {
+                lineStyle = {
+                  color: theme === "dark" ? "#a78bfa" : "#7c3aed",
+                  fontWeight: 500,
                 };
               } else if (line.includes("───")) {
                 lineStyle = {
-                  color: theme === "dark" ? "#404040" : "#d4d4d4",
+                  color: theme === "dark" ? "#3f3f46" : "#d4d4d8",
                 };
               }
 
               return (
                 <div key={index} style={lineStyle} className="animate-fadeIn">
-                  {line.includes("Analysis Complete") && (
+                  {line.includes("✓ Analysis Complete") && (
                     <span className="inline-flex items-center gap-2">
                       <CheckCircle className="w-4 h-4" />
-                      {line}
+                      Analysis Complete
                     </span>
                   )}
-                  {line.includes("Efficiency") && (
+                  {line.includes("Health Score") && (
                     <span className="inline-flex items-center gap-2">
                       <Zap className="w-4 h-4" />
                       {line}
                     </span>
                   )}
-                  {line.includes("Velocity") && (
+                  {line.includes("recommendations") && (
                     <span className="inline-flex items-center gap-2">
                       <TrendingUp className="w-4 h-4" />
-                      {line}
+                      5 recommendations ready
                     </span>
                   )}
-                  {!line.includes("Analysis Complete") &&
-                    !line.includes("Efficiency") &&
-                    !line.includes("Velocity") && <span>{line}</span>}
+                  {!line.includes("✓ Analysis Complete") &&
+                    !line.includes("Health Score") &&
+                    !line.includes("recommendations") && <span>{line}</span>}
                 </div>
               );
             })}
 
             {isTyping && (
-              <div className="flex items-center gap-1.5 mt-2">
+              <div className="flex items-center gap-1.5 mt-3">
                 <div
                   className="w-1.5 h-1.5 rounded-full animate-pulse"
                   style={{
-                    backgroundColor: theme === "dark" ? "#3b82f6" : "#2563eb",
+                    backgroundColor: theme === "dark" ? "#60a5fa" : "#7c3aed",
                   }}
                 />
                 <div
                   className="w-1.5 h-1.5 rounded-full animate-pulse"
                   style={{
-                    backgroundColor: theme === "dark" ? "#3b82f6" : "#2563eb",
+                    backgroundColor: theme === "dark" ? "#60a5fa" : "#7c3aed",
                     animationDelay: "0.2s",
                   }}
                 />
                 <div
                   className="w-1.5 h-1.5 rounded-full animate-pulse"
                   style={{
-                    backgroundColor: theme === "dark" ? "#3b82f6" : "#2563eb",
+                    backgroundColor: theme === "dark" ? "#60a5fa" : "#7c3aed",
                     animationDelay: "0.4s",
                   }}
                 />
@@ -475,15 +494,16 @@ function AnimatedTerminal({ theme }: { theme: "light" | "dark" }) {
         </div>
       </div>
 
+      {/* Decorative elements */}
       <div
-        className="absolute -top-2 -right-2 w-4 h-4 rounded-full opacity-30 animate-pulse"
-        style={{ backgroundColor: "var(--color-primary)" }}
+        className="absolute -top-3 -right-3 w-6 h-6 rounded-full opacity-20 animate-pulse"
+        style={{ backgroundColor: theme === "dark" ? "#60a5fa" : "#7c3aed" }}
       />
       <div
-        className="absolute -bottom-1 -left-1 w-2 h-2 rounded-full opacity-40 animate-pulse"
+        className="absolute -bottom-2 -left-2 w-4 h-4 rounded-full opacity-25 animate-pulse"
         style={{
-          backgroundColor: "var(--color-accent)",
-          animationDelay: "0.3s",
+          backgroundColor: theme === "dark" ? "#a78bfa" : "#8b5cf6",
+          animationDelay: "0.5s",
         }}
       />
     </div>

@@ -2,11 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
 import "@/app/glass.css";
+import "@/app/landing.css";
 import Link from "next/link";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     function getTheme(): "light" | "dark" {
@@ -35,7 +37,15 @@ export default function Navbar() {
       attributeFilter: ["data-theme"],
     });
 
-    return () => observer.disconnect();
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, [theme]);
 
   const toggleTheme = () => {
@@ -46,63 +56,93 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass-nav glass-theme">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? "glass-nav glass-theme" : ""
+      }`}
+      style={{
+        backgroundColor: scrolled ? undefined : "transparent",
+        borderBottom: scrolled ? "1px solid var(--color-border)" : "none",
+      }}
+    >
+      <div className="landing-container">
         <div className="flex justify-between items-center h-14 sm:h-16">
           <div className="shrink-0 flex items-center">
-            <h1 className="text-xl sm:text-2xl font-bold text-(--color-fg)">
-              CodeHealth
-              <span className="text-(--color-primary) neon-glow-subtle ml-1">
-                AI
-              </span>
-            </h1>
+            <Link
+              href="/"
+              className="flex items-center"
+              style={{ textDecoration: "none" }}
+            >
+              <h1
+                className="text-2xl sm:text-3xl font-bold"
+                style={{ color: "var(--color-fg)", textDecoration: "none" }}
+              >
+                CodeHealth
+                <span
+                  className="neon-glow-subtle ml-0.5"
+                  style={{ color: "var(--color-primary)", textDecoration: "none" }}
+                >
+                  AI
+                </span>
+              </h1>
+            </Link>
           </div>
 
           <div className="hidden md:block">
             <div className="flex items-baseline space-x-6 lg:space-x-8">
               <Link
                 href="#features"
-                className="text-(--color-fg-secondary) hover:text-(--color-fg) transition-colors text-sm lg:text-base"
+                className="text-sm lg:text-base font-medium transition-opacity hover:opacity-70"
+                style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
               >
                 Features
               </Link>
               <Link
-                href="#pricing"
-                className="text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors text-sm lg:text-base"
+                href="#how-it-works"
+                className="text-sm lg:text-base font-medium transition-opacity hover:opacity-70"
+                style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
               >
-                Pricing
+                How It Works
               </Link>
               <Link
                 href="#docs"
-                className="text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors text-sm lg:text-base"
+                className="text-sm lg:text-base font-medium transition-opacity hover:opacity-70"
+                style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
               >
                 Docs
               </Link>
               <Link
                 href="#contact"
-                className="text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors text-sm lg:text-base"
+                className="text-sm lg:text-base font-medium transition-opacity hover:opacity-70"
+                style={{ color: "var(--color-fg-secondary)", textDecoration: "none" }}
               >
                 Contact
               </Link>
             </div>
           </div>
 
-          <div className="hidden md:flex items-center space-x-3 lg:space-x-4">
+          <div className="hidden md:flex items-center space-x-3">
             <button
               onClick={toggleTheme}
-              className="text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors text-sm lg:text-base px-3 py-2 rounded-lg"
+              className="rounded-2xl! transition-all duration-200"
               aria-label="Toggle theme"
-              style={{ color: "var(--color-bg)" }}
+              style={{
+                backgroundColor: "transparent",
+                border: theme === "dark" ? "1px solid rgba(255, 255, 255, 0.15)" : "1px solid rgba(0, 0, 0, 0.1)",
+                color: theme === "dark" ? "#ffffff" : "#18181b",
+                paddingInline: "0.75rem",
+                paddingBlock: "0.5rem",
+              }}
             >
               {theme === "dark" ? (
-                <Sun className="w-5 h-5" />
+                <Sun className="w-5.5 h-5.5" />
               ) : (
-                <Moon className="w-5 h-5" />
+                <Moon className="w-5.5 h-5.5" />
               )}
             </button>
 
             <button
-              className="text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors text-sm lg:text-base px-3 py-2 rounded-lg"
+              className="landing-btn-ghost !py-2 !px-4 text-sm"
               onClick={() =>
                 (window.location.href = process.env.NEXT_PUBLIC_LOGIN_URL!)
               }
@@ -111,37 +151,49 @@ export default function Navbar() {
             </button>
 
             <button
-              className="glass-btn-primary px-3 py-2 lg:px-4 text-sm lg:text-base rounded-lg"
+              className="landing-btn-primary !py-2 !px-4 text-sm whitespace-nowrap"
               onClick={() =>
                 (window.location.href = process.env.NEXT_PUBLIC_SIGNUP_URL!)
               }
             >
-              Sign Up
+              Get Started
             </button>
           </div>
 
           <div className="md:hidden flex items-center space-x-2">
             <button
               onClick={toggleTheme}
-              className="glass-btn p-2 rounded-lg transition-all duration-200"
+              className="rounded-2xl! transition-all duration-200"
               aria-label="Toggle theme"
-              style={{ color: "var(--color-fg-secondary)" }}
+              style={{
+                backgroundColor: "transparent",
+                border: theme === "dark" ? "1px solid rgba(255, 255, 255, 0.15)" : "1px solid rgba(0, 0, 0, 0.1)",
+                color: theme === "dark" ? "#ffffff" : "#18181b",
+                paddingInline: "0.75rem",
+                paddingBlock: "0.5rem",
+              }}
             >
               {theme === "dark" ? (
-                <Sun className="w-5 h-5" />
+                <Sun className="w-5.5 h-5.5" />
               ) : (
-                <Moon className="w-5 h-5" />
+                <Moon className="w-5.5 h-5.5" />
               )}
             </button>
 
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="glass-btn p-2 rounded-lg"
+              className="rounded-xl! flex items-center justify-center transition-all duration-200"
               aria-expanded={isMenuOpen}
               aria-controls="mobile-menu"
+              style={{
+                backgroundColor: "transparent",
+                border: theme === "dark" ? "1px solid rgba(255, 255, 255, 0.15)" : "1px solid rgba(0, 0, 0, 0.1)",
+                color: theme === "dark" ? "#ffffff" : "#18181b",
+                padding: "0.5rem 0.75rem",
+              }}
             >
               <svg
-                className="h-5 w-5 sm:h-6 sm:w-6"
+                className="h-5 w-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -168,41 +220,93 @@ export default function Navbar() {
         {isMenuOpen && (
           <div
             id="mobile-menu"
-            className="md:hidden glass-card mt-2 border-t border-[var(--color-border)]/30"
+            className="md:hidden rounded-xl mt-3 overflow-hidden"
+            style={{
+              backgroundColor: "var(--color-bg-secondary)",
+              border: "1px solid var(--color-border)",
+              boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
+            }}
           >
-            <div className="px-2 pt-2 pb-3 space-y-1">
+            <div className="p-4 space-y-1">
               <Link
                 href="#features"
                 onClick={() => setIsMenuOpen(false)}
-                className="block px-3 py-2 text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors rounded-md"
+                className="block px-4 py-3 rounded-lg text-base font-medium transition-all duration-200"
+                style={{
+                  color: "var(--color-fg)",
+                  textDecoration: "none",
+                  backgroundColor: "transparent",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--color-bg)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
               >
                 Features
               </Link>
               <Link
-                href="#pricing"
+                href="#how-it-works"
                 onClick={() => setIsMenuOpen(false)}
-                className="block px-3 py-2 text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors rounded-md"
+                className="block px-4 py-3 rounded-lg text-base font-medium transition-all duration-200"
+                style={{
+                  color: "var(--color-fg)",
+                  textDecoration: "none",
+                  backgroundColor: "transparent",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--color-bg)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
               >
-                Pricing
+                How It Works
               </Link>
               <Link
                 href="#docs"
                 onClick={() => setIsMenuOpen(false)}
-                className="block px-3 py-2 text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors rounded-md"
+                className="block px-4 py-3 rounded-lg text-base font-medium transition-all duration-200"
+                style={{
+                  color: "var(--color-fg)",
+                  textDecoration: "none",
+                  backgroundColor: "transparent",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--color-bg)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
               >
                 Docs
               </Link>
               <Link
                 href="#contact"
                 onClick={() => setIsMenuOpen(false)}
-                className="block px-3 py-2 text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors rounded-md"
+                className="block px-4 py-3 rounded-lg text-base font-medium transition-all duration-200"
+                style={{
+                  color: "var(--color-fg)",
+                  textDecoration: "none",
+                  backgroundColor: "transparent",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--color-bg)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
               >
                 Contact
               </Link>
 
-              <div className="flex space-x-4 px-3 py-2 border-t border-[var(--color-border)] mt-2 pt-4">
+              <div
+                className="flex gap-3 pt-4 mt-3"
+                style={{ borderTop: "1px solid var(--color-border)" }}
+              >
                 <button
-                  className="flex-1 text-[var(--color-fg-secondary)] hover:text-[var(--color-fg)] transition-colors py-2 rounded-md"
+                  className="flex-1 landing-btn-ghost !py-3 text-base"
                   onClick={() => {
                     window.location.href = process.env.NEXT_PUBLIC_LOGIN_URL!;
                     setIsMenuOpen(false);
@@ -211,13 +315,13 @@ export default function Navbar() {
                   Login
                 </button>
                 <button
-                  className="flex-1 glass-btn-primary px-4 py-2 rounded-md"
+                  className="flex-1 landing-btn-primary !py-3 text-base whitespace-nowrap"
                   onClick={() => {
                     window.location.href = process.env.NEXT_PUBLIC_SIGNUP_URL!;
                     setIsMenuOpen(false);
                   }}
                 >
-                  Sign Up
+                  Get Started
                 </button>
               </div>
             </div>
