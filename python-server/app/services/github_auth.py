@@ -15,7 +15,7 @@ GITHUB_PRIVATE_KEY = gs.github_private_key
 def _prepare_private_key(pem_content: str) -> str:
     try:
 
-        pem_content = pem_content.strip()
+        pem_content = pem_content.replace("\\n", "\n").strip()
         
         if not pem_content.startswith('-----BEGIN'):
             raise ValueError("Private key must be in PEM format starting with -----BEGIN")

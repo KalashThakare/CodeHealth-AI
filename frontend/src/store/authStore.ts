@@ -56,22 +56,12 @@ export const useAuthStore = create<AuthStore>()(
       checkAuth: async (router?: any): Promise<void> => {
         set({ isloggingin: true });
         try {
-          const token = localStorage.getItem("authToken");
 
-          if (!token) {
-            set({ authUser: null, isloggingin: false });
-            return;
-          }
-
-          const res = await axiosInstance.get<User>("/auth/check", {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          });
+          const res = await axiosInstance.get<User>("/auth/check");
 
           if (res.data) {
             set({ authUser: res.data, isloggingin: false });
           } else {
-            localStorage.removeItem("authToken");
             set({ authUser: null, isloggingin: false });
           }
         } catch (error: any) {
@@ -81,7 +71,6 @@ export const useAuthStore = create<AuthStore>()(
 
           if (status === 401 || status === 403) {
             console.log("Authentication failed - token invalid");
-            localStorage.removeItem("authToken");
             set({ authUser: null, isloggingin: false });
 
             if (

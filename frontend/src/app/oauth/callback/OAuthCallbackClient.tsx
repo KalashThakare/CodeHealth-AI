@@ -20,6 +20,7 @@ export default function OAuthCallbackClient() {
   const [details, setDetails] = useState("");
 
   useEffect(() => {
+    console.log("========== OAUTH CALLBACK PAGE ==========");
     const success = searchParams.get("success");
     const error = searchParams.get("error");
     const provider = searchParams.get("provider") || "OAuth";
@@ -42,9 +43,10 @@ export default function OAuthCallbackClient() {
       }
 
       setTimeout(() => {
+        console.log("Now redirecting to dashboard");
         window.location.href = "/dashboard";
         // router.replace("/dashboard");
-      }, 2000);
+      }, 3000);
     } else if (error) {
       setStatus("error");
       const errorMessages: Record<string, { title: string; details: string }> =

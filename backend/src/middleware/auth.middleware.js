@@ -3,43 +3,69 @@ import jwt from "jsonwebtoken";
 import User from "../database/models/User.js";
 
 export const protectRoute = async (req, res, next) => {
+  console.log("========== AUTH DEBUG ==========");
 
-    const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
+  const authHeader = req.headers.authorization;
+  const token =
+    req.cookies?.token ||
+    (authHeader && authHeader.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : null);
 
-    if (!token) {
-        return res.status(400).json({ message: "Unauthorised" });
+  console.log("Token present:", Boolean(token));
+
+  if (!token) {
+    console.log("No token found");
+    console.log("========== AUTH DEBUG END ==========");
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const isBlacklisted = await BlacklistToken.findOne({ where: { token } });
+
+  if (isBlacklisted) {
+    console.log("Token is blacklisted");
+    console.log("========== AUTH DEBUG END ==========");
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+ 
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("JWT decoded payload:", decoded);
+
+    if (!decoded.userId) {
+      console.log("userId missing in token payload");
+      console.log("========== AUTH DEBUG END ==========");
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const isBlacklisted = await BlacklistToken.findOne({ where: { token: token } });
+    const user = await User.findOne({ where: { id: decoded.userId } });
+    console.log("User found:", Boolean(user));
 
-    if (isBlacklisted) {
-        return res.status(401).json({ message: 'Unauthorized' });
+    if (!user) {
+      console.log("No user found for ID:", decoded.userId);
+      console.log("========== AUTH DEBUG END ==========");
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        if (!decoded.userId) {
-            return res.status(401).json({ message: "Unauthorized: Invalid token payload" });
-        }
-        const user = await User.findOne({ where: { id: decoded.userId } });
-        if (!user) {
-            return res.status(401).json({ message: "Unauthorized: User not found" });
-        }
+    req.user = user;
+    req.token = token;
 
-        req.user = user;
-        req.token = token;
+    console.log("Auth success, proceeding to next()");
+    console.log("========== AUTH DEBUG END ==========");
 
-        next();
+    next();
+  } catch (error) {
+    console.log("JWT Error:", error.name, error.message);
 
-    } catch (error) {
-
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({ message: "Unauthorized: Token expired" });
-        } else if (error.name === 'JsonWebTokenError') {
-            return res.status(401).json({ message: "Unauthorized: Invalid token" });
-        }
-        console.error("Authentication error:", error);
-        return res.status(500).json({ message: "Internal Server Error" });
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token expired" });
     }
 
-}
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
