@@ -1090,6 +1090,31 @@ vercel env add VARIABLE_NAME
 
 This project was developed by a two-member team with clearly defined responsibilities:
 
+### Jayesh Rajbhar
+**Role:** Frontend Engineer & UI/UX Designer
+
+**Responsibilities:**
+- Complete frontend development using Next.js
+- UI/UX design and component architecture
+- Data visualization implementation with D3.js and Recharts
+- Dashboard design and development
+- WebSocket client integration for real-time updates
+- Observability interface development
+- Alert configuration UI
+- Repository connection flow
+- Authentication UI (GitHub/Google OAuth)
+- Responsive design and mobile optimization
+- Complete deployment
+
+**Key Contributions:**
+- Designed intuitive, data-rich dashboards
+- Implemented complex visualizations (heatmaps, radar charts, distributions)
+- Created real-time update system for metrics
+- Built seamless GitHub integration flow
+- Optimized frontend performance for large datasets
+
+---
+
 ### Kalash Thakare
 **Role:** Backend Engineer & System Architect
 
@@ -1113,31 +1138,6 @@ This project was developed by a two-member team with clearly defined responsibil
 - Built automated re-analysis system on push/PR events
 - Created technical debt scoring algorithms
 - Developed worker isolation strategy for scalability
-
----
-
-### Jayesh Rajbhar
-**Role:** Frontend Engineer & UI/UX Designer
-
-**Responsibilities:**
-- Complete frontend development using Next.js
-- UI/UX design and component architecture
-- Data visualization implementation with D3.js and Recharts
-- Dashboard design and development
-- WebSocket client integration for real-time updates
-- Observability interface development
-- Alert configuration UI
-- Repository connection flow
-- Authentication UI (GitHub/Google OAuth)
-- Responsive design and mobile optimization
-- Complete deployment
-
-**Key Contributions:**
-- Designed intuitive, data-rich dashboards
-- Implemented complex visualizations (heatmaps, radar charts, distributions)
-- Created real-time update system for metrics
-- Built seamless GitHub integration flow
-- Optimized frontend performance for large datasets
 
 ---
 
