@@ -1175,7 +1175,7 @@ We welcome contributions! Please follow these steps:
 
 For issues, questions, or feature requests:
 - Open an issue on [GitHub Issues](#)
-- Contact: [your-email@example.com](clouddrop.s3@gmail.com)
+- Contact: [codehealth-ai@gmail.com](clouddrop.s3@gmail.com)
 
 ---
 
