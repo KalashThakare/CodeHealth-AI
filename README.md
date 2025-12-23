@@ -174,14 +174,20 @@ CodeHealth-AI employs a **distributed, multi-server architecture** designed for 
 ## 🛠️ Technology Stack
 
 ### Frontend
-| Technology | Purpose |
-|------------|---------|
-| **Next.js 14** | React framework with SSR and App Router |
-| **TypeScript** | Type-safe development |
-| **Recharts** | Line charts, bar charts, area charts for metrics |
-| **D3.js** | Advanced visualizations (radar charts, heatmaps, distributions) |
-| **Socket.io Client** | Real-time updates and notifications |
-| **Tailwind CSS** | Utility-first styling |
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Next.js | 15.4.10 | Application framework with App Router |
+| React | 19.1.0 | UI component library |
+| TypeScript | 5.x | Type-safe development |
+| Zustand | 5.0.7 | State management |
+| Recharts | 3.5.1 | Line charts and metric graphs |
+| D3.js | 7.9.0 | Advanced visualizations (radar, heatmaps) |
+| Chart.js | 4.5.1 | Gauge and distribution charts |
+| GSAP | 3.13.0 | Animations and transitions |
+| Socket.io-client | 4.8.1 | Real-time communication |
+| Tailwind CSS | 4.x | Utility-first CSS framework |
+| Axios | 1.11.0 | HTTP client |
 
 ### Backend (Node.js)
 | Technology | Purpose |
