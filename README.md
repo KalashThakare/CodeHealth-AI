@@ -206,11 +206,9 @@ CodeHealth-AI employs a **distributed, multi-server architecture** designed for 
 | Technology | Purpose |
 |------------|---------|
 | **FastAPI** | High-performance async API framework |
-| **Radon** | Cyclomatic complexity and maintainability analysis |
-| **Lizard** | Code metric extraction |
+| **Radon** | Cyclomatic complexity and maintainability analysis 
 | **Together AI** | AI-powered insight generation |
 | **Google Gemini** | Natural language processing |
-| **PyGithub** | GitHub API interaction |
 | **JWT** | GitHub App authentication |
 
 ### Infrastructure
@@ -1097,7 +1095,7 @@ vercel env add VARIABLE_NAME
 This project was developed by a two-member team with clearly defined responsibilities:
 
 ### Jayesh Rajbhar
-**Role:** Frontend Engineer & UI/UX Designer
+**Role:** Frontend Engineer, UI/UX Designer & Deployment
 
 **Responsibilities:**
 - Complete frontend development using Next.js
@@ -1136,7 +1134,6 @@ This project was developed by a two-member team with clearly defined responsibil
 - Python analysis engine integration
 - API endpoint design and implementation
 - Authentication and authorization logic
-- Deployment and DevOps configuration
 
 **Key Contributions:**
 - Designed distributed job processing architecture
