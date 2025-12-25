@@ -12,7 +12,7 @@
 [![TypeScript](https://img.shields.io/badge/typescript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
 
-[Live Demo](https://codehealth-rose.vercel.app/) • [Documentation](#) • [Report Issues](#)
+[Live Demo](https://codehealth-rose.vercel.app/) • [Documentation](https://codehealth-rose.vercel.app/#docs)
 
 </div>
 
