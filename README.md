@@ -857,18 +857,7 @@ npm run dev
 # API runs on http://localhost:5000
 ```
 
-#### 4. Worker Setup
-
-```bash
-cd workers
-npm install
-
-# Workers use same .env as backend
-npm run start
-# Workers process jobs from Redis queue
-```
-
-#### 5. Python Analysis Engine
+#### 4. Python Analysis Engine
 
 ```bash
 cd analysis-engine
@@ -882,7 +871,7 @@ uvicorn main:app --reload --port 8000
 # Analysis engine runs on http://localhost:8000
 ```
 
-#### 6. Redis Setup
+#### 5. Redis Setup
 
 ```bash
 # Using Docker
