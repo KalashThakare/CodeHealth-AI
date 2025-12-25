@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![CodeHealth-AI Logo](https://github.com/KalashThakare/CodeHealth-AI/blob/main/frontend/public/web-app-manifest-192x192.png)
+![CodeHealth-AI Logo](https://github.com/KalashThakare/CodeHealth-AI/blob/main/frontend/public/landing.png)
 
 **AI-Powered Continuous Repository Health Analysis & Developer Intelligence Platform**
 
