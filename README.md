@@ -1145,12 +1145,6 @@ This project was developed by a two-member team with clearly defined responsibil
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
 ## 🤝 Contributing
 
 We welcome contributions! Please follow these steps:
@@ -1163,13 +1157,6 @@ We welcome contributions! Please follow these steps:
 
 ---
 
-## 📞 Support
-
-For issues, questions, or feature requests:
-- Open an issue on [GitHub Issues](#)
-- Contact: [codehealth-ai@gmail.com](clouddrop.s3@gmail.com)
-
----
 
 <div align="center">
 
